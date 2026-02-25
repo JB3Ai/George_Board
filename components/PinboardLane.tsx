@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardItem, UserEmail } from '../types';
+import { ClipboardItem, UserEmail, ItemType } from '../types';
 import { Card } from './Card';
 
 interface PinboardLaneProps {
@@ -16,6 +16,26 @@ interface PinboardLaneProps {
 export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, onUpdate, onDelete, onEdit, onRefresh }) => {
   const pinned = items.filter(i => i.isPinned);
   const unpinned = items.filter(i => !i.isPinned);
+
+  const getHostname = (url: string) => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      const parts = url.split('/');
+      return parts[2] || parts[0] || '';
+    }
+  };
+
+  const linkItems = items.filter(
+    i => i.type === ItemType.WEBPAGE || i.type === ItemType.YOUTUBE
+  );
+
+  const domainCounts = linkItems.reduce<Record<string, number>>((acc, item) => {
+    const host = getHostname(item.content);
+    if (!host) return acc;
+    acc[host] = (acc[host] || 0) + 1;
+    return acc;
+  }, {});
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -51,7 +71,19 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               {pinned.map(item => (
                 <motion.div key={item.id} variants={itemVariants} layout>
-                  <Card item={item} currentUser={currentUser} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} />
+                  <Card 
+                    item={item} 
+                    currentUser={currentUser} 
+                    onUpdate={onUpdate} 
+                    onDelete={onDelete} 
+                    onEdit={onEdit} 
+                    onRefresh={onRefresh}
+                    domainCount={
+                      (item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE)
+                        ? domainCounts[getHostname(item.content)] || 1
+                        : undefined
+                    }
+                  />
                 </motion.div>
               ))}
             </div>
@@ -73,7 +105,19 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
             <AnimatePresence mode="popLayout">
               {unpinned.map(item => (
                 <motion.div key={item.id} variants={itemVariants} layout>
-                  <Card item={item} currentUser={currentUser} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} />
+                  <Card 
+                    item={item} 
+                    currentUser={currentUser} 
+                    onUpdate={onUpdate} 
+                    onDelete={onDelete} 
+                    onEdit={onEdit} 
+                    onRefresh={onRefresh}
+                    domainCount={
+                      (item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE)
+                        ? domainCounts[getHostname(item.content)] || 1
+                        : undefined
+                    }
+                  />
                 </motion.div>
               ))}
             </AnimatePresence>

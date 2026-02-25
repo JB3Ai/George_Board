@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('JONO');
   const [items, setItems] = useState<ClipboardItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [commandText, setCommandText] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState<ClipboardItem | null>(null);
   
@@ -164,6 +165,43 @@ const App: React.FC = () => {
     }
   };
 
+  const handleCommandSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const raw = commandText.trim();
+    if (!raw) return;
+
+    const value = raw.startsWith('/') ? raw.slice(1) : raw;
+    const [cmd, ...rest] = value.split(/\s+/);
+    const arg = rest.join(' ').trim();
+
+    switch (cmd.toLowerCase()) {
+      case 'note':
+        setEditingItem(null);
+        setNewItemType(ItemType.NOTE);
+        setIsAdding(true);
+        break;
+      case 'link':
+        setEditingItem(null);
+        setNewItemType(ItemType.WEBPAGE);
+        setIsAdding(true);
+        break;
+      case 'task':
+        setEditingItem(null);
+        setNewItemType(ItemType.TASK);
+        setIsAdding(true);
+        break;
+      case 'search':
+        if (arg) {
+          setSearchTerm(arg);
+        }
+        break;
+      default:
+        break;
+    }
+
+    setCommandText('');
+  };
+
   const handleDemoClick = () => {
     // Navigate to dedicated development webapp
     window.open('https://jb3ai.com/nexus-proto', '_blank');
@@ -260,7 +298,27 @@ const App: React.FC = () => {
             ))}
           </div>
           
-          <div className="flex items-center gap-6 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-6 w-full sm:w-auto justify-end sm:ml-8">
+            <form
+              onSubmit={handleCommandSubmit}
+              className="hidden sm:flex items-center px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] tracking-[0.2em] uppercase text-[#9AA3AD]/70"
+            >
+              <span className="mr-3 text-[#66FF66]">⌘</span>
+              <input
+                type="text"
+                value={commandText}
+                onChange={e => setCommandText(e.target.value)}
+                placeholder="/note /link /task /search"
+                className="bg-transparent text-[11px] tracking-[0.15em] uppercase outline-none text-[#E6E6E6] placeholder:text-[#9AA3AD]/40 w-48"
+              />
+            </form>
+            <button 
+              onClick={handleDemoClick}
+              className="flex items-center gap-3 px-6 py-3 bg-[#66FF66]/10 border border-[#66FF66]/30 rounded-xl text-[#66FF66] text-[10px] tracking-[0.2em] font-bold uppercase hover:bg-[#66FF66]/20 hover:scale-[1.05] transition-all group shadow-[0_0_20px_rgba(102,255,102,0.1)]"
+            >
+              <Rocket size={14} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+              DEMO
+            </button>
             <button onClick={handleLogout} title="Terminate Session" className="text-[#9AA3AD]/20 hover:text-red-400 transition-colors">
               <LogOut size={18} strokeWidth={1.5} />
             </button>

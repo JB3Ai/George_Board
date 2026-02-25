@@ -4,19 +4,6 @@ import { ExternalLink, Copy, Archive, Pin, CheckCircle2, Clock, Trash2, Globe, L
 import { ClipboardItem, ItemType, TaskStatus, UserEmail, EnrichmentStatus } from '../types';
 import { useToast } from './Toast';
 
-const formatTimeAgo = (timestamp: number) => {
-  if (!timestamp) return 'Just now';
-  const diffMs = Date.now() - timestamp;
-  const diffSec = Math.floor(diffMs / 1000);
-  if (diffSec < 60) return 'Just now';
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h ago`;
-  const diffD = Math.floor(diffH / 24);
-  return `${diffD}d ago`;
-};
-
 interface CardProps {
   item: ClipboardItem;
   currentUser: UserEmail;
@@ -24,10 +11,9 @@ interface CardProps {
   onDelete: (id: string) => void;
   onEdit: (item: ClipboardItem) => void;
   onRefresh: (id: string) => void;
-  domainCount?: number;
 }
 
-export const Card: React.FC<CardProps> = ({ item, currentUser, onUpdate, onDelete, onEdit, onRefresh, domainCount }) => {
+export const Card: React.FC<CardProps> = ({ item, currentUser, onUpdate, onDelete, onEdit, onRefresh }) => {
   const isOwner = item.userId === currentUser;
   const isEnriching = item.enrichmentStatus === EnrichmentStatus.PENDING;
   const hasFailed = item.enrichmentStatus === EnrichmentStatus.FAILED || item.enrichmentStatus === EnrichmentStatus.DELAYED;
@@ -316,20 +302,10 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, onUpdate, onDelet
                     <Globe size={16} className="text-white/20" />
                   )}
                 </div>
-                <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
                   <p className="text-xs text-[#9AA3AD] truncate font-mono tracking-tight lowercase">
                     {getSafeHostname(item.content)}
                   </p>
-                  {domainCount && domainCount > 1 && (
-                    <div className="flex items-center gap-1 text-[10px] text-[#9AA3AD]/60 font-mono">
-                      <div className="relative w-5 h-4 mr-0.5">
-                        <span className="absolute inset-y-0 left-0 w-3 rounded-sm bg-white/5 border border-white/10" />
-                        <span className="absolute inset-y-0 left-1 w-3 rounded-sm bg-white/10 border border-white/15" />
-                        <span className="absolute inset-y-0 left-2 w-3 rounded-sm bg-[#66FF66]/15 border border-[#66FF66]/40" />
-                      </div>
-                      <span className="tracking-[0.18em] uppercase">×{domainCount}</span>
-                    </div>
-                  )}
                 </div>
               </div>
               
@@ -357,12 +333,6 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, onUpdate, onDelet
              </div>
           </div>
         )}
-
-        <div className="mt-4 pt-4 border-t border-white/[0.02] flex items-center justify-between">
-          <span className="text-[10px] tracking-[0.2em] text-[#9AA3AD]/40 uppercase font-bold">
-            Updated {formatTimeAgo(item.createdAt)}
-          </span>
-        </div>
       </div>
     </div>
   );

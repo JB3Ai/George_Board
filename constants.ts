@@ -11,5 +11,6 @@ export const TABS = [
   { id: 'GEORGE', label: 'GEORGE', email: 'gsourlis@yahoo.com' },
   { id: 'STORAGE', label: 'STORAGE', email: null },
   { id: 'INFO', label: 'INFO', email: null },
+  { id: 'DEMO', label: 'DEMO', email: null },
   { id: 'SETTINGS', label: 'SETTINGS', email: null }
 ];

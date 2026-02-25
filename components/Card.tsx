@@ -166,17 +166,24 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, onUpdate, onDelet
             <h3 className={`text-xl font-medium text-[#E6E6E6] leading-snug tracking-tight ${isEnriching ? 'animate-skeleton text-white/10' : ''}`}>
               {item.metadata?.title || item.title || "Observation Unit"}
             </h3>
+            {(item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE) && (
+              <p className="text-sm text-[#9AA3AD] leading-relaxed font-normal line-clamp-2">
+                {item.metadata?.description && item.metadata.description.length < item.content.length 
+                  ? item.metadata.description 
+                  : getSafeHostname(item.content)}
+              </p>
+            )}
           </div>
           
-          <div className="flex gap-2 opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 transition-all duration-500 translate-x-2 group-hover:translate-x-0 shrink-0">
+          <div className="flex flex-wrap sm:flex-nowrap gap-2 opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 transition-all duration-500 translate-x-2 group-hover:translate-x-0 shrink-0 justify-end">
             {showRefresh && (
               <div className="relative">
                 <button 
                   onClick={handleRefreshClick} 
-                  className={`p-3 bg-white/[0.03] hover:bg-[#66FF66]/10 rounded-2xl text-[#9AA3AD] hover:text-[#66FF66] border border-white/[0.05] transition-all ${isEnriching ? 'animate-spin' : ''}`} 
+                  className={`p-2.5 sm:p-3 bg-white/[0.03] hover:bg-[#66FF66]/10 rounded-2xl text-[#9AA3AD] hover:text-[#66FF66] border border-white/[0.05] transition-all ${isEnriching ? 'animate-spin' : ''}`} 
                   title="Refresh Metadata"
                 >
-                  <RefreshCw size={16} strokeWidth={1.5} />
+                  <RefreshCw size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
                 </button>
                 {showCooldown && (
                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-black/80 text-[9px] text-white/60 tracking-widest uppercase rounded-lg border border-white/10 whitespace-nowrap animate-in fade-in slide-in-from-bottom-1">
@@ -187,31 +194,31 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, onUpdate, onDelet
             )}
             {(item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE) && (
               <>
-                <button onClick={() => window.open(item.content, '_blank')} className="p-3 bg-white/[0.03] hover:bg-[#66FF66]/10 rounded-2xl text-[#9AA3AD] hover:text-[#66FF66] border border-white/[0.05] transition-all" title="Open Asset">
-                  <ExternalLink size={16} strokeWidth={1.5} />
+                <button onClick={() => window.open(item.content, '_blank')} className="p-2.5 sm:p-3 bg-white/[0.03] hover:bg-[#66FF66]/10 rounded-2xl text-[#9AA3AD] hover:text-[#66FF66] border border-white/[0.05] transition-all" title="Open Asset">
+                  <ExternalLink size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
                 </button>
-                <button onClick={handleCopyLink} className="p-3 bg-white/[0.03] hover:bg-[#66FF66]/10 rounded-2xl text-[#9AA3AD] hover:text-[#66FF66] border border-white/[0.05] transition-all" title="Copy Link">
-                  <Link2 size={16} strokeWidth={1.5} />
+                <button onClick={handleCopyLink} className="p-2.5 sm:p-3 bg-white/[0.03] hover:bg-[#66FF66]/10 rounded-2xl text-[#9AA3AD] hover:text-[#66FF66] border border-white/[0.05] transition-all" title="Copy Link">
+                  <Link2 size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
                 </button>
               </>
             )}
-            <button onClick={handleCopy} title="Copy Content" className="p-3 bg-white/[0.03] hover:bg-[#66FF66]/10 rounded-2xl text-[#9AA3AD] hover:text-[#66FF66] border border-white/[0.05] transition-all">
-              <Copy size={16} strokeWidth={1.5} />
+            <button onClick={handleCopy} title="Copy Content" className="p-2.5 sm:p-3 bg-white/[0.03] hover:bg-[#66FF66]/10 rounded-2xl text-[#9AA3AD] hover:text-[#66FF66] border border-white/[0.05] transition-all">
+              <Copy size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
             </button>
             
             {isOwner && (
               <>
-                <button onClick={() => onEdit(item)} className="p-3 bg-white/[0.03] hover:bg-[#66FF66]/10 rounded-2xl text-[#9AA3AD] hover:text-[#66FF66] border border-white/[0.05] transition-all" title="Edit Record">
-                  <Edit3 size={16} strokeWidth={1.5} />
+                <button onClick={() => onEdit(item)} className="p-2.5 sm:p-3 bg-white/[0.03] hover:bg-[#66FF66]/10 rounded-2xl text-[#9AA3AD] hover:text-[#66FF66] border border-white/[0.05] transition-all" title="Edit Record">
+                  <Edit3 size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
                 </button>
-                <button onClick={() => onUpdate(item.id, { isPinned: !item.isPinned })} className={`p-3 bg-white/[0.03] rounded-2xl border transition-all ${item.isPinned ? 'text-[#66FF66] border-[#66FF66]/20' : 'text-[#9AA3AD] border-white/[0.05] hover:text-white hover:bg-white/10'}`} title="Pin Priority">
-                  <Pin size={16} strokeWidth={1.5} className={item.isPinned ? "animate-pin-glow" : ""} />
+                <button onClick={() => onUpdate(item.id, { isPinned: !item.isPinned })} className={`p-2.5 sm:p-3 bg-white/[0.03] rounded-2xl border transition-all ${item.isPinned ? 'text-[#66FF66] border-[#66FF66]/20' : 'text-[#9AA3AD] border-white/[0.05] hover:text-white hover:bg-white/10'}`} title="Pin Priority">
+                  <Pin size={14} className={`sm:w-4 sm:h-4 ${item.isPinned ? "animate-pin-glow" : ""}`} strokeWidth={1.5} />
                 </button>
-                <button onClick={() => onUpdate(item.id, { isArchived: !item.isArchived })} className={`p-3 bg-white/[0.03] rounded-2xl border transition-all ${item.isArchived ? 'text-[#66FF66] border-[#66FF66]/20' : 'text-[#9AA3AD] border-white/[0.05] hover:text-white hover:bg-white/10'}`} title="Archive Unit">
-                  <Archive size={16} strokeWidth={1.5} />
+                <button onClick={() => onUpdate(item.id, { isArchived: !item.isArchived })} className={`p-2.5 sm:p-3 bg-white/[0.03] rounded-2xl border transition-all ${item.isArchived ? 'text-[#66FF66] border-[#66FF66]/20' : 'text-[#9AA3AD] border-white/[0.05] hover:text-white hover:bg-white/10'}`} title="Archive Unit">
+                  <Archive size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
                 </button>
-                <button onClick={() => onDelete(item.id)} className="p-3 bg-white/[0.03] hover:bg-red-500/10 rounded-2xl text-[#9AA3AD] hover:text-red-400 border border-white/[0.05] transition-all" title="Purge Record">
-                  <Trash2 size={16} strokeWidth={1.5} />
+                <button onClick={() => onDelete(item.id)} className="p-2.5 sm:p-3 bg-white/[0.03] hover:bg-red-500/10 rounded-2xl text-[#9AA3AD] hover:text-red-400 border border-white/[0.05] transition-all" title="Purge Record">
+                  <Trash2 size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
                 </button>
               </>
             )}
@@ -282,12 +289,6 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, onUpdate, onDelet
 
         {(item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE) && (
           <div className="flex flex-col gap-6">
-            {(item.metadata?.description || (item.content !== getSafeHostname(item.content) && item.content)) && (
-              <p className="text-sm text-[#9AA3AD] leading-relaxed font-normal line-clamp-3">
-                {item.metadata?.description || item.content}
-              </p>
-            )}
-            
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-5 bg-white/[0.03] p-5 rounded-2xl border border-white/[0.06] transition-all flex-1 min-w-0">
                 <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center shrink-0 overflow-hidden relative border border-white/10">

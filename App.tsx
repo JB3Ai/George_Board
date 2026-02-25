@@ -6,12 +6,13 @@ import { LinkPasteBar } from './components/LinkPasteBar';
 import { SearchInput } from './components/SearchInput';
 import { InfoTab } from './components/InfoTab';
 import { SettingsTab } from './components/SettingsTab';
+import { DemoTab } from './components/DemoTab';
 import { ToastProvider } from './components/Toast';
 import { db } from './services/db';
 import { fetchLinkMetadata } from './services/metadata';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus } from './types';
 import { TABS } from './constants';
-import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket } from 'lucide-react';
+import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, LayoutGrid } from 'lucide-react';
 
 const App: React.FC = () => {
   // Fix: Explicitly type activeTab as string to prevent narrowing that causes comparison errors
@@ -26,6 +27,7 @@ const App: React.FC = () => {
   const [newItemContent, setNewItemContent] = useState('');
   const [newItemDueDate, setNewItemDueDate] = useState('');
   const [newItemLocation, setNewItemLocation] = useState('');
+  const [newItemIsDemo, setNewItemIsDemo] = useState(false);
 
   useEffect(() => {
     setItems(db.getItems());
@@ -78,6 +80,7 @@ const App: React.FC = () => {
     
     setNewItemDueDate(item.dueDate || '');
     setNewItemLocation(item.eventLocation || '');
+    setNewItemIsDemo(item.isDemo || false);
     setIsAdding(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -166,6 +169,37 @@ const App: React.FC = () => {
     window.open('https://jb3ai.com/nexus-proto', '_blank');
   };
 
+  const handleRefresh = async (id: string) => {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+
+    db.updateItem(id, session.email, { 
+      enrichmentStatus: EnrichmentStatus.PENDING,
+      preview_fail_count: (item.preview_fail_count || 0) + 1
+    });
+    setItems(db.getItems());
+
+    try {
+      const metadata = await fetchLinkMetadata(item.content);
+      const hasMetadata = metadata && Object.keys(metadata).length > 0 && (metadata.title || metadata.siteName || metadata.og_image_url);
+      
+      db.updateItem(id, session.email, { 
+        metadata: hasMetadata ? { ...item.metadata, ...metadata } : item.metadata,
+        enrichmentStatus: hasMetadata ? EnrichmentStatus.SUCCESS : EnrichmentStatus.FAILED,
+        preview_last_fetched_at: Date.now(),
+        preview_next_allowed_at: Date.now() + 60000 // 60s cooldown
+      });
+    } catch (error) {
+      db.updateItem(id, session.email, { 
+        enrichmentStatus: EnrichmentStatus.FAILED,
+        preview_last_fetched_at: Date.now(),
+        preview_next_allowed_at: Date.now() + 60000
+      });
+    } finally {
+      setItems(db.getItems());
+    }
+  };
+
   const handleCommit = async () => {
     if (editingItem) {
       const updates: Partial<ClipboardItem> = {
@@ -173,6 +207,7 @@ const App: React.FC = () => {
         taskStatus: newItemType === ItemType.TASK ? (editingItem.taskStatus || TaskStatus.OPEN) : undefined,
         dueDate: newItemType === ItemType.TASK || newItemType === ItemType.EVENT ? newItemDueDate : undefined,
         eventLocation: newItemType === ItemType.EVENT ? newItemLocation : undefined,
+        isDemo: newItemIsDemo,
       };
 
       if (newItemType === ItemType.WEBPAGE || newItemType === ItemType.YOUTUBE) {
@@ -197,6 +232,7 @@ const App: React.FC = () => {
           taskStatus: newItemType === ItemType.TASK ? TaskStatus.OPEN : undefined,
           dueDate: newItemType === ItemType.TASK || newItemType === ItemType.EVENT ? newItemDueDate : undefined,
           eventLocation: newItemType === ItemType.EVENT ? newItemLocation : undefined,
+          isDemo: newItemIsDemo,
         });
       }
     }
@@ -209,13 +245,13 @@ const App: React.FC = () => {
     <ToastProvider>
       <SessionGuard>
         <div className="flex flex-col gap-16">
-          <nav className="flex items-center justify-between border-b border-white/[0.04] pb-6 overflow-x-auto">
-          <div className="flex gap-12 min-w-max items-center">
+          <nav className="flex flex-col sm:flex-row items-center justify-between border-b border-white/[0.04] pb-6 gap-6">
+          <div className="flex gap-8 sm:gap-12 w-full sm:w-auto items-center overflow-x-auto no-scrollbar scroll-smooth">
             {TABS.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id); setIsAdding(false); setSearchTerm(''); }}
-                className={`text-[11px] tracking-[0.3em] uppercase transition-all pb-6 -mb-6 border-b-2 font-bold whitespace-nowrap ${
+                className={`text-[10px] sm:text-[11px] tracking-[0.3em] uppercase transition-all pb-6 -mb-6 border-b-2 font-bold whitespace-nowrap ${
                   activeTab === tab.id ? 'text-[#66FF66] border-[#66FF66]' : 'text-[#9AA3AD]/40 border-transparent hover:text-[#9AA3AD]'
                 }`}
               >
@@ -224,14 +260,7 @@ const App: React.FC = () => {
             ))}
           </div>
           
-          <div className="flex items-center gap-6 ml-8">
-            <button 
-              onClick={handleDemoClick}
-              className="flex items-center gap-3 px-6 py-3 bg-[#66FF66]/10 border border-[#66FF66]/30 rounded-xl text-[#66FF66] text-[10px] tracking-[0.2em] font-bold uppercase hover:bg-[#66FF66]/20 hover:scale-[1.05] transition-all group shadow-[0_0_20px_rgba(102,255,102,0.1)]"
-            >
-              <Rocket size={14} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-              DEMO
-            </button>
+          <div className="flex items-center gap-6 w-full sm:w-auto justify-end">
             <button onClick={handleLogout} title="Terminate Session" className="text-[#9AA3AD]/20 hover:text-red-400 transition-colors">
               <LogOut size={18} strokeWidth={1.5} />
             </button>
@@ -334,6 +363,18 @@ const App: React.FC = () => {
                         />
                       </div>
                     )}
+                    
+                    <button 
+                      onClick={() => setNewItemIsDemo(!newItemIsDemo)}
+                      className={`flex items-center gap-3 px-6 py-2.5 rounded-xl border text-[10px] tracking-widest uppercase font-bold transition-all ${
+                        newItemIsDemo 
+                        ? 'bg-[#66FF66]/10 border-[#66FF66]/30 text-[#66FF66]' 
+                        : 'bg-white/5 border-white/5 text-[#9AA3AD]/40 hover:border-white/10'
+                      }`}
+                    >
+                      <Rocket size={14} />
+                      Demo Asset
+                    </button>
                   </div>
 
                   <div className="flex justify-end gap-10 pt-10 border-t border-white/[0.04]">
@@ -351,6 +392,7 @@ const App: React.FC = () => {
                 onUpdate={(id, u) => { db.updateItem(id, session.email, u); setItems(db.getItems()); }} 
                 onDelete={id => { db.deleteItem(id, session.email); setItems(db.getItems()); }}
                 onEdit={handleEdit}
+                onRefresh={handleRefresh}
               />
             </div>
           )}

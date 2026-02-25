@@ -1,19 +1,45 @@
 
 :root {
-  /* Requested Color Palette */
+  /* Default Neon Theme */
   --accent: #66FF66;
   --bg-dark: #0A0C10;
   --bg-card: #121620;
   --text-primary: #E6E6E6;
   --text-muted: #9AA3AD;
   --border-color: rgba(192, 192, 192, 0.12);
-  
   --bg-glass: rgba(18, 22, 32, 0.85);
   --border-active: rgba(102, 255, 102, 0.3);
   
   /* Typography Scaling */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --tracking-widest: 0.25em;
+  --base-font-size: 16px;
+}
+
+[data-theme="midnight"] {
+  --accent: #F27D26;
+  --bg-dark: #050508;
+  --bg-card: #0D0D14;
+  --text-primary: #F0F0F5;
+  --text-muted: #7E7E8F;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --bg-glass: rgba(13, 13, 20, 0.9);
+  --border-active: rgba(242, 125, 38, 0.3);
+}
+
+[data-theme="paper"] {
+  --accent: #141414;
+  --bg-dark: #F5F5F0;
+  --bg-card: #FFFFFF;
+  --text-primary: #141414;
+  --text-muted: #666666;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --bg-glass: rgba(255, 255, 255, 0.8);
+  --border-active: rgba(0, 0, 0, 0.4);
+}
+
+[data-font-size="large"] {
+  --base-font-size: 20px;
 }
 
 body {
@@ -22,7 +48,8 @@ body {
   font-family: var(--font-sans);
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
-  font-size: 16px; /* Increased base size */
+  font-size: var(--base-font-size);
+  transition: background-color 0.3s ease, color 0.3s ease, font-size 0.3s ease;
 }
 
 .glass {
@@ -84,6 +111,15 @@ input::placeholder, textarea::placeholder {
 
 .animate-pin-glow {
   animation: pin-glow 2.5s infinite ease-in-out;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Custom Utilities for larger fonts */

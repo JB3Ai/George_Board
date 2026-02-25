@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Layout } from './Layout';
 import { Login } from './Login';
 import { PinPad } from './PinPad';
+import { Splash } from './Splash';
 import { UserSession, UserEmail } from '../types';
 import { supabaseAuth } from '../services/auth';
 import { Mail } from 'lucide-react';
@@ -16,6 +17,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
   const [session, setSession] = useState<UserSession | null>(null);
   const [isMagicLinkSent, setIsMagicLinkSent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -52,11 +54,16 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
       setSession(verifiedSession);
       localStorage.setItem('jb3_session', JSON.stringify(verifiedSession));
       showToast('Session Authorized', 'success');
+      setShowSplash(true);
     } else {
       showToast(result.error || 'Verification failed', 'error');
     }
     setIsProcessing(false);
   };
+
+  if (showSplash) {
+    return <Splash onComplete={() => setShowSplash(false)} />;
+  }
 
   if (!session) {
     return (

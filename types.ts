@@ -9,6 +9,17 @@ export enum ItemType {
   YOUTUBE = 'YOUTUBE'
 }
 
+export enum Theme {
+  NEON = 'NEON',
+  MIDNIGHT = 'MIDNIGHT',
+  PAPER = 'PAPER'
+}
+
+export enum FontSize {
+  SMALL = 'SMALL',
+  LARGE = 'LARGE'
+}
+
 export enum TaskStatus {
   OPEN = 'OPEN',
   WAITING = 'WAITING',
@@ -18,7 +29,8 @@ export enum TaskStatus {
 export enum EnrichmentStatus {
   PENDING = 'PENDING',
   SUCCESS = 'SUCCESS',
-  FAILED = 'FAILED'
+  FAILED = 'FAILED',
+  DELAYED = 'DELAYED'
 }
 
 export interface LinkMetadata {
@@ -46,6 +58,10 @@ export interface ClipboardItem {
   metadata?: LinkMetadata;
   enrichmentStatus?: EnrichmentStatus;
   readBy?: UserEmail[];
+  isDemo?: boolean;
+  preview_fail_count?: number;
+  preview_last_fetched_at?: number;
+  preview_next_allowed_at?: number;
 }
 
 export interface UserSession {

@@ -18,8 +18,13 @@ export const supabaseAuth = {
     await new Promise(r => setTimeout(r, 800)); // Latency simulation
     
     // Prototype Logic: Compare against a stored PIN in localStorage for this browser session
-    // Or hardcode '1234' for initial development if no PIN set
-    const storedPin = localStorage.getItem(`pin_hash_${email}`) || '1234';
+    // Or hardcode specific PINs for the prototype
+    const defaultPins: Record<string, string> = {
+      'jono@jonoblackburn.com': '4020',
+      'gsourlis@yahoo.com': '1234'
+    };
+    
+    const storedPin = localStorage.getItem(`pin_hash_${email}`) || defaultPins[email.toLowerCase()] || '1234';
     
     if (pin === storedPin) {
       return { success: true };

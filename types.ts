@@ -12,7 +12,8 @@ export enum ItemType {
 export enum Theme {
   NEON = 'NEON',
   MIDNIGHT = 'MIDNIGHT',
-  PAPER = 'PAPER'
+  PAPER = 'PAPER',
+  SAND = 'SAND'
 }
 
 export enum FontSize {

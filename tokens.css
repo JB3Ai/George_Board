@@ -38,6 +38,17 @@
   --border-active: rgba(0, 0, 0, 0.4);
 }
 
+[data-theme="sand"] {
+  --accent: #8B4513;
+  --bg-dark: #FDF5E6;
+  --bg-card: #FFF8DC;
+  --text-primary: #5D4037;
+  --text-muted: #8D6E63;
+  --border-color: rgba(139, 69, 19, 0.1);
+  --bg-glass: rgba(255, 248, 220, 0.85);
+  --border-active: rgba(139, 69, 19, 0.3);
+}
+
 [data-font-size="large"] {
   --base-font-size: 20px;
 }

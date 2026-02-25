@@ -1,0 +1,38 @@
+
+import { UserEmail } from '../types';
+
+export function isAllowlisted(email: string): boolean {
+  const list = ['jono@jonoblackburn.com', 'gsourlis@yahoo.com'];
+  return list.includes(email.toLowerCase());
+}
+
+/**
+ * Server-side simulation for PIN verification.
+ * In production, this calls the Supabase Edge Function 'verify-pin'.
+ */
+export const supabaseAuth = {
+  verifyPin: async (email: string, pin: string): Promise<{ success: boolean; error?: string }> => {
+    // In production: 
+    // const { data, error } = await supabase.functions.invoke('verify-pin', { body: { email, pin } })
+    
+    await new Promise(r => setTimeout(r, 800)); // Latency simulation
+    
+    // Prototype Logic: Compare against a stored PIN in localStorage for this browser session
+    // Or hardcode '1234' for initial development if no PIN set
+    const storedPin = localStorage.getItem(`pin_hash_${email}`) || '1234';
+    
+    if (pin === storedPin) {
+      return { success: true };
+    }
+
+    return { success: false, error: 'Credential validation failed' };
+  },
+
+  setPin: async (email: string, pin: string) => {
+    localStorage.setItem(`pin_hash_${email}`, pin);
+  },
+
+  resetPin: async (email: string) => {
+    localStorage.removeItem(`pin_hash_${email}`);
+  }
+};

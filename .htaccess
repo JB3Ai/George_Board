@@ -2,6 +2,7 @@
 RewriteEngine On
 RewriteBase /clipboard/
 RewriteRule ^index\.html$ - [L]
+RewriteRule ^$ /clipboard/index.html [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule . /clipboard/index.html [L]

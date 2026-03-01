@@ -113,10 +113,9 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, onUpdate, onDelet
     }
   };
 
-  // Determine who the other person is for read receipts
-  const otherStakeholder = currentUser === 'jono@jonoblackburn.com' ? 'gsourlis@yahoo.com' : 'jono@jonoblackburn.com';
-  const seenByOther = item.readBy?.includes(otherStakeholder);
-  const readerName = otherStakeholder === 'jono@jonoblackburn.com' ? 'Jono' : 'George';
+  const seenByOther = (item.readBy || []).some(reader => reader !== currentUser);
+  const lastReader = (item.readBy || []).find(reader => reader !== currentUser);
+  const readerName = lastReader ? lastReader.split('@')[0].toUpperCase() : 'USER';
 
   const showRefresh = hasFailed || (item.preview_last_fetched_at && Date.now() - item.preview_last_fetched_at > 24 * 60 * 60 * 1000);
 

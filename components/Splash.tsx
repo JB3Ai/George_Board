@@ -33,7 +33,7 @@ export const Splash: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
                 transition={{ duration: 1, ease: "easeInOut" }}
                 className="absolute inset-0 bg-[#66FF66]/10 rounded-[22px]"
               />
-              <span className="text-4xl font-bold text-[#66FF66] tracking-tighter relative z-10">JB</span>
+              <span className="text-2xl font-bold text-[#66FF66] tracking-[0.08em] relative z-10">JB³Ai</span>
             </div>
             <div className="space-y-2 text-center">
               <p className="text-[10px] tracking-[0.5em] text-[#66FF66] font-bold uppercase">Initializing</p>

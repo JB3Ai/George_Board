@@ -244,7 +244,11 @@ const App: React.FC = () => {
   return (
     <ToastProvider>
       <SessionGuard>
-        <div className="flex flex-col gap-16">
+        {/* Full-screen background */}
+        <div className="fixed inset-0 bg-[#0a0a0a] pointer-events-none z-0" />
+        
+        {/* Content */}
+        <div className="relative z-10 flex flex-col gap-16">
           <nav className="flex flex-col sm:flex-row items-center justify-between border-b border-white/[0.04] pb-6 gap-6">
           <div className="flex gap-8 sm:gap-12 w-full sm:w-auto items-center overflow-x-auto no-scrollbar scroll-smooth">
             {TABS.map(tab => (
@@ -272,7 +276,7 @@ const App: React.FC = () => {
             <div className="space-y-16">
               <div className="flex flex-col lg:flex-row gap-8 items-end justify-between">
                 <div className="flex-1 w-full max-w-2xl">
-                  {isOwnTab && activeTab !== 'STORAGE' ? (
+                  {isOwnTab ? (
                     <LinkPasteBar onAdd={handleAddLink} />
                   ) : (
                     <div className="h-16 flex items-center px-8 glass rounded-2xl text-[11px] tracking-[0.3em] text-[#9AA3AD]/30 uppercase font-bold border-dashed border-white/5">
@@ -405,7 +409,7 @@ const App: React.FC = () => {
             />
           )}
         </div>
-      </div>
+        </div>
       </SessionGuard>
     </ToastProvider>
   );

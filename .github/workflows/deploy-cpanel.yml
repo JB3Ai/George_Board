@@ -36,6 +36,6 @@ jobs:
           password: ${{ secrets.CPANEL_FTP_PASSWORD }}
           protocol: ftp
           local-dir: ./dist/
-          server-dir: ${{ secrets.CPANEL_TARGET_DIR }}
+          server-dir: ./clipboard/
           dangerous-clean-slate: false
 

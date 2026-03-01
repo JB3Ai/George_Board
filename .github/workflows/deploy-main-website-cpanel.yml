@@ -24,7 +24,7 @@ jobs:
           password: ${{ secrets.CPANEL_FTP_PASSWORD }}
           protocol: ftp
           local-dir: ./jb3ai-landing/
-          server-dir: /public_html/
+          server-dir: ./
           dangerous-clean-slate: false
           exclude: |
             **/clipboard/**

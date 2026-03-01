@@ -25,6 +25,9 @@ jobs:
       - name: Build app
         run: npm run build
 
+      - name: Include Apache rules in dist
+        run: cp .htaccess dist/.htaccess
+
       - name: Deploy dist to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:

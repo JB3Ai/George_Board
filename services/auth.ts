@@ -1,8 +1,9 @@
 
-import { ALLOWLIST } from '../constants';
+import { UserEmail } from '../types';
 
 export function isAllowlisted(email: string): boolean {
-  return ALLOWLIST.includes(email.toLowerCase());
+  const list = ['jono@jonoblackburn.com', 'gsourlis@yahoo.com'];
+  return list.includes(email.toLowerCase());
 }
 
 /**
@@ -20,17 +21,7 @@ export const supabaseAuth = {
     // Or hardcode specific PINs for the prototype
     const defaultPins: Record<string, string> = {
       'jono@jonoblackburn.com': '4020',
-      'sue@jb3ai.com': '1234',
-      'bartho@jb3ai.com': '1234',
-      'george@jb3ai.com': '1234',
-      'tammy@jb3ai.com': '1234',
-      'candice@jb3ai.com': '1234',
-      'radkin@jb3ai.com': '1234',
-      'stephan@jb3ai.com': '1234',
-      'mussa@jb3ai.com': '1234',
-      'jason@jb3ai.com': '1234',
-      'nicolette@jb3ai.com': '1234',
-      'tracy@jb3ai.com': '1234'
+      'gsourlis@yahoo.com': '1234'
     };
     
     const storedPin = localStorage.getItem(`pin_hash_${email}`) || defaultPins[email.toLowerCase()] || '1234';

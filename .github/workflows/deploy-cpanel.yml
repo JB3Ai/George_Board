@@ -28,7 +28,7 @@ jobs:
       - name: Include Apache rules in dist
         run: cp .htaccess dist/.htaccess
 
-      - name: Deploy dist to cPanel via FTP
+      - name: Deploy dist to cPanel via FTP (configured target)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.CPANEL_FTP_SERVER }}
@@ -37,4 +37,16 @@ jobs:
           protocol: ftp
           local-dir: ./dist/
           server-dir: ${{ secrets.CPANEL_TARGET_DIR }}
+          dangerous-clean-slate: false
+
+      - name: Deploy dist to cPanel via FTP (fallback /public_html/clipboard)
+        continue-on-error: true
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.CPANEL_FTP_SERVER }}
+          username: ${{ secrets.CPANEL_FTP_USERNAME }}
+          password: ${{ secrets.CPANEL_FTP_PASSWORD }}
+          protocol: ftp
+          local-dir: ./dist/
+          server-dir: /public_html/clipboard/
           dangerous-clean-slate: false

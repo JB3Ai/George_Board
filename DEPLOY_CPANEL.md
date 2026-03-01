@@ -33,7 +33,8 @@ Any push to `main` triggers `.github/workflows/deploy-cpanel.yml`:
 
 1. install deps
 2. build app (`npm run build`)
-3. upload `dist/` to your cPanel path
+3. upload `dist/` to your configured `CPANEL_TARGET_DIR`
+4. also attempt fallback upload to `/public_html/clipboard/`
 
 ## 3) Trigger manually
 

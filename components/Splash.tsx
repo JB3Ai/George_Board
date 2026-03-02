@@ -11,6 +11,7 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
   const [step, setStep] = useState(0);
   const mediaBaseUrl = `${import.meta.env.BASE_URL}Media/`;
   const hasCompletedRef = useRef(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const completeOnce = useCallback(() => {
     if (hasCompletedRef.current) return;
@@ -30,12 +31,16 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
   useEffect(() => {
     if (step !== 3) return;
 
-    const video = document.getElementById('gtr-intro-video') as HTMLVideoElement | null;
+    const video = videoRef.current;
     const complete = () => completeOnce();
-    const fallbackTimer = setTimeout(complete, 8000);
+    const fallbackTimer = setTimeout(complete, 12000);
 
     if (!video) {
-      return () => clearTimeout(fallbackTimer);
+      const noVideoTimer = setTimeout(complete, 2200);
+      return () => {
+        clearTimeout(fallbackTimer);
+        clearTimeout(noVideoTimer);
+      };
     }
 
     const onEnded = () => {
@@ -43,16 +48,36 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
       complete();
     };
 
-    video.currentTime = 0;
-    video.addEventListener('ended', onEnded);
-    video.play().catch(() => {
+    const onError = () => {
       clearTimeout(fallbackTimer);
       setTimeout(complete, 1800);
-    });
+    };
+
+    let retries = 0;
+    const attemptPlay = () => {
+      if (hasCompletedRef.current) return;
+      video.muted = true;
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {
+          retries += 1;
+          if (retries < 8) {
+            setTimeout(attemptPlay, 350);
+          }
+        });
+      }
+    };
+
+    video.currentTime = 0;
+    video.load();
+    video.addEventListener('ended', onEnded);
+    video.addEventListener('error', onError);
+    setTimeout(attemptPlay, 120);
 
     return () => {
       clearTimeout(fallbackTimer);
       video.removeEventListener('ended', onEnded);
+      video.removeEventListener('error', onError);
     };
   }, [step, completeOnce]);
 
@@ -112,15 +137,14 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
             className="absolute inset-0 bg-black"
           >
             <video
-              id="gtr-intro-video"
+              ref={videoRef}
               className="w-full h-full object-cover"
               muted
               playsInline
               preload="auto"
-              autoPlay
             >
-              <source src={`${mediaBaseUrl}gtr-intro-vid.webm`} type="video/webm" />
               <source src={`${mediaBaseUrl}gtr-intro-vid.mp4`} type="video/mp4" />
+              <source src={`${mediaBaseUrl}gtr-intro-vid.webm`} type="video/webm" />
             </video>
           </motion.div>
         )}

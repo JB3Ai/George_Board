@@ -30,7 +30,7 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       finalUrl: '/dadchefai/',
       sameTab: true,
       icon: <ChefHat size={24} />,
-      shieldGate: true
+      shieldGate: false
     },
     {
       id: 'kids-demo',
@@ -41,7 +41,7 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       finalUrl: '/kids-goexplore-gauteng-edition/',
       sameTab: true,
       icon: <MapPin size={24} />,
-      shieldGate: true
+      shieldGate: false
     },
     {
       id: 'dev-soon-a',
@@ -49,10 +49,10 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       title: 'Dev coming soon',
       description: 'Reserved slot for next internal demo build.',
       siteName: 'Development',
-      finalUrl: '/os3grid/',
+      finalUrl: '/',
       sameTab: true,
       icon: <Globe size={24} />,
-      shieldGate: true
+      shieldGate: false
     },
     {
       id: 'dev-soon-b',
@@ -60,10 +60,10 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       title: 'Dev Coming soon',
       description: 'Reserved slot for next internal demo build.',
       siteName: 'Development',
-      finalUrl: '/os3grid/',
+      finalUrl: '/',
       sameTab: true,
       icon: <Globe size={24} />,
-      shieldGate: true
+      shieldGate: false
     },
     {
       id: 'dev-soon-c',
@@ -71,10 +71,10 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       title: 'Dev Coming soon',
       description: 'Reserved slot for next internal demo build.',
       siteName: 'Development',
-      finalUrl: '/os3grid/',
+      finalUrl: '/',
       sameTab: true,
       icon: <Globe size={24} />,
-      shieldGate: true
+      shieldGate: false
     }
   ];
 
@@ -106,10 +106,10 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
             const target = item.finalUrl || '/os3grid/';
             const shieldUrl = `https://jb3ai.com/os3grid/?redirect=${encodeURIComponent(target)}`;
             if (item.sameTab) {
-              window.location.href = shieldUrl;
+              window.location.href = item.shieldGate ? shieldUrl : target;
               return;
             }
-            window.open(shieldUrl, '_blank');
+            window.open(item.shieldGate ? shieldUrl : target, '_blank');
           }}
           className="group relative flex flex-col items-start p-10 glass rounded-[2.5rem] border-white/5 hover:border-[#66FF66]/30 hover:bg-[#66FF66]/5 transition-all duration-500 text-left overflow-hidden"
         >

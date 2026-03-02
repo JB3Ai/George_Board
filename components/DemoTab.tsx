@@ -16,7 +16,7 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       title: 'JB³Ai OS3Grid',
       description: 'OS3Grid launch path via ShieldAI intro.',
       siteName: 'OS3Grid',
-      finalUrl: '/os3grid-telephone/',
+      finalUrl: '/os3grid-shield-intro/',
       sameTab: true,
       icon: <Shield size={24} />,
       shieldGate: true
@@ -38,7 +38,7 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       title: 'Kids-GoExplore-Gauteng-Edition',
       description: 'Kids GoExplore Gauteng interactive app.',
       siteName: 'Kids GoExplore',
-      finalUrl: '/kids-goexplore-gauteng-edition/',
+      finalUrl: '/kids-goexplore/',
       sameTab: true,
       icon: <MapPin size={24} />,
       shieldGate: false

@@ -7,13 +7,14 @@ import { Card } from './Card';
 interface PinboardLaneProps {
   items: ClipboardItem[];
   currentUser: UserEmail;
+  canManageAll?: boolean;
   onUpdate: (id: string, updates: Partial<ClipboardItem>) => void;
   onDelete: (id: string) => void;
   onEdit: (item: ClipboardItem) => void;
   onRefresh: (id: string) => void;
 }
 
-export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, onUpdate, onDelete, onEdit, onRefresh }) => {
+export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, canManageAll = false, onUpdate, onDelete, onEdit, onRefresh }) => {
   const pinned = items.filter(i => i.isPinned);
   const unpinned = items.filter(i => !i.isPinned);
 
@@ -51,7 +52,7 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               {pinned.map(item => (
                 <motion.div key={item.id} variants={itemVariants} layout>
-                  <Card item={item} currentUser={currentUser} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} />
+                  <Card item={item} currentUser={currentUser} canManageAll={canManageAll} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} />
                 </motion.div>
               ))}
             </div>
@@ -73,7 +74,7 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
             <AnimatePresence mode="popLayout">
               {unpinned.map(item => (
                 <motion.div key={item.id} variants={itemVariants} layout>
-                  <Card item={item} currentUser={currentUser} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} />
+                  <Card item={item} currentUser={currentUser} canManageAll={canManageAll} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} />
                 </motion.div>
               ))}
             </AnimatePresence>

@@ -1,5 +1,6 @@
 
 import { ClipboardItem, ItemType, TaskStatus, UserEmail } from '../types';
+import { OWNER_EMAIL } from '../constants';
 
 const STORAGE_KEY = 'jb3_clipboard_data';
 
@@ -31,8 +32,7 @@ export const db = {
     const items = db.getItems();
     const item = items.find(i => i.id === id);
     
-    // Simulate Row Level Security
-    if (item && item.userId !== currentUser) {
+    if (item && item.userId !== currentUser && currentUser !== OWNER_EMAIL) {
       throw new Error("Unauthorized: You can only edit your own content");
     }
 
@@ -58,7 +58,7 @@ export const db = {
     const items = db.getItems();
     const item = items.find(i => i.id === id);
     
-    if (item && item.userId !== currentUser) {
+    if (item && item.userId !== currentUser && currentUser !== OWNER_EMAIL) {
       throw new Error("Unauthorized");
     }
 

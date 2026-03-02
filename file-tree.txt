@@ -1,0 +1,60 @@
+George_Board/
+(Excluded directories: .git, node_modules, dist)
+├── .github/
+│   └── workflows/
+│       └── deploy-cpanel.yml
+├── components/
+│   ├── Card.tsx
+│   ├── DemoTab.tsx
+│   ├── InfoTab.tsx
+│   ├── Layout.tsx
+│   ├── LinkPasteBar.tsx
+│   ├── Login.tsx
+│   ├── PinboardLane.tsx
+│   ├── PinPad.tsx
+│   ├── SearchInput.tsx
+│   ├── SessionGuard.tsx
+│   ├── SettingsTab.tsx
+│   ├── Splash.tsx
+│   └── Toast.tsx
+├── Media/
+│   └── GTR3.jpeg
+├── public/
+│   ├── Media/
+│   │   └── GTR3.jpeg
+│   ├── .htaccess
+│   └── index.php
+├── services/
+│   ├── auth.ts
+│   ├── db.ts
+│   └── metadata.ts
+├── src/
+│   └── context/
+│       └── UIContext.tsx
+├── supabase/
+│   └── functions/
+│       ├── fetch-metadata/
+│       │   └── index.ts
+│       └── verify-pin/
+│           └── index.ts
+├── .gitignore
+├── .htaccess
+├── App.tsx
+├── constants.ts
+├── DEPLOY_CPANEL.md
+├── DEPLOYMENT.md
+├── index.html
+├── index.tsx
+├── metadata.json
+├── package-lock.json
+├── package.json
+├── PRODUCT_SPEC.md
+├── README.md
+├── RUN_LOCAL.md
+├── SQL.sql
+├── tailwind.config.js
+├── tokens.css
+├── tsconfig.json
+├── types.ts
+├── vite-env.d.ts
+└── vite.config.ts

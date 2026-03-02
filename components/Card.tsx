@@ -7,14 +7,15 @@ import { useToast } from './Toast';
 interface CardProps {
   item: ClipboardItem;
   currentUser: UserEmail;
+  canManageAll?: boolean;
   onUpdate: (id: string, updates: Partial<ClipboardItem>) => void;
   onDelete: (id: string) => void;
   onEdit: (item: ClipboardItem) => void;
   onRefresh: (id: string) => void;
 }
 
-export const Card: React.FC<CardProps> = ({ item, currentUser, onUpdate, onDelete, onEdit, onRefresh }) => {
-  const isOwner = item.userId === currentUser;
+export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = false, onUpdate, onDelete, onEdit, onRefresh }) => {
+  const isOwner = canManageAll || item.userId === currentUser;
   const isEnriching = item.enrichmentStatus === EnrichmentStatus.PENDING;
   const hasFailed = item.enrichmentStatus === EnrichmentStatus.FAILED || item.enrichmentStatus === EnrichmentStatus.DELAYED;
   const cardRef = useRef<HTMLDivElement>(null);
@@ -113,10 +114,9 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, onUpdate, onDelet
     }
   };
 
-  // Determine who the other person is for read receipts
-  const otherStakeholder = currentUser === 'jono@jonoblackburn.com' ? 'gsourlis@yahoo.com' : 'jono@jonoblackburn.com';
-  const seenByOther = item.readBy?.includes(otherStakeholder);
-  const readerName = otherStakeholder === 'jono@jonoblackburn.com' ? 'Jono' : 'George';
+  const seenByOther = (item.readBy || []).some(reader => reader !== currentUser);
+  const lastReader = (item.readBy || []).find(reader => reader !== currentUser);
+  const readerName = lastReader ? lastReader.split('@')[0].toUpperCase() : 'USER';
 
   const showRefresh = hasFailed || (item.preview_last_fetched_at && Date.now() - item.preview_last_fetched_at > 24 * 60 * 60 * 1000);
 

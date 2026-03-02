@@ -49,6 +49,28 @@
   --border-active: rgba(139, 69, 19, 0.3);
 }
 
+[data-theme="ocean"] {
+  --accent: #48D1CC;
+  --bg-dark: #08131A;
+  --bg-card: #0E1D27;
+  --text-primary: #E6F7FF;
+  --text-muted: #8AA6B5;
+  --border-color: rgba(72, 209, 204, 0.14);
+  --bg-glass: rgba(14, 29, 39, 0.88);
+  --border-active: rgba(72, 209, 204, 0.35);
+}
+
+[data-theme="carbon"] {
+  --accent: #C9CDD3;
+  --bg-dark: #090A0C;
+  --bg-card: #111317;
+  --text-primary: #E8EAED;
+  --text-muted: #8E939C;
+  --border-color: rgba(201, 205, 211, 0.12);
+  --bg-glass: rgba(17, 19, 23, 0.9);
+  --border-active: rgba(201, 205, 211, 0.3);
+}
+
 [data-font-size="large"] {
   --base-font-size: 20px;
 }

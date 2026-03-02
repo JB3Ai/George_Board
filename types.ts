@@ -1,5 +1,4 @@
-
-export type UserEmail = 'jono@jonoblackburn.com' | 'gsourlis@yahoo.com';
+export type UserEmail = string;
 
 export enum ItemType {
   NOTE = 'NOTE',
@@ -13,7 +12,9 @@ export enum Theme {
   NEON = 'NEON',
   MIDNIGHT = 'MIDNIGHT',
   PAPER = 'PAPER',
-  SAND = 'SAND'
+  SAND = 'SAND',
+  OCEAN = 'OCEAN',
+  CARBON = 'CARBON'
 }
 
 export enum FontSize {
@@ -47,6 +48,7 @@ export interface LinkMetadata {
 export interface ClipboardItem {
   id: string;
   userId: UserEmail;
+  syncTabId?: string;
   type: ItemType;
   title: string;
   content: string;

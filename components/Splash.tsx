@@ -2,7 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export const Splash: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+interface SplashProps {
+  onComplete: () => void;
+  username?: string;
+}
+
+export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
   const [step, setStep] = useState(0);
 
   useEffect(() => {
@@ -10,10 +15,38 @@ export const Splash: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
       setTimeout(() => setStep(1), 500),
       setTimeout(() => setStep(2), 1500),
       setTimeout(() => setStep(3), 2500),
-      setTimeout(() => onComplete(), 3500),
     ];
     return () => timers.forEach(clearTimeout);
   }, [onComplete]);
+
+  useEffect(() => {
+    if (step !== 3) return;
+
+    const video = document.getElementById('gtr-intro-video') as HTMLVideoElement | null;
+    const complete = () => onComplete();
+    const fallbackTimer = setTimeout(complete, 8000);
+
+    if (!video) {
+      return () => clearTimeout(fallbackTimer);
+    }
+
+    const onEnded = () => {
+      clearTimeout(fallbackTimer);
+      complete();
+    };
+
+    video.currentTime = 0;
+    video.addEventListener('ended', onEnded);
+    video.play().catch(() => {
+      clearTimeout(fallbackTimer);
+      setTimeout(complete, 1800);
+    });
+
+    return () => {
+      clearTimeout(fallbackTimer);
+      video.removeEventListener('ended', onEnded);
+    };
+  }, [step, onComplete]);
 
   return (
     <div className="fixed inset-0 bg-[#0A0C10] z-[100] flex items-center justify-center overflow-hidden">
@@ -57,7 +90,7 @@ export const Splash: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
             exit={{ opacity: 0, y: -20 }}
             className="text-center space-y-4"
           >
-            <h1 className="text-4xl font-light tracking-[0.2em] text-white uppercase">Nexus <span className="text-[#66FF66] font-bold">V3</span></h1>
+            <h1 className="text-4xl font-light tracking-[0.2em] text-white uppercase">Welcome, <span className="text-[#66FF66] font-bold">{username || 'Operator'}</span></h1>
             <p className="text-[11px] tracking-[0.4em] text-white/20 uppercase font-bold">Secure Stakeholder Environment</p>
           </motion.div>
         )}
@@ -68,8 +101,20 @@ export const Splash: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[#66FF66]"
-          />
+            className="absolute inset-0 bg-black"
+          >
+            <video
+              id="gtr-intro-video"
+              className="w-full h-full object-cover"
+              muted
+              playsInline
+              preload="auto"
+              autoPlay
+            >
+              <source src="/Media/gtr-intro-vid.webm" type="video/webm" />
+              <source src="/Media/gtr-intro-vid.mp4" type="video/mp4" />
+            </video>
+          </motion.div>
         )}
       </AnimatePresence>
       

@@ -5,7 +5,8 @@ import { Login } from './Login';
 import { PinPad } from './PinPad';
 import { Splash } from './Splash';
 import { UserSession, UserEmail } from '../types';
-import { supabaseAuth } from '../services/auth';
+import { supabaseAuth, isFirstTimeUser } from '../services/auth';
+import { userRegistry } from '../services/userRegistry';
 import { Mail } from 'lucide-react';
 import { useToast } from './Toast';
 
@@ -18,6 +19,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
   const [isMagicLinkSent, setIsMagicLinkSent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
+  const [splashUsername, setSplashUsername] = useState('');
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -43,6 +45,12 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
     if (!session) return;
     setIsProcessing(true);
 
+    const firstTime = isFirstTimeUser(session.email);
+
+    if (firstTime) {
+      await supabaseAuth.setPin(session.email, pin);
+    }
+
     const result = await supabaseAuth.verifyPin(session.email, pin);
 
     if (result.success) {
@@ -53,7 +61,11 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
       };
       setSession(verifiedSession);
       localStorage.setItem('jb3_session', JSON.stringify(verifiedSession));
-      showToast('Session Authorized', 'success');
+
+      const user = userRegistry.getUserByEmail(session.email);
+      setSplashUsername(user?.label || session.email.split('@')[0].toUpperCase());
+
+      showToast(firstTime ? 'PIN Created & Session Authorized' : 'Session Authorized', 'success');
       setShowSplash(true);
     } else {
       showToast(result.error || 'Verification failed', 'error');
@@ -62,7 +74,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
   };
 
   if (showSplash) {
-    return <Splash onComplete={() => setShowSplash(false)} />;
+    return <Splash onComplete={() => setShowSplash(false)} username={splashUsername} />;
   }
 
   if (!session) {
@@ -88,10 +100,11 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
   }
 
   if (!session.pinVerified) {
+    const firstTime = isFirstTimeUser(session.email);
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
-          <PinPad onComplete={handlePinComplete} isSetting={false} />
+          <PinPad onComplete={handlePinComplete} isSetting={firstTime} />
           <button 
             onClick={() => setSession(null)} 
             className="mt-12 text-[9px] tracking-[0.3em] text-white/10 hover:text-white/40 transition-colors uppercase font-bold"

@@ -79,7 +79,7 @@ const AppInner: React.FC = () => {
       return;
     }
 
-    if (activeTab !== currentUserTab.id) {
+    if (activeTab !== currentUserTab.id && activeTab !== DEMO_TAB_ID) {
       setActiveTab(currentUserTab.id);
     }
   }, [isOwnerSession, currentUserTab?.id, activeTab]);
@@ -369,10 +369,16 @@ const AppInner: React.FC = () => {
               ))}
               <button
                 onClick={() => { setActiveTab(DEMO_TAB_ID); setIsAdding(false); setSearchTerm(''); }}
-                className={`text-[10px] sm:text-[11px] tracking-[0.3em] uppercase transition-all pb-6 -mb-6 border-b-2 font-bold whitespace-nowrap ${
-                  activeTab === DEMO_TAB_ID ? 'text-[#66FF66] border-[#66FF66]' : 'text-[#C6CED8] border-transparent hover:text-white'
+                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border text-[11px] sm:text-[12px] tracking-[0.24em] uppercase transition-all font-bold whitespace-nowrap ${
+                  activeTab === DEMO_TAB_ID
+                    ? 'text-[#66FF66] border-[#66FF66]/70 bg-[#66FF66]/15 shadow-[0_0_24px_rgba(102,255,102,0.35)]'
+                    : 'text-[#66FF66]/90 border-[#66FF66]/30 bg-[#66FF66]/10 hover:bg-[#66FF66]/15 hover:border-[#66FF66]/60 shadow-[0_0_18px_rgba(102,255,102,0.18)]'
                 }`}
               >
+                <span className="relative inline-flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#66FF66] opacity-70" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#66FF66]" />
+                </span>
                 DEMO
               </button>
               <button

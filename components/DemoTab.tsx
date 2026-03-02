@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Rocket, ExternalLink, Globe, Youtube, Shield, ChefHat, MapPin } from 'lucide-react';
+import { Rocket, ExternalLink, Globe, Shield, ChefHat, MapPin } from 'lucide-react';
 import { ClipboardItem, ItemType } from '../types';
 
 interface DemoTabProps {
@@ -9,30 +9,17 @@ interface DemoTabProps {
 }
 
 export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
-  const demoItems = items.filter(i => i.isDemo);
-
   const fixedShowcase = [
-    {
-      id: 'main-website-demo',
-      type: ItemType.WEBPAGE,
-      title: 'JB³Ai MainWebsite demo',
-      description: 'Main website demo area.',
-      siteName: 'Main Website',
-      url: '/',
-      sameTab: true,
-      icon: <Globe size={24} />,
-      shieldGate: false
-    },
     {
       id: 'os3-grid-demo',
       type: ItemType.WEBPAGE,
       title: 'JB³Ai OS3Grid',
-      description: 'Launch Shield intro, then continue to the OS3Grid telephone system.',
-      siteName: 'OS³ Grid',
-      url: '/os3grid/',
+      description: 'OS3Grid launch path via ShieldAI intro.',
+      siteName: 'OS3Grid',
+      finalUrl: '/os3grid/',
       sameTab: true,
       icon: <Shield size={24} />,
-      shieldGate: false
+      shieldGate: true
     },
     {
       id: 'dadchef-demo',
@@ -40,10 +27,10 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       title: 'DadChefAi - Just for fun',
       description: 'DadChefAi showcase.',
       siteName: 'DadChefAi',
-      url: '/dadchefai/',
+      finalUrl: '/dadchefai/',
       sameTab: true,
       icon: <ChefHat size={24} />,
-      shieldGate: false
+      shieldGate: true
     },
     {
       id: 'kids-demo',
@@ -51,10 +38,10 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       title: 'Kids-GoExplore-Gauteng-Edition',
       description: 'Kids GoExplore Gauteng interactive app.',
       siteName: 'Kids GoExplore',
-      url: '/kids-goexplore-gauteng-edition/',
+      finalUrl: '/kids-goexplore-gauteng-edition/',
       sameTab: true,
       icon: <MapPin size={24} />,
-      shieldGate: false
+      shieldGate: true
     },
     {
       id: 'dev-soon-a',
@@ -62,10 +49,10 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       title: 'Dev coming soon',
       description: 'Reserved slot for next internal demo build.',
       siteName: 'Development',
-      url: '',
-      sameTab: false,
+      finalUrl: '/os3grid/',
+      sameTab: true,
       icon: <Globe size={24} />,
-      shieldGate: false
+      shieldGate: true
     },
     {
       id: 'dev-soon-b',
@@ -73,24 +60,25 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       title: 'Dev Coming soon',
       description: 'Reserved slot for next internal demo build.',
       siteName: 'Development',
-      url: '',
-      sameTab: false,
+      finalUrl: '/os3grid/',
+      sameTab: true,
       icon: <Globe size={24} />,
-      shieldGate: false
+      shieldGate: true
+    },
+    {
+      id: 'dev-soon-c',
+      type: ItemType.NOTE,
+      title: 'Dev Coming soon',
+      description: 'Reserved slot for next internal demo build.',
+      siteName: 'Development',
+      finalUrl: '/os3grid/',
+      sameTab: true,
+      icon: <Globe size={24} />,
+      shieldGate: true
     }
   ];
 
-  const cards = fixedShowcase.length > 0
-    ? fixedShowcase
-    : demoItems.map((item) => ({
-        id: item.id,
-        type: item.type,
-        title: item.metadata?.title || item.title,
-        description: item.metadata?.description || '',
-        siteName: item.metadata?.siteName || item.type,
-        url: item.content,
-        sameTab: false
-      }));
+  const cards = fixedShowcase;
 
   if (cards.length === 0) {
     return (
@@ -115,16 +103,13 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.1 }}
           onClick={() => {
-            if (!item.url) return;
-            if (item.shieldGate) {
-              window.location.href = `/os3grid/?redirect=${encodeURIComponent(item.url)}`;
-              return;
-            }
+            const target = item.finalUrl || '/os3grid/';
+            const shieldUrl = `https://jb3ai.com/os3grid/?redirect=${encodeURIComponent(target)}`;
             if (item.sameTab) {
-              window.location.href = item.url;
+              window.location.href = shieldUrl;
               return;
             }
-            window.open(item.url, '_blank');
+            window.open(shieldUrl, '_blank');
           }}
           className="group relative flex flex-col items-start p-10 glass rounded-[2.5rem] border-white/5 hover:border-[#66FF66]/30 hover:bg-[#66FF66]/5 transition-all duration-500 text-left overflow-hidden"
         >

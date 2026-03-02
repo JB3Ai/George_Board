@@ -10,19 +10,33 @@ interface PinPadProps {
 export const PinPad: React.FC<PinPadProps> = ({ onComplete, isSetting }) => {
   const [pin, setPin] = useState('');
   const [trust, setTrust] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (pin.length === 4) {
-      onComplete(pin, trust);
-      setPin('');
-    }
+    if (pin.length !== 4 || isSubmitting) return;
+
+    let isActive = true;
+    setIsSubmitting(true);
+
+    Promise.resolve(onComplete(pin, trust))
+      .finally(() => {
+        if (!isActive) return;
+        setPin('');
+        setIsSubmitting(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
   }, [pin, onComplete, trust]);
 
   const handlePress = (num: string) => {
+    if (isSubmitting) return;
     if (pin.length < 4) setPin(prev => prev + num);
   };
 
   const handleClear = () => {
+    if (isSubmitting) return;
     setPin(prev => prev.slice(0, -1));
   };
 
@@ -58,6 +72,7 @@ export const PinPad: React.FC<PinPadProps> = ({ onComplete, isSetting }) => {
           <button
             key={num}
             onClick={() => handlePress(num)}
+            disabled={isSubmitting}
             className="w-full aspect-square flex items-center justify-center text-2xl font-light text-[#9AA3AD] hover:text-[#66FF66] hover:bg-[#66FF66]/5 rounded-3xl transition-all border border-white/[0.05] active:scale-90 hover:border-[#66FF66]/20"
           >
             {num}
@@ -66,12 +81,14 @@ export const PinPad: React.FC<PinPadProps> = ({ onComplete, isSetting }) => {
         <div />
         <button
           onClick={() => handlePress('0')}
+          disabled={isSubmitting}
           className="w-full aspect-square flex items-center justify-center text-2xl font-light text-[#9AA3AD] hover:text-[#66FF66] hover:bg-[#66FF66]/5 rounded-3xl transition-all border border-white/[0.05] active:scale-90 hover:border-[#66FF66]/20"
         >
           0
         </button>
         <button
           onClick={handleClear}
+          disabled={isSubmitting}
           className="w-full aspect-square flex items-center justify-center text-[#9AA3AD]/20 hover:text-red-400 transition-all active:scale-90"
         >
           <Delete size={28} strokeWidth={1} />

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SplashProps {
@@ -10,6 +10,13 @@ interface SplashProps {
 export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
   const [step, setStep] = useState(0);
   const mediaBaseUrl = `${import.meta.env.BASE_URL}Media/`;
+  const hasCompletedRef = useRef(false);
+
+  const completeOnce = useCallback(() => {
+    if (hasCompletedRef.current) return;
+    hasCompletedRef.current = true;
+    onComplete();
+  }, [onComplete]);
 
   useEffect(() => {
     const timers = [
@@ -18,13 +25,13 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
       setTimeout(() => setStep(3), 2500),
     ];
     return () => timers.forEach(clearTimeout);
-  }, [onComplete]);
+  }, []);
 
   useEffect(() => {
     if (step !== 3) return;
 
     const video = document.getElementById('gtr-intro-video') as HTMLVideoElement | null;
-    const complete = () => onComplete();
+    const complete = () => completeOnce();
     const fallbackTimer = setTimeout(complete, 8000);
 
     if (!video) {
@@ -47,7 +54,7 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
       clearTimeout(fallbackTimer);
       video.removeEventListener('ended', onEnded);
     };
-  }, [step, onComplete]);
+  }, [step, completeOnce]);
 
   return (
     <div className="fixed inset-0 bg-[#0A0C10] z-[100] flex items-center justify-center overflow-hidden">

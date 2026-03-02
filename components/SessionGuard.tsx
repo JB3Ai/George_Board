@@ -79,7 +79,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
 
   if (!session) {
     return (
-      <Layout>
+      <Layout showBackground={false}>
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           {isMagicLinkSent ? (
             <div className="flex flex-col items-center gap-6 animate-in fade-in zoom-in-95 duration-500 text-center">
@@ -102,7 +102,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
   if (!session.pinVerified) {
     const firstTime = isFirstTimeUser(session.email);
     return (
-      <Layout>
+      <Layout showBackground={false}>
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <PinPad onComplete={handlePinComplete} isSetting={firstTime} />
           <button 

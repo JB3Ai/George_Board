@@ -16,7 +16,7 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       title: 'JB³Ai OS3Grid',
       description: 'OS3Grid launch path via ShieldAI intro.',
       siteName: 'OS3Grid',
-      finalUrl: '/os3grid/',
+      finalUrl: '/os3grid-telephone/',
       sameTab: true,
       icon: <Shield size={24} />,
       shieldGate: true
@@ -103,8 +103,11 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.1 }}
           onClick={() => {
-            const target = item.finalUrl || '/os3grid/';
-            const shieldUrl = `https://jb3ai.com/os3grid/?redirect=${encodeURIComponent(target)}`;
+            const target = item.finalUrl || '/';
+            // In dev, ShieldAI gateway runs on port 5173; in prod, same origin
+            const isDev = window.location.hostname === 'localhost';
+            const shieldBase = isDev ? 'http://localhost:5173/os3grid/' : '/os3grid/';
+            const shieldUrl = `${shieldBase}?redirect=${encodeURIComponent(target)}`;
             if (item.sameTab) {
               window.location.href = item.shieldGate ? shieldUrl : target;
               return;

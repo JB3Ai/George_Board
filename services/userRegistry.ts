@@ -25,6 +25,7 @@ const SEED_USERS: RegisteredUser[] = [
   { id: 'JASON', label: 'JASON', email: 'jason@jb3ai.com', addedAt: 0 },
   { id: 'NICOLETTE', label: 'NICOLETTE', email: 'nicolette@jb3ai.com', addedAt: 0 },
   { id: 'TRACY', label: 'TRACY', email: 'tracy@jb3ai.com', addedAt: 0 },
+  { id: 'TEST', label: 'TEST', email: 'jonoelite@gmail.com', addedAt: 0 },
 ];
 
 function loadRegistry(): RegisteredUser[] {

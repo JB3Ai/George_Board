@@ -9,6 +9,7 @@ interface SplashProps {
 
 export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
   const [step, setStep] = useState(0);
+  const mediaBaseUrl = `${import.meta.env.BASE_URL}Media/`;
 
   useEffect(() => {
     const timers = [
@@ -111,8 +112,8 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
               preload="auto"
               autoPlay
             >
-              <source src="/Media/gtr-intro-vid.webm" type="video/webm" />
-              <source src="/Media/gtr-intro-vid.mp4" type="video/mp4" />
+              <source src={`${mediaBaseUrl}gtr-intro-vid.webm`} type="video/webm" />
+              <source src={`${mediaBaseUrl}gtr-intro-vid.mp4`} type="video/mp4" />
             </video>
           </motion.div>
         )}

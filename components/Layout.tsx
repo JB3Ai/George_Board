@@ -2,11 +2,13 @@
 import React from 'react';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const backgroundUrl = `${import.meta.env.BASE_URL}Media/GTR3.jpeg`;
+
   return (
     <div className="min-h-screen relative flex flex-col items-center px-6 py-12 md:py-24 overflow-hidden">
       <div
         className="absolute inset-0 bg-center bg-cover bg-no-repeat"
-        style={{ backgroundImage: "url('/Media/GTR3.jpeg')" }}
+        style={{ backgroundImage: `url('${backgroundUrl}')` }}
       />
       <div className="absolute inset-0 bg-black/70" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />

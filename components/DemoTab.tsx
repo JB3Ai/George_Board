@@ -104,15 +104,17 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
           transition={{ delay: idx * 0.1 }}
           onClick={() => {
             const target = item.finalUrl || '/';
-            // In dev, ShieldAI gateway runs on port 5173; in prod, same origin
             const isDev = window.location.hostname === 'localhost';
-            const shieldBase = isDev ? 'http://localhost:5173/os3grid/' : '/os3grid/';
-            const shieldUrl = `${shieldBase}?redirect=${encodeURIComponent(target)}`;
+            const directUrl = item.shieldGate
+              ? (isDev
+                ? `http://localhost:5173/os3grid-shield-intro/?redirect=${encodeURIComponent('/os3grid/')}`
+                : `/os3grid-shield-intro/?redirect=${encodeURIComponent('/os3grid/')}`)
+              : target;
             if (item.sameTab) {
-              window.location.href = item.shieldGate ? shieldUrl : target;
+              window.location.href = directUrl;
               return;
             }
-            window.open(item.shieldGate ? shieldUrl : target, '_blank');
+            window.open(directUrl, '_blank');
           }}
           className="group relative flex flex-col items-start p-10 glass rounded-[2.5rem] border-white/5 hover:border-[#66FF66]/30 hover:bg-[#66FF66]/5 transition-all duration-500 text-left overflow-hidden"
         >

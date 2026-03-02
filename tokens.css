@@ -162,3 +162,108 @@ input::placeholder, textarea::placeholder {
   font-weight: 700;
   text-transform: uppercase;
 }
+
+/* Compatibility layer: map legacy hardcoded utility colors to theme tokens globally */
+[class*="bg-[#0A0C10]"] {
+  background-color: var(--bg-dark) !important;
+}
+
+[class*="bg-[#121620]"] {
+  background-color: var(--bg-card) !important;
+}
+
+[class*="text-[#E6E6E6]"] {
+  color: var(--text-primary) !important;
+}
+
+[class*="text-[#9AA3AD]"] {
+  color: var(--text-muted) !important;
+}
+
+[class*="text-[#66FF66]/70"] {
+  color: color-mix(in srgb, var(--accent) 70%, transparent) !important;
+}
+
+[class*="text-[#66FF66]/60"] {
+  color: color-mix(in srgb, var(--accent) 60%, transparent) !important;
+}
+
+[class*="text-[#66FF66]/50"] {
+  color: color-mix(in srgb, var(--accent) 50%, transparent) !important;
+}
+
+[class*="text-[#66FF66]/40"] {
+  color: color-mix(in srgb, var(--accent) 40%, transparent) !important;
+}
+
+[class*="text-[#66FF66]/30"] {
+  color: color-mix(in srgb, var(--accent) 30%, transparent) !important;
+}
+
+[class*="text-[#66FF66]/20"] {
+  color: color-mix(in srgb, var(--accent) 20%, transparent) !important;
+}
+
+[class*="text-[#66FF66]/10"] {
+  color: color-mix(in srgb, var(--accent) 10%, transparent) !important;
+}
+
+[class*="text-[#66FF66]"] {
+  color: var(--accent) !important;
+}
+
+[class*="bg-[#66FF66]/40"] {
+  background-color: color-mix(in srgb, var(--accent) 40%, transparent) !important;
+}
+
+[class*="bg-[#66FF66]/30"] {
+  background-color: color-mix(in srgb, var(--accent) 30%, transparent) !important;
+}
+
+[class*="bg-[#66FF66]/20"] {
+  background-color: color-mix(in srgb, var(--accent) 20%, transparent) !important;
+}
+
+[class*="bg-[#66FF66]/15"] {
+  background-color: color-mix(in srgb, var(--accent) 15%, transparent) !important;
+}
+
+[class*="bg-[#66FF66]/10"] {
+  background-color: color-mix(in srgb, var(--accent) 10%, transparent) !important;
+}
+
+[class*="bg-[#66FF66]/5"] {
+  background-color: color-mix(in srgb, var(--accent) 5%, transparent) !important;
+}
+
+[class*="bg-[#66FF66]"] {
+  background-color: var(--accent) !important;
+}
+
+[class*="border-[#66FF66]/70"] {
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent) !important;
+}
+
+[class*="border-[#66FF66]/60"] {
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent) !important;
+}
+
+[class*="border-[#66FF66]/40"] {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent) !important;
+}
+
+[class*="border-[#66FF66]/30"] {
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent) !important;
+}
+
+[class*="border-[#66FF66]/20"] {
+  border-color: color-mix(in srgb, var(--accent) 20%, transparent) !important;
+}
+
+[class*="border-[#66FF66]/10"] {
+  border-color: color-mix(in srgb, var(--accent) 10%, transparent) !important;
+}
+
+[class*="border-[#66FF66]"] {
+  border-color: var(--accent) !important;
+}

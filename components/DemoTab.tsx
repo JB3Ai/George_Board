@@ -105,10 +105,13 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
           onClick={() => {
             const target = item.finalUrl || '/';
             const isDev = window.location.hostname === 'localhost';
+            const redirectTarget = isDev
+              ? 'http://localhost:5173/os3grid/'
+              : `${window.location.origin}/os3grid/`;
             const directUrl = item.shieldGate
               ? (isDev
-                ? `http://localhost:5173/os3grid-shield-intro/?redirect=${encodeURIComponent('/os3grid/')}`
-                : `/os3grid-shield-intro/?redirect=${encodeURIComponent('/os3grid/')}`)
+                ? `http://localhost:5173/os3grid-shield-intro/?redirect=${encodeURIComponent(redirectTarget)}`
+                : `/os3grid-shield-intro/?redirect=${encodeURIComponent(redirectTarget)}`)
               : target;
             if (item.sameTab) {
               window.location.href = directUrl;

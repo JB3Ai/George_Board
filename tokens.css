@@ -207,10 +207,6 @@ input::placeholder, textarea::placeholder {
   color: color-mix(in srgb, var(--accent) 10%, transparent) !important;
 }
 
-[class*="text-[#66FF66]"] {
-  color: var(--accent) !important;
-}
-
 [class*="bg-[#66FF66]/40"] {
   background-color: color-mix(in srgb, var(--accent) 40%, transparent) !important;
 }
@@ -233,10 +229,6 @@ input::placeholder, textarea::placeholder {
 
 [class*="bg-[#66FF66]/5"] {
   background-color: color-mix(in srgb, var(--accent) 5%, transparent) !important;
-}
-
-[class*="bg-[#66FF66]"] {
-  background-color: var(--accent) !important;
 }
 
 [class*="border-[#66FF66]/70"] {
@@ -263,6 +255,3 @@ input::placeholder, textarea::placeholder {
   border-color: color-mix(in srgb, var(--accent) 10%, transparent) !important;
 }
 
-[class*="border-[#66FF66]"] {
-  border-color: var(--accent) !important;
-}

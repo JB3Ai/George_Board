@@ -4,6 +4,7 @@ import { Layout } from './Layout';
 import { Login } from './Login';
 import { PinPad } from './PinPad';
 import { Splash } from './Splash';
+import { InstallInstructionsModal } from './InstallInstructionsModal';
 import { UserSession, UserEmail } from '../types';
 import { supabaseAuth, isFirstTimeUser } from '../services/auth';
 import { userRegistry } from '../services/userRegistry';
@@ -19,6 +20,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
   const [isMagicLinkSent, setIsMagicLinkSent] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
   const [splashUsername, setSplashUsername] = useState('');
   const { showToast } = useToast();
 
@@ -67,6 +69,12 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
 
       showToast(firstTime ? 'PIN Created & Session Authorized' : 'Session Authorized', 'success');
       setShowSplash(true);
+
+      // Show install instructions modal if first time and not previously shown
+      if (firstTime && !localStorage.getItem('jb3_install_modal_shown')) {
+        setShowInstallModal(true);
+        localStorage.setItem('jb3_install_modal_shown', 'true');
+      }
     } else {
       showToast(result.error || 'Verification failed', 'error');
     }
@@ -121,6 +129,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
           >
             Cancel Session
           </button>
+          <InstallInstructionsModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
         </div>
       </Layout>
     );

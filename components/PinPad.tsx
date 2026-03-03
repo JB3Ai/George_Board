@@ -5,9 +5,10 @@ import { Delete, ShieldCheck, ShieldAlert } from 'lucide-react';
 interface PinPadProps {
   onComplete: (pin: string, trust: boolean) => void;
   isSetting?: boolean;
+  onResetPin?: () => void;
 }
 
-export const PinPad: React.FC<PinPadProps> = ({ onComplete, isSetting }) => {
+export const PinPad: React.FC<PinPadProps> = ({ onComplete, isSetting, onResetPin }) => {
   const [pin, setPin] = useState('');
   const [trust, setTrust] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -96,13 +97,26 @@ export const PinPad: React.FC<PinPadProps> = ({ onComplete, isSetting }) => {
       </div>
 
       {!isSetting && (
-        <label className="flex items-center gap-4 cursor-pointer group px-8 py-3 rounded-2xl hover:bg-white/[0.02] transition-colors">
-          <div className={`w-5 h-5 rounded border transition-all flex items-center justify-center ${trust ? 'bg-[#66FF66] border-[#66FF66]' : 'border-white/10 group-hover:border-[#66FF66]/40'}`}>
-            {trust && <div className="w-2.5 h-2.5 bg-black rounded-[2px]" />}
-          </div>
-          <input type="checkbox" className="hidden" checked={trust} onChange={e => setTrust(e.target.checked)} />
-          <span className="text-[11px] tracking-[0.2em] text-[#9AA3AD]/40 uppercase font-bold group-hover:text-[#66FF66]/60 transition-colors">Trust device for 7 days</span>
-        </label>
+        <div className="flex flex-col items-center gap-4">
+          <label className="flex items-center gap-4 cursor-pointer group px-8 py-3 rounded-2xl hover:bg-white/[0.02] transition-colors">
+            <div className={`w-5 h-5 rounded border transition-all flex items-center justify-center ${trust ? 'bg-[#66FF66] border-[#66FF66]' : 'border-white/10 group-hover:border-[#66FF66]/40'}`}>
+              {trust && <div className="w-2.5 h-2.5 bg-black rounded-[2px]" />}
+            </div>
+            <input type="checkbox" className="hidden" checked={trust} onChange={e => setTrust(e.target.checked)} />
+            <span className="text-[11px] tracking-[0.2em] text-[#9AA3AD]/40 uppercase font-bold group-hover:text-[#66FF66]/60 transition-colors">Trust device for 7 days</span>
+          </label>
+
+          {onResetPin && (
+            <button
+              type="button"
+              onClick={onResetPin}
+              disabled={isSubmitting}
+              className="text-[10px] tracking-[0.25em] uppercase font-bold text-[#9AA3AD]/40 hover:text-red-400 transition-colors"
+            >
+              Reset PIN
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

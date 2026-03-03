@@ -73,6 +73,16 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
     setIsProcessing(false);
   };
 
+  const handlePinResetFromGate = async () => {
+    if (!session) return;
+    setIsProcessing(true);
+    await supabaseAuth.resetPin(session.email);
+    localStorage.removeItem('jb3_session');
+    setSession(null);
+    setIsProcessing(false);
+    showToast('PIN reset. Sign in again to define a new PIN.', 'success');
+  };
+
   if (showSplash) {
     return <Splash onComplete={() => setShowSplash(false)} username={splashUsername} />;
   }
@@ -104,7 +114,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
     return (
       <Layout showBackground={false}>
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
-          <PinPad onComplete={handlePinComplete} isSetting={firstTime} />
+          <PinPad onComplete={handlePinComplete} isSetting={firstTime} onResetPin={handlePinResetFromGate} />
           <button 
             onClick={() => setSession(null)} 
             className="mt-12 text-[9px] tracking-[0.3em] text-white/10 hover:text-white/40 transition-colors uppercase font-bold"

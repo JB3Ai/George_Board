@@ -24,6 +24,9 @@ jobs:
 
       - name: Build app
         run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets['SUPABASE_URL'] }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets['SUPABASE_ANON_KEY'] }}
 
       - name: Include Apache rules in dist
         run: cp .htaccess dist/.htaccess

@@ -21,6 +21,16 @@ Launch the development server.
 npm run dev
 ```
 
+### 3.1 Optional: Cloud Memory (Recommended)
+To make clipboard data recover across browser clears/devices, add these to `.env.local`:
+
+```bash
+VITE_SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
+VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+```
+
+Then run the SQL in [SQL.sql](SQL.sql), including the `clipboard_state` table.
+
 ### 4. Authentication (Mock)
 To access the app; use one of the allowlisted emails:
 - `jono@jonoblackburn.com`
@@ -30,6 +40,6 @@ On your first login; setting any 4-digit PIN will associate it with your email i
 
 ### 5. Deployment Note
 For production deployment to jb3ai.com/clipboard:
-- Update `services/db.ts` to connect to your Supabase instance.
+- Ensure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set.
 - Execute the provided `SQL.sql` in the Supabase SQL editor.
 - Configure Supabase Auth to only allow the specific stakeholder emails.

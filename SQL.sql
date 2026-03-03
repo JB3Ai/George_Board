@@ -28,3 +28,25 @@ ALTER TABLE public.metadata_cache ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.request_logs ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Internal Read" ON public.metadata_cache FOR SELECT TO authenticated USING (true);
+
+-- 8. Clipboard State Snapshot (Cloud Persistence)
+CREATE TABLE IF NOT EXISTS public.clipboard_state (
+  id TEXT PRIMARY KEY,
+  payload JSONB NOT NULL DEFAULT '[]'::jsonb,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.clipboard_state ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Clipboard state read" ON public.clipboard_state
+FOR SELECT TO anon, authenticated
+USING (true);
+
+CREATE POLICY "Clipboard state write" ON public.clipboard_state
+FOR INSERT TO anon, authenticated
+WITH CHECK (true);
+
+CREATE POLICY "Clipboard state update" ON public.clipboard_state
+FOR UPDATE TO anon, authenticated
+USING (true)
+WITH CHECK (true);

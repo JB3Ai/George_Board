@@ -1,9 +1,14 @@
 
 import { ClipboardItem, ItemType, TaskStatus, UserEmail } from '../types';
 import { OWNER_EMAIL } from '../constants';
+import { isSupabaseConfigured, supabase } from './supabaseClient';
 
 const STORAGE_KEY = 'jb3_clipboard_data';
 const STORAGE_BACKUP_KEY = 'jb3_clipboard_data_backup';
+const CLOUD_STATE_TABLE = 'clipboard_state';
+const CLOUD_STATE_ID = 'global';
+
+let cloudWriteQueue: Promise<void> = Promise.resolve();
 
 const isValidItem = (item: any): item is ClipboardItem => {
   return Boolean(
@@ -26,6 +31,29 @@ const parseItems = (raw: string | null): ClipboardItem[] | null => {
   } catch {
     return null;
   }
+};
+
+const queueCloudWrite = (items: ClipboardItem[]) => {
+  if (!isSupabaseConfigured || !supabase) return;
+
+  cloudWriteQueue = cloudWriteQueue
+    .catch(() => undefined)
+    .then(async () => {
+      const { error } = await supabase
+        .from(CLOUD_STATE_TABLE)
+        .upsert(
+          {
+            id: CLOUD_STATE_ID,
+            payload: items,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        );
+
+      if (error) {
+        console.warn('Cloud mirror write failed:', error.message);
+      }
+    });
 };
 
 export const db = {
@@ -52,6 +80,31 @@ export const db = {
     const serialized = JSON.stringify(items);
     localStorage.setItem(STORAGE_KEY, serialized);
     localStorage.setItem(STORAGE_BACKUP_KEY, serialized);
+    queueCloudWrite(items);
+  },
+
+  hydrateFromCloud: async (): Promise<ClipboardItem[] | null> => {
+    if (!isSupabaseConfigured || !supabase) return null;
+
+    const { data, error } = await supabase
+      .from(CLOUD_STATE_TABLE)
+      .select('payload')
+      .eq('id', CLOUD_STATE_ID)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('Cloud hydrate failed:', error.message);
+      return null;
+    }
+
+    const payload = data?.payload;
+    if (!Array.isArray(payload)) return null;
+
+    const items = payload.filter(isValidItem) as ClipboardItem[];
+    if (items.length === 0) return [];
+
+    db.saveItems(items);
+    return items;
   },
 
   addItem: (item: Omit<ClipboardItem, 'id' | 'createdAt' | 'isPinned' | 'isArchived'>): ClipboardItem => {

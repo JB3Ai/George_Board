@@ -62,8 +62,17 @@ const AppInner: React.FC = () => {
       : [];
 
   useEffect(() => {
-    setItems(db.getItems());
+    const localItems = db.getItems();
+    setItems(localItems);
     setDefaultNote(localStorage.getItem(DEFAULT_NOTE_KEY) || '');
+
+    db.hydrateFromCloud()
+      .then((cloudItems) => {
+        if (cloudItems && cloudItems.length > 0) {
+          setItems(cloudItems);
+        }
+      })
+      .catch(() => undefined);
   }, []);
 
   useEffect(() => {

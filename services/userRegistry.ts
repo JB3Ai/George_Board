@@ -1,4 +1,5 @@
 import { UserEmail } from '../types';
+import { OWNER_EMAIL } from '../constants';
 
 export interface RegisteredUser {
   id: string;
@@ -10,7 +11,6 @@ export interface RegisteredUser {
 }
 
 const REGISTRY_KEY = 'jb3_user_registry';
-const OWNER_EMAIL = 'jono@jonoblackburn.com';
 
 const SEED_USERS: RegisteredUser[] = [
   { id: 'JONO', label: 'JONO', email: 'jono@jonoblackburn.com', isOwner: true, addedAt: 0 },
@@ -29,12 +29,33 @@ const SEED_USERS: RegisteredUser[] = [
 ];
 
 function loadRegistry(): RegisteredUser[] {
+  const ensureOwner = (users: RegisteredUser[]): RegisteredUser[] => {
+    const hasOwner = users.some((u) => u.email.toLowerCase().trim() === OWNER_EMAIL && u.isOwner);
+    if (hasOwner) return users;
+
+    const ownerSeed = SEED_USERS.find((u) => u.email === OWNER_EMAIL)!;
+    return [ownerSeed, ...users.filter((u) => u.email.toLowerCase().trim() !== OWNER_EMAIL)];
+  };
+
   const data = localStorage.getItem(REGISTRY_KEY);
   if (!data) {
-    localStorage.setItem(REGISTRY_KEY, JSON.stringify(SEED_USERS));
-    return [...SEED_USERS];
+    const seeded = ensureOwner([...SEED_USERS]);
+    localStorage.setItem(REGISTRY_KEY, JSON.stringify(seeded));
+    return seeded;
   }
-  return JSON.parse(data);
+
+  try {
+    const parsed = JSON.parse(data) as RegisteredUser[];
+    const fixed = ensureOwner(Array.isArray(parsed) ? parsed : [...SEED_USERS]);
+    if (fixed.length !== parsed.length) {
+      localStorage.setItem(REGISTRY_KEY, JSON.stringify(fixed));
+    }
+    return fixed;
+  } catch {
+    const seeded = ensureOwner([...SEED_USERS]);
+    localStorage.setItem(REGISTRY_KEY, JSON.stringify(seeded));
+    return seeded;
+  }
 }
 
 function saveRegistry(users: RegisteredUser[]): void {

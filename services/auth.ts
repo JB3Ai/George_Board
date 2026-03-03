@@ -1,9 +1,12 @@
 import { userRegistry } from './userRegistry';
+import { OWNER_EMAIL } from '../constants';
 
 const pinKey = (email: string) => `pin_hash_${email.trim().toLowerCase()}`;
 
 export function isAllowlisted(email: string): boolean {
-  return userRegistry.isRegistered(email);
+  const normalized = email.trim().toLowerCase();
+  if (normalized === OWNER_EMAIL) return true;
+  return userRegistry.isRegistered(normalized);
 }
 
 export function isFirstTimeUser(email: string): boolean {

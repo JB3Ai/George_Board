@@ -88,7 +88,7 @@ const AppInner: React.FC = () => {
       return;
     }
 
-    if (activeTab !== currentUserTab.id && activeTab !== DEMO_TAB_ID) {
+    if (activeTab !== currentUserTab.id && activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID) {
       setActiveTab(currentUserTab.id);
     }
   }, [isOwnerSession, currentUserTab?.id, activeTab]);

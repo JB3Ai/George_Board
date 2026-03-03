@@ -1,11 +1,15 @@
 import { userRegistry } from './userRegistry';
 
+const pinKey = (email: string) => `pin_hash_${email.trim().toLowerCase()}`;
+
 export function isAllowlisted(email: string): boolean {
   return userRegistry.isRegistered(email);
 }
 
 export function isFirstTimeUser(email: string): boolean {
-  return !localStorage.getItem(`pin_hash_${email.toLowerCase()}`);
+  const normalized = pinKey(email);
+  const legacy = `pin_hash_${email}`;
+  return !localStorage.getItem(normalized) && !localStorage.getItem(legacy);
 }
 
 export const supabaseAuth = {
@@ -27,7 +31,15 @@ export const supabaseAuth = {
       'tracy@jb3ai.com': '1234'
     };
 
-    const storedPin = localStorage.getItem(`pin_hash_${email}`) || defaultPins[email.toLowerCase()] || '1234';
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedKey = pinKey(email);
+    const legacyKey = `pin_hash_${email}`;
+
+    const storedPin =
+      localStorage.getItem(normalizedKey) ||
+      localStorage.getItem(legacyKey) ||
+      defaultPins[normalizedEmail] ||
+      '1234';
 
     if (pin === storedPin) {
       return { success: true };
@@ -37,10 +49,11 @@ export const supabaseAuth = {
   },
 
   setPin: async (email: string, pin: string) => {
-    localStorage.setItem(`pin_hash_${email}`, pin);
+    localStorage.setItem(pinKey(email), pin);
   },
 
   resetPin: async (email: string) => {
+    localStorage.removeItem(pinKey(email));
     localStorage.removeItem(`pin_hash_${email}`);
   }
 };

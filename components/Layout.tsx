@@ -7,7 +7,7 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, showBackground = true }) => {
-  const backgroundUrl = `${import.meta.env.BASE_URL}Media/GTR3.png`;
+  const backgroundUrl = `${import.meta.env.BASE_URL}Media/gtr3.png`;
 
   return (
     <div className="min-h-screen relative flex flex-col items-center px-6 py-12 md:py-24 overflow-hidden">

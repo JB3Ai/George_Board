@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Rocket, ExternalLink, Globe, Shield, ChefHat, MapPin } from 'lucide-react';
@@ -9,17 +8,18 @@ interface DemoTabProps {
 }
 
 export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
-  const fixedShowcase = [
+  // Only show the 6 requested demo cards, no ShieldAI/testbed
+  const cards = [
     {
       id: 'os3-grid-demo',
       type: ItemType.WEBPAGE,
       title: 'JB³Ai OS3Grid',
-      description: 'OS3Grid launch path via ShieldAI intro.',
+      description: 'OS3Grid demo grid.',
       siteName: 'OS3Grid',
-      finalUrl: '/os3grid-shield-intro/',
+      finalUrl: '/os3grid/',
       sameTab: true,
-      icon: <Shield size={24} />,
-      shieldGate: true
+      icon: <Globe size={24} />,
+      shieldGate: false // Ensure shieldGate is false
     },
     {
       id: 'dadchef-demo',
@@ -78,8 +78,6 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
     }
   ];
 
-  const cards = fixedShowcase;
-
   if (cards.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-48 text-center space-y-8 animate-in fade-in duration-1000">
@@ -104,15 +102,8 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
           transition={{ delay: idx * 0.1 }}
           onClick={() => {
             const target = item.finalUrl || '/';
-            const isDev = window.location.hostname === 'localhost';
-            const redirectTarget = isDev
-              ? 'http://localhost:5173/os3grid/'
-              : `${window.location.origin}/os3grid/`;
-            const directUrl = item.shieldGate
-              ? (isDev
-                ? `http://localhost:5173/os3grid-shield-intro/?redirect=${encodeURIComponent(redirectTarget)}`
-                : `/os3grid-shield-intro/?redirect=${encodeURIComponent(redirectTarget)}`)
-              : target;
+            // Always direct to /os3grid, never use shieldGate redirect
+            const directUrl = target;
             if (item.sameTab) {
               window.location.href = directUrl;
               return;

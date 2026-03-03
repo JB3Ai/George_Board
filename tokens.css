@@ -27,26 +27,29 @@
   --border-active: rgba(242, 125, 38, 0.3);
 }
 
+/* Improved readability for paper and sand themes */
 [data-theme="paper"] {
   --accent: #141414;
   --bg-dark: #F5F5F0;
   --bg-card: #FFFFFF;
-  --text-primary: #141414;
-  --text-muted: #666666;
-  --border-color: rgba(0, 0, 0, 0.1);
-  --bg-glass: rgba(255, 255, 255, 0.8);
-  --border-active: rgba(0, 0, 0, 0.4);
+  --text-primary: #222222;
+  --text-muted: #444444;
+  --border-color: rgba(0, 0, 0, 0.12);
+  --bg-glass: rgba(255, 255, 255, 0.92);
+  --border-active: rgba(0, 0, 0, 0.5);
+  font-weight: 500;
 }
 
 [data-theme="sand"] {
   --accent: #8B4513;
   --bg-dark: #FDF5E6;
   --bg-card: #FFF8DC;
-  --text-primary: #5D4037;
-  --text-muted: #8D6E63;
-  --border-color: rgba(139, 69, 19, 0.1);
-  --bg-glass: rgba(255, 248, 220, 0.85);
-  --border-active: rgba(139, 69, 19, 0.3);
+  --text-primary: #3E2723;
+  --text-muted: #6D4C41;
+  --border-color: rgba(139, 69, 19, 0.14);
+  --bg-glass: rgba(255, 248, 220, 0.92);
+  --border-active: rgba(139, 69, 19, 0.4);
+  font-weight: 500;
 }
 
 [data-theme="ocean"] {

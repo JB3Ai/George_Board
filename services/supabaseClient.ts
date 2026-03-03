@@ -3,13 +3,32 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+const hasValidUrl = (() => {
+  if (!supabaseUrl) return false;
+  try {
+    const parsed = new URL(supabaseUrl);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+})();
 
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl!, supabaseAnonKey!, {
+export const isSupabaseConfigured = Boolean(hasValidUrl && supabaseAnonKey);
+
+let client: ReturnType<typeof createClient> | null = null;
+
+if (isSupabaseConfigured) {
+  try {
+    client = createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
       },
-    })
-  : null;
+    });
+  } catch (error) {
+    console.warn('Supabase client initialization failed, continuing with local storage only.');
+    client = null;
+  }
+}
+
+export const supabase = client;

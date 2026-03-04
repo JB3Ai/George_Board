@@ -163,11 +163,11 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
               {item.isPinned && <Pin size={12} className="text-[#66FF66] fill-[#66FF66] group-hover:animate-pin-glow" />}
             </div>
             
-            <h3 className={`text-xl font-medium text-[#E6E6E6] leading-snug tracking-tight ${isEnriching ? 'animate-skeleton text-white/10' : ''}`}>
+            <h3 className={`text-xl font-medium text-[var(--text-primary)] leading-snug tracking-tight ${isEnriching ? 'animate-skeleton text-white/10' : ''}`}>
               {item.metadata?.title || item.title || "Observation Unit"}
             </h3>
             {(item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE) && (
-              <p className="text-sm text-[#9AA3AD] leading-relaxed font-normal line-clamp-2">
+              <p className="text-sm text-[var(--text-muted)] leading-relaxed font-normal line-clamp-2">
                 {item.metadata?.description && item.metadata.description.length < item.content.length 
                   ? item.metadata.description 
                   : getSafeHostname(item.content)}
@@ -227,7 +227,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
 
         {item.type === ItemType.TASK && (
           <div className="flex flex-col gap-8">
-            <p className="text-sm text-[#9AA3AD] leading-relaxed font-normal">{item.content}</p>
+            <p className="text-sm text-[var(--text-muted)] leading-relaxed font-normal">{item.content}</p>
             <div className="flex items-center justify-between pt-8 border-t border-white/[0.04]">
               <button
                 disabled={!isOwner}
@@ -244,7 +244,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
                 {item.taskStatus}
               </button>
               {item.dueDate && (
-                <span className="text-[11px] text-[#9AA3AD]/40 tracking-[0.2em] uppercase font-bold">Expires: {new Date(item.dueDate).toLocaleDateString()}</span>
+                <span className="text-[11px] text-[var(--text-muted)] tracking-[0.2em] uppercase font-bold opacity-60">Expires: {new Date(item.dueDate).toLocaleDateString()}</span>
               )}
             </div>
           </div>
@@ -255,7 +255,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
              <div className="flex flex-wrap gap-4">
                 <div className="flex items-center gap-3 bg-white/[0.03] px-4 py-3 rounded-xl border border-white/[0.05]">
                   <Clock size={14} className="text-[#66FF66]" />
-                  <span className="text-xs text-[#E6E6E6] font-mono">
+                  <span className="text-xs text-[var(--text-primary)] font-mono">
                     {item.dueDate ? new Date(item.dueDate).toLocaleString() : 'TBD'}
                   </span>
                 </div>
@@ -267,7 +267,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
                 )}
              </div>
              {item.content && (
-               <p className="text-sm text-[#9AA3AD] leading-relaxed font-normal italic">"{item.content}"</p>
+               <p className="text-sm text-[var(--text-muted)] leading-relaxed font-normal italic">"{item.content}"</p>
              )}
              {item.dueDate && (
                 <button 
@@ -282,7 +282,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
         )}
 
         {item.type === ItemType.NOTE && (
-          <p className="text-sm text-[#9AA3AD] leading-relaxed font-normal whitespace-pre-wrap">
+          <p className="text-sm text-[var(--text-muted)] leading-relaxed font-normal whitespace-pre-wrap">
             {item.content}
           </p>
         )}
@@ -303,7 +303,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-[#9AA3AD] truncate font-mono tracking-tight lowercase">
+                  <p className="text-xs text-[var(--text-muted)] truncate font-mono tracking-tight lowercase">
                     {getSafeHostname(item.content)}
                   </p>
                 </div>
@@ -328,8 +328,8 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
                 </span>
              </div>
              <div className="flex flex-col items-end">
-                <span className="text-[9px] tracking-widest text-[#9AA3AD]/40 uppercase font-bold">Stakeholder: {readerName}</span>
-                <span className="text-[8px] tracking-premium text-[#9AA3AD]/20 uppercase">Protocol JB³-Read</span>
+                <span className="text-[9px] tracking-widest text-[var(--text-muted)] uppercase font-bold opacity-40">Stakeholder: {readerName}</span>
+                <span className="text-[8px] tracking-premium text-[var(--text-muted)] uppercase opacity-20">Protocol JB³-Read</span>
              </div>
           </div>
         )}

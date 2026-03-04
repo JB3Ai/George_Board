@@ -116,7 +116,7 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
           <div className="absolute top-0 right-0 w-32 h-32 bg-[#66FF66]/5 blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
           
           <div className="flex items-center justify-between w-full mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center text-[#9AA3AD] group-hover:text-[#66FF66] group-hover:border-[#66FF66]/20 transition-all duration-500">
+            <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center text-[var(--text-muted)] group-hover:text-[var(--accent)] group-hover:border-[var(--accent)]/20 transition-all duration-500">
               {item.icon || <Globe size={24} />}
             </div>
             <div className="flex items-center gap-3">
@@ -130,14 +130,14 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
           </div>
 
           <div className="space-y-4">
-            <p className="text-[10px] tracking-[0.4em] text-[#9AA3AD]/40 uppercase font-bold group-hover:text-[#66FF66]/60 transition-colors">
+            <p className="text-[10px] tracking-[0.4em] text-[var(--text-muted)] opacity-40 uppercase font-bold group-hover:text-[var(--accent)] group-hover:opacity-60 transition-colors">
               {item.siteName || item.type}
             </p>
-            <h3 className="text-2xl font-medium text-[#E6E6E6] leading-tight tracking-tight group-hover:text-white transition-colors">
+            <h3 className="text-2xl font-medium text-[var(--text-primary)] leading-tight tracking-tight group-hover:text-[var(--text-primary)] transition-colors">
               {item.title}
             </h3>
             {item.description && (
-              <p className="text-sm text-[#9AA3AD]/60 line-clamp-2 leading-relaxed font-light">
+              <p className="text-sm text-[var(--text-muted)] opacity-60 line-clamp-2 leading-relaxed font-light">
                 {item.description}
               </p>
             )}

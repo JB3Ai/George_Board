@@ -113,3 +113,30 @@ CREATE POLICY "Registry open access" ON public.user_registry
 FOR ALL TO anon, authenticated
 USING (true)
 WITH CHECK (true);
+
+-- 12. Document file fields on clipboard_items
+-- Run these ALTER statements if the table already exists from section 10
+ALTER TABLE public.clipboard_items
+  ADD COLUMN IF NOT EXISTS file_url   TEXT,
+  ADD COLUMN IF NOT EXISTS file_name  TEXT,
+  ADD COLUMN IF NOT EXISTS file_size  BIGINT;
+
+-- 13. Supabase Storage bucket for uploaded documents
+-- Create this in the Supabase dashboard under Storage > New Bucket
+-- OR run the SQL below (requires Supabase Storage extension to be enabled):
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('documents', 'documents', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow anyone (anon + authenticated) to upload, read, and delete their own files
+CREATE POLICY "Documents public read" ON storage.objects
+FOR SELECT TO anon, authenticated
+USING (bucket_id = 'documents');
+
+CREATE POLICY "Documents upload" ON storage.objects
+FOR INSERT TO anon, authenticated
+WITH CHECK (bucket_id = 'documents');
+
+CREATE POLICY "Documents delete own" ON storage.objects
+FOR DELETE TO anon, authenticated
+USING (bucket_id = 'documents');

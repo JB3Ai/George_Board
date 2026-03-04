@@ -47,6 +47,9 @@ const toRow = (item: ClipboardItem) => ({
   enrichment_status: item.enrichmentStatus ?? null,
   link_metadata: item.metadata ?? null,
   read_by: item.readBy ?? [],
+  file_url: item.fileUrl ?? null,
+  file_name: item.fileName ?? null,
+  file_size: item.fileSize ?? null,
   updated_at: new Date().toISOString(),
 });
 
@@ -67,6 +70,9 @@ const fromRow = (row: any): ClipboardItem => ({
   enrichmentStatus: row.enrichment_status ?? undefined,
   metadata: row.link_metadata ?? undefined,
   readBy: row.read_by ?? [],
+  fileUrl: row.file_url ?? undefined,
+  fileName: row.file_name ?? undefined,
+  fileSize: row.file_size ?? undefined,
 });
 
 const writeToSupabase = (item: ClipboardItem) => {

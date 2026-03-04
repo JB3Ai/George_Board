@@ -1,8 +1,9 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { ExternalLink, Copy, Archive, Pin, CheckCircle2, Clock, Trash2, Globe, Loader2, Youtube, MapPin, Calendar, FileText, CheckSquare, Eye, Edit3, RefreshCw, Link2 } from 'lucide-react';
+import { ExternalLink, Copy, Archive, Pin, CheckCircle2, Clock, Trash2, Globe, Loader2, Youtube, MapPin, Calendar, FileText, CheckSquare, Eye, Edit3, RefreshCw, Link2, FileArchive, Download } from 'lucide-react';
 import { ClipboardItem, ItemType, TaskStatus, UserEmail, EnrichmentStatus } from '../types';
 import { useToast } from './Toast';
+import { formatFileSize, getFileIcon } from '../services/documentService';
 
 interface CardProps {
   item: ClipboardItem;
@@ -64,6 +65,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
       case ItemType.EVENT: return <Calendar size={12} />;
       case ItemType.TASK: return <CheckSquare size={12} />;
       case ItemType.NOTE: return <FileText size={12} />;
+      case ItemType.DOCUMENT: return <FileArchive size={12} className="text-blue-400" />;
       default: return null;
     }
   };
@@ -285,6 +287,54 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
           <p className="text-sm text-[var(--text-muted)] leading-relaxed font-normal whitespace-pre-wrap">
             {item.content}
           </p>
+        )}
+
+        {item.type === ItemType.DOCUMENT && (
+          <div className="flex flex-col gap-6">
+            {/* File info row */}
+            {item.fileName && (
+              <div className="flex items-center gap-5 bg-white/[0.03] p-5 rounded-2xl border border-white/[0.06] transition-all">
+                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center shrink-0 border border-white/10 text-xl">
+                  {getFileIcon(item.fileName)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[var(--text-primary)] font-medium truncate">{item.fileName}</p>
+                  {item.fileSize && (
+                    <p className="text-[11px] text-[var(--text-muted)] mt-1 tracking-widest uppercase">{formatFileSize(item.fileSize)}</p>
+                  )}
+                </div>
+              </div>
+            )}
+            {/* Notes */}
+            {item.content && (
+              <p className="text-sm text-[var(--text-muted)] leading-relaxed font-normal whitespace-pre-wrap">{item.content}</p>
+            )}
+            {/* Action buttons */}
+            {item.fileUrl && (
+              <div className="flex gap-3">
+                <a
+                  href={item.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 py-3 flex-1 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[11px] tracking-[0.2em] font-bold uppercase hover:bg-blue-500/20 transition-all"
+                >
+                  <ExternalLink size={14} />
+                  View
+                </a>
+                <a
+                  href={item.fileUrl}
+                  download={item.fileName}
+                  className="flex items-center justify-center gap-3 py-3 flex-1 rounded-2xl bg-white/[0.03] border border-white/[0.06] text-[#9AA3AD] text-[11px] tracking-[0.2em] font-bold uppercase hover:bg-white/10 transition-all"
+                >
+                  <Download size={14} />
+                  Download
+                </a>
+              </div>
+            )}
+            {!item.fileUrl && (
+              <span className="text-[9px] tracking-[0.3em] text-red-400/40 uppercase font-bold">File unavailable</span>
+            )}
+          </div>
         )}
 
         {(item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE) && (

@@ -12,7 +12,8 @@ import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession } from './types';
 import { OWNER_EMAIL } from './constants';
-import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2 } from 'lucide-react';
+import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2 } from 'lucide-react';
+import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 
 const DEFAULT_NOTE_KEY = 'jb3_default_note_all';
 
@@ -37,6 +38,8 @@ const AppInner: React.FC = () => {
   const [newItemDueDate, setNewItemDueDate] = useState('');
   const [newItemLocation, setNewItemLocation] = useState('');
   const [newItemIsDemo, setNewItemIsDemo] = useState(false);
+  const [newItemFile, setNewItemFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const getCurrentSession = (): UserSession => {
     const saved = localStorage.getItem('jb3_session');
@@ -185,10 +188,14 @@ const AppInner: React.FC = () => {
   const handleEdit = (item: ClipboardItem) => {
     setEditingItem(item);
     setNewItemType(item.type);
+    setNewItemFile(null);
 
     if (item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE) {
       setNewItemTitle(item.content);
       setNewItemContent(item.metadata?.description || '');
+    } else if (item.type === ItemType.DOCUMENT) {
+      setNewItemTitle(item.title);
+      setNewItemContent(item.content); // notes
     } else {
       setNewItemTitle(item.title);
       setNewItemContent(item.content);
@@ -272,6 +279,7 @@ const AppInner: React.FC = () => {
       case ItemType.EVENT: return <Calendar size={14} />;
       case ItemType.WEBPAGE: return <Globe size={14} />;
       case ItemType.YOUTUBE: return <Youtube size={14} />;
+      case ItemType.DOCUMENT: return <FileArchive size={14} />;
       default: return <Plus size={14} />;
     }
   };
@@ -321,6 +329,26 @@ const AppInner: React.FC = () => {
       if (newItemType === ItemType.WEBPAGE || newItemType === ItemType.YOUTUBE) {
         updates.content = newItemTitle;
         updates.metadata = { ...editingItem.metadata, description: newItemContent };
+      } else if (newItemType === ItemType.DOCUMENT) {
+        updates.title = newItemTitle || editingItem.fileName || 'Document';
+        updates.content = newItemContent; // notes
+        // If user picked a new replacement file, upload it
+        if (newItemFile) {
+          setIsUploading(true);
+          try {
+            const result = await uploadDocument(newItemFile, session.email);
+            if (result) {
+              updates.fileUrl = result.url;
+              updates.fileName = newItemFile.name;
+              updates.fileSize = newItemFile.size;
+            }
+          } catch (err: any) {
+            showToast(err.message || 'Upload failed', 'error');
+            setIsUploading(false);
+            return;
+          }
+          setIsUploading(false);
+        }
       } else {
         updates.title = newItemTitle || 'Untitled Log';
         updates.content = newItemContent;
@@ -331,6 +359,31 @@ const AppInner: React.FC = () => {
     } else {
       if (newItemType === ItemType.WEBPAGE || newItemType === ItemType.YOUTUBE) {
         await handleAddLink(newItemTitle, newItemType, newItemContent);
+      } else if (newItemType === ItemType.DOCUMENT) {
+        if (!newItemFile) {
+          showToast('Please select a file to upload', 'error');
+          return;
+        }
+        setIsUploading(true);
+        try {
+          const result = await uploadDocument(newItemFile, session.email);
+          db.addItem({
+            userId: session.email,
+            syncTabId: getActiveSyncTabId(),
+            type: ItemType.DOCUMENT,
+            title: newItemTitle || newItemFile.name,
+            content: newItemContent,
+            fileUrl: result?.url,
+            fileName: newItemFile.name,
+            fileSize: newItemFile.size,
+            isDemo: newItemIsDemo,
+          });
+        } catch (err: any) {
+          showToast(err.message || 'Upload failed', 'error');
+          setIsUploading(false);
+          return;
+        }
+        setIsUploading(false);
       } else {
         db.addItem({
           userId: session.email,
@@ -352,6 +405,7 @@ const AppInner: React.FC = () => {
     setNewItemContent('');
     setNewItemDueDate('');
     setNewItemLocation('');
+    setNewItemFile(null);
   };
 
   const sectionTitle = activeTab === 'JONO'
@@ -545,21 +599,74 @@ const AppInner: React.FC = () => {
 
                 <div className="space-y-4">
                   <p className="text-[9px] tracking-widest text-[#9AA3AD]/40 uppercase font-bold">
-                    {newItemType === ItemType.WEBPAGE || newItemType === ItemType.YOUTUBE ? 'Target URL' : 'Subject Line'}
+                    {newItemType === ItemType.WEBPAGE || newItemType === ItemType.YOUTUBE ? 'Target URL'
+                    : newItemType === ItemType.DOCUMENT ? 'Document Title (optional)'
+                    : 'Subject Line'}
                   </p>
                   <input
                     autoFocus
-                    placeholder={newItemType === ItemType.WEBPAGE || newItemType === ItemType.YOUTUBE ? 'https://...' : 'Entry Subject'}
+                    placeholder={
+                      newItemType === ItemType.WEBPAGE || newItemType === ItemType.YOUTUBE ? 'https://...'
+                      : newItemType === ItemType.DOCUMENT ? 'Leave blank to use filename'
+                      : 'Entry Subject'
+                    }
                     value={newItemTitle}
                     onChange={(event) => setNewItemTitle(event.target.value)}
                     className="w-full bg-transparent border-b border-white/10 py-5 text-2xl font-light text-[#E6E6E6] focus:outline-none"
                   />
                 </div>
 
+                {/* Document file picker */}
+                {newItemType === ItemType.DOCUMENT && (
+                  <div className="space-y-4">
+                    <p className="text-[9px] tracking-widest text-[#9AA3AD]/40 uppercase font-bold">File</p>
+                    <label className={`flex items-center gap-6 p-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${
+                      newItemFile
+                        ? 'border-[#66FF66]/40 bg-[#66FF66]/5'
+                        : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
+                    }`}>
+                      <input
+                        type="file"
+                        accept={ACCEPTED_EXTENSIONS}
+                        className="hidden"
+                        onChange={(e) => setNewItemFile(e.target.files?.[0] ?? null)}
+                      />
+                      <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                        {newItemFile ? (
+                          <span className="text-xl">{getFileIcon(newItemFile.name)}</span>
+                        ) : (
+                          <Upload size={20} className="text-white/20" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {newItemFile ? (
+                          <>
+                            <p className="text-sm text-[#E6E6E6] font-medium truncate">{newItemFile.name}</p>
+                            <p className="text-[10px] text-[#9AA3AD]/50 tracking-widest uppercase mt-1">{formatFileSize(newItemFile.size)}</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm text-[#9AA3AD]/50">Click to select a file</p>
+                            <p className="text-[10px] text-[#9AA3AD]/30 tracking-widest uppercase mt-1">PDF, DOC, XLS, PPT, TXT — max 20 MB</p>
+                          </>
+                        )}
+                      </div>
+                    </label>
+                  </div>
+                )}
+
                 <div className="space-y-4">
-                  <p className="text-[9px] tracking-widest text-[#9AA3AD]/40 uppercase font-bold">Notes</p>
+                  <p className="text-[9px] tracking-widest text-[#9AA3AD]/40 uppercase font-bold">
+                    {newItemType === ItemType.DOCUMENT ? 'Notes / Description' : 'Notes'}
+                  </p>
                   <textarea
-                    placeholder={newItemType === ItemType.YOUTUBE || newItemType === ItemType.WEBPAGE ? 'Add a description or notes about this link...' : 'Write note...'}
+                    placeholder={
+                      newItemType === ItemType.YOUTUBE || newItemType === ItemType.WEBPAGE
+                        ? 'Add a description or notes about this link...'
+                        : newItemType === ItemType.DOCUMENT
+                        ? 'Add context or notes about this document...'
+                        : 'Write note...'
+                    }
                     value={newItemContent}
                     onChange={(event) => setNewItemContent(event.target.value)}
                     className="w-full bg-transparent text-lg font-light text-[#9AA3AD] focus:outline-none min-h-[160px] resize-none leading-relaxed"
@@ -606,11 +713,16 @@ const AppInner: React.FC = () => {
                 </div>
 
                 <div className="flex justify-end gap-10 pt-10 border-t border-white/[0.04]">
-                  <button onClick={() => { setIsAdding(false); setEditingItem(null); }} className="text-[11px] tracking-[0.3em] text-[#9AA3AD]/40 hover:text-white transition-colors uppercase font-bold">
+                  <button onClick={() => { setIsAdding(false); setEditingItem(null); setNewItemFile(null); }} className="text-[11px] tracking-[0.3em] text-[#9AA3AD]/40 hover:text-white transition-colors uppercase font-bold">
                     Discard
                   </button>
-                  <button onClick={handleCommit} className="px-14 h-14 bg-[#66FF66] text-black text-[11px] font-bold tracking-[0.3em] rounded-[1.25rem] uppercase">
-                    {editingItem ? 'Apply Updates' : 'Commit Entry'}
+                  <button
+                    onClick={handleCommit}
+                    disabled={isUploading}
+                    className="inline-flex items-center gap-3 px-14 h-14 bg-[#66FF66] text-black text-[11px] font-bold tracking-[0.3em] rounded-[1.25rem] uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isUploading && <Loader2 size={16} className="animate-spin" />}
+                    {isUploading ? 'Uploading...' : editingItem ? 'Apply Updates' : 'Commit Entry'}
                   </button>
                 </div>
               </div>

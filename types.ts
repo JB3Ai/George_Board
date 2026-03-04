@@ -5,7 +5,8 @@ export enum ItemType {
   TASK = 'TASK',
   EVENT = 'EVENT',
   WEBPAGE = 'WEBPAGE',
-  YOUTUBE = 'YOUTUBE'
+  YOUTUBE = 'YOUTUBE',
+  DOCUMENT = 'DOCUMENT'
 }
 
 export enum Theme {
@@ -65,6 +66,10 @@ export interface ClipboardItem {
   preview_fail_count?: number;
   preview_last_fetched_at?: number;
   preview_next_allowed_at?: number;
+  // Document fields
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
 }
 
 export interface UserSession {

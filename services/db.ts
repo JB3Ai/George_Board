@@ -5,10 +5,7 @@ import { isSupabaseConfigured, supabase } from './supabaseClient';
 
 const STORAGE_KEY = 'jb3_clipboard_data';
 const STORAGE_BACKUP_KEY = 'jb3_clipboard_data_backup';
-const CLOUD_STATE_TABLE = 'clipboard_state';
-const CLOUD_STATE_ID = 'global';
-
-let cloudWriteQueue: Promise<void> = Promise.resolve();
+const ITEMS_TABLE = 'clipboard_items';
 
 const isValidItem = (item: any): item is ClipboardItem => {
   return Boolean(
@@ -33,26 +30,63 @@ const parseItems = (raw: string | null): ClipboardItem[] | null => {
   }
 };
 
-const queueCloudWrite = (items: ClipboardItem[]) => {
+// Map ClipboardItem (camelCase) → Supabase row (snake_case)
+const toRow = (item: ClipboardItem) => ({
+  id: item.id,
+  user_id: item.userId,
+  sync_tab_id: item.syncTabId ?? null,
+  type: item.type,
+  title: item.title,
+  content: item.content,
+  is_pinned: item.isPinned,
+  is_archived: item.isArchived,
+  created_at: item.createdAt,
+  task_status: item.taskStatus ?? null,
+  due_date: item.dueDate ?? null,
+  event_location: item.eventLocation ?? null,
+  enrichment_status: item.enrichmentStatus ?? null,
+  link_metadata: item.metadata ?? null,
+  read_by: item.readBy ?? [],
+  updated_at: new Date().toISOString(),
+});
+
+// Map Supabase row → ClipboardItem
+const fromRow = (row: any): ClipboardItem => ({
+  id: row.id,
+  userId: row.user_id,
+  syncTabId: row.sync_tab_id ?? undefined,
+  type: row.type as ItemType,
+  title: row.title,
+  content: row.content,
+  isPinned: row.is_pinned ?? false,
+  isArchived: row.is_archived ?? false,
+  createdAt: row.created_at,
+  taskStatus: row.task_status ?? undefined,
+  dueDate: row.due_date ?? undefined,
+  eventLocation: row.event_location ?? undefined,
+  enrichmentStatus: row.enrichment_status ?? undefined,
+  metadata: row.link_metadata ?? undefined,
+  readBy: row.read_by ?? [],
+});
+
+const writeToSupabase = (item: ClipboardItem) => {
   if (!isSupabaseConfigured || !supabase) return;
+  (supabase as any)
+    .from(ITEMS_TABLE)
+    .upsert(toRow(item), { onConflict: 'id' })
+    .then(({ error }: { error: any }) => {
+      if (error) console.warn('Supabase item write failed:', error.message);
+    });
+};
 
-  cloudWriteQueue = cloudWriteQueue
-    .catch(() => undefined)
-    .then(async () => {
-      const { error } = await supabase
-        .from(CLOUD_STATE_TABLE)
-        .upsert(
-          {
-            id: CLOUD_STATE_ID,
-            payload: items,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'id' }
-        );
-
-      if (error) {
-        console.warn('Cloud mirror write failed:', error.message);
-      }
+const deleteFromSupabase = (id: string) => {
+  if (!isSupabaseConfigured || !supabase) return;
+  (supabase as any)
+    .from(ITEMS_TABLE)
+    .delete()
+    .eq('id', id)
+    .then(({ error }: { error: any }) => {
+      if (error) console.warn('Supabase item delete failed:', error.message);
     });
 };
 
@@ -62,9 +96,7 @@ export const db = {
     const backup = parseItems(localStorage.getItem(STORAGE_BACKUP_KEY));
 
     if (primary) {
-      if (!backup) {
-        localStorage.setItem(STORAGE_BACKUP_KEY, JSON.stringify(primary));
-      }
+      if (!backup) localStorage.setItem(STORAGE_BACKUP_KEY, JSON.stringify(primary));
       return primary;
     }
 
@@ -80,29 +112,24 @@ export const db = {
     const serialized = JSON.stringify(items);
     localStorage.setItem(STORAGE_KEY, serialized);
     localStorage.setItem(STORAGE_BACKUP_KEY, serialized);
-    queueCloudWrite(items);
   },
 
   hydrateFromCloud: async (): Promise<ClipboardItem[] | null> => {
     if (!isSupabaseConfigured || !supabase) return null;
 
-    const { data, error } = await supabase
-      .from(CLOUD_STATE_TABLE)
-      .select('payload')
-      .eq('id', CLOUD_STATE_ID)
-      .maybeSingle();
+    const { data, error } = await (supabase as any)
+      .from(ITEMS_TABLE)
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.warn('Cloud hydrate failed:', error.message);
       return null;
     }
 
-    const payload = data?.payload;
-    if (!Array.isArray(payload)) return null;
+    if (!Array.isArray(data) || data.length === 0) return [];
 
-    const items = payload.filter(isValidItem) as ClipboardItem[];
-    if (items.length === 0) return [];
-
+    const items = data.map(fromRow);
     db.saveItems(items);
     return items;
   },
@@ -118,44 +145,50 @@ export const db = {
     };
     const items = db.getItems();
     db.saveItems([newItem, ...items]);
+    writeToSupabase(newItem);
     return newItem;
   },
 
   updateItem: (id: string, currentUser: UserEmail, updates: Partial<ClipboardItem>) => {
     const items = db.getItems();
     const item = items.find(i => i.id === id);
-    
+
     if (item && item.userId !== currentUser && currentUser !== OWNER_EMAIL) {
-      throw new Error("Unauthorized: You can only edit your own content");
+      throw new Error('Unauthorized: You can only edit your own content');
     }
 
+    const updatedItem = item ? { ...item, ...updates } : null;
     const updatedItems = items.map(i => i.id === id ? { ...i, ...updates } : i);
     db.saveItems(updatedItems);
+    if (updatedItem) writeToSupabase(updatedItem);
   },
 
   markAsRead: (id: string, readerEmail: UserEmail) => {
     const items = db.getItems();
+    let updated: ClipboardItem | null = null;
     const updatedItems = items.map(i => {
       if (i.id === id) {
         const readBy = i.readBy || [];
         if (!readBy.includes(readerEmail)) {
-          return { ...i, readBy: [...readBy, readerEmail] };
+          updated = { ...i, readBy: [...readBy, readerEmail] };
+          return updated;
         }
       }
       return i;
     });
     db.saveItems(updatedItems);
+    if (updated) writeToSupabase(updated);
   },
 
   deleteItem: (id: string, currentUser: UserEmail) => {
     const items = db.getItems();
     const item = items.find(i => i.id === id);
-    
+
     if (item && item.userId !== currentUser && currentUser !== OWNER_EMAIL) {
-      throw new Error("Unauthorized");
+      throw new Error('Unauthorized');
     }
 
-    const filteredItems = items.filter(i => i.id !== id);
-    db.saveItems(filteredItems);
+    db.saveItems(items.filter(i => i.id !== id));
+    deleteFromSupabase(id);
   }
 };

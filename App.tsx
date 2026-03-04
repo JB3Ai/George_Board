@@ -7,7 +7,7 @@ import { LinkPasteBar } from './components/LinkPasteBar';
 import { SearchInput } from './components/SearchInput';
 import { ToastProvider, useToast } from './components/Toast';
 import { db } from './services/db';
-import { userRegistry } from './services/userRegistry';
+import { userRegistry, hydrateRegistryFromCloud } from './services/userRegistry';
 import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession } from './types';
@@ -65,6 +65,11 @@ const AppInner: React.FC = () => {
     const localItems = db.getItems();
     setItems(localItems);
     setDefaultNote(localStorage.getItem(DEFAULT_NOTE_KEY) || '');
+
+    // Hydrate registry from Supabase first, then items
+    hydrateRegistryFromCloud()
+      .then(() => setTabsVersion(v => v + 1))
+      .catch(() => undefined);
 
     db.hydrateFromCloud()
       .then((cloudItems) => {

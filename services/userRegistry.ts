@@ -1,5 +1,6 @@
 import { UserEmail } from '../types';
 import { OWNER_EMAIL } from '../constants';
+import { isSupabaseConfigured, supabase } from './supabaseClient';
 
 export interface RegisteredUser {
   id: string;
@@ -11,6 +12,7 @@ export interface RegisteredUser {
 }
 
 const REGISTRY_KEY = 'jb3_user_registry';
+const REGISTRY_TABLE = 'user_registry';
 
 const SEED_USERS: RegisteredUser[] = [
   { id: 'JONO', label: 'JONO', email: 'jono@jonoblackburn.com', isOwner: true, addedAt: 0 },
@@ -28,22 +30,40 @@ const SEED_USERS: RegisteredUser[] = [
   { id: 'TEST', label: 'TEST', email: 'jonoelite@gmail.com', addedAt: 0 },
 ];
 
+// Map DB row (snake_case) → RegisteredUser
+const fromRow = (row: any): RegisteredUser => ({
+  id: row.id,
+  label: row.label,
+  email: row.email,
+  isOwner: row.is_owner ?? false,
+  addedAt: row.added_at ?? 0,
+  addedBy: row.added_by ?? undefined,
+});
+
+// Map RegisteredUser → DB row
+const toRow = (u: RegisteredUser) => ({
+  id: u.id,
+  label: u.label,
+  email: u.email,
+  is_owner: u.isOwner ?? false,
+  added_at: u.addedAt,
+  added_by: u.addedBy ?? null,
+});
+
+function ensureOwner(users: RegisteredUser[]): RegisteredUser[] {
+  const hasOwner = users.some((u) => u.email.toLowerCase().trim() === OWNER_EMAIL && u.isOwner);
+  if (hasOwner) return users;
+  const ownerSeed = SEED_USERS.find((u) => u.email === OWNER_EMAIL)!;
+  return [ownerSeed, ...users.filter((u) => u.email.toLowerCase().trim() !== OWNER_EMAIL)];
+}
+
 function loadRegistry(): RegisteredUser[] {
-  const ensureOwner = (users: RegisteredUser[]): RegisteredUser[] => {
-    const hasOwner = users.some((u) => u.email.toLowerCase().trim() === OWNER_EMAIL && u.isOwner);
-    if (hasOwner) return users;
-
-    const ownerSeed = SEED_USERS.find((u) => u.email === OWNER_EMAIL)!;
-    return [ownerSeed, ...users.filter((u) => u.email.toLowerCase().trim() !== OWNER_EMAIL)];
-  };
-
   const data = localStorage.getItem(REGISTRY_KEY);
   if (!data) {
     const seeded = ensureOwner([...SEED_USERS]);
     localStorage.setItem(REGISTRY_KEY, JSON.stringify(seeded));
     return seeded;
   }
-
   try {
     const parsed = JSON.parse(data) as RegisteredUser[];
     const fixed = ensureOwner(Array.isArray(parsed) ? parsed : [...SEED_USERS]);
@@ -60,6 +80,32 @@ function loadRegistry(): RegisteredUser[] {
 
 function saveRegistry(users: RegisteredUser[]): void {
   localStorage.setItem(REGISTRY_KEY, JSON.stringify(users));
+  // Mirror to Supabase — fire and forget
+  if (!isSupabaseConfigured || !supabase) return;
+  (supabase as any)
+    .from(REGISTRY_TABLE)
+    .upsert(users.map(toRow), { onConflict: 'email' })
+    .then(({ error }: { error: any }) => {
+      if (error) console.warn('Registry sync failed:', error.message);
+    });
+}
+
+// On first load, try to pull registry from Supabase and hydrate localStorage
+export async function hydrateRegistryFromCloud(): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
+  try {
+    const { data, error } = await (supabase as any)
+      .from(REGISTRY_TABLE)
+      .select('*')
+      .order('added_at', { ascending: true });
+
+    if (error || !Array.isArray(data) || data.length === 0) return;
+
+    const users = ensureOwner(data.map(fromRow));
+    localStorage.setItem(REGISTRY_KEY, JSON.stringify(users));
+  } catch {
+    // silently fall back to localStorage
+  }
 }
 
 export interface UserTab {
@@ -94,7 +140,6 @@ export const userRegistry = {
     }
 
     let id = displayName.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
-
     let suffix = 1;
     const baseId = id;
     while (users.some((u) => u.id === id)) {
@@ -125,6 +170,17 @@ export const userRegistry = {
 
     const filtered = users.filter((u) => u.email !== normalizedEmail);
     saveRegistry(filtered);
+
+    // Also delete from Supabase
+    if (isSupabaseConfigured && supabase) {
+      (supabase as any)
+        .from(REGISTRY_TABLE)
+        .delete()
+        .eq('email', normalizedEmail)
+        .then(({ error }: { error: any }) => {
+          if (error) console.warn('Registry delete failed:', error.message);
+        });
+    }
   },
 
   getUserByEmail: (email: string): RegisteredUser | undefined => {

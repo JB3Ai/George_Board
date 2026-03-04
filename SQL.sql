@@ -29,7 +29,7 @@ ALTER TABLE public.request_logs ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Internal Read" ON public.metadata_cache FOR SELECT TO authenticated USING (true);
 
--- 8. Clipboard State Snapshot (Cloud Persistence)
+-- 8. Clipboard State Snapshot (Cloud Persistence) — LEGACY, kept for migration
 CREATE TABLE IF NOT EXISTS public.clipboard_state (
   id TEXT PRIMARY KEY,
   payload JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -48,5 +48,68 @@ WITH CHECK (true);
 
 CREATE POLICY "Clipboard state update" ON public.clipboard_state
 FOR UPDATE TO anon, authenticated
+USING (true)
+WITH CHECK (true);
+
+-- 9. User Profiles: PIN + per-user preferences (theme, font size)
+CREATE TABLE IF NOT EXISTS public.user_profiles (
+  email TEXT PRIMARY KEY,
+  pin TEXT,
+  theme TEXT DEFAULT 'NEON',
+  font_size TEXT DEFAULT 'SMALL',
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Profiles open access" ON public.user_profiles
+FOR ALL TO anon, authenticated
+USING (true)
+WITH CHECK (true);
+
+-- 10. Individual Clipboard Items (replaces blob in clipboard_state)
+CREATE TABLE IF NOT EXISTS public.clipboard_items (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  sync_tab_id TEXT,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  is_pinned BOOLEAN DEFAULT false,
+  is_archived BOOLEAN DEFAULT false,
+  created_at BIGINT NOT NULL,
+  task_status TEXT,
+  due_date TEXT,
+  event_location TEXT,
+  enrichment_status TEXT,
+  link_metadata JSONB,
+  read_by TEXT[] DEFAULT '{}',
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.clipboard_items ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Items open access" ON public.clipboard_items
+FOR ALL TO anon, authenticated
+USING (true)
+WITH CHECK (true);
+
+CREATE INDEX idx_clipboard_items_user ON public.clipboard_items(user_id);
+CREATE INDEX idx_clipboard_items_created ON public.clipboard_items(created_at DESC);
+
+-- 11. User Registry (replaces localStorage jb3_user_registry)
+CREATE TABLE IF NOT EXISTS public.user_registry (
+  id TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  is_owner BOOLEAN DEFAULT false,
+  added_at BIGINT DEFAULT 0,
+  added_by TEXT
+);
+
+ALTER TABLE public.user_registry ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Registry open access" ON public.user_registry
+FOR ALL TO anon, authenticated
 USING (true)
 WITH CHECK (true);

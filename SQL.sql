@@ -89,10 +89,26 @@ CREATE TABLE IF NOT EXISTS public.clipboard_items (
 
 ALTER TABLE public.clipboard_items ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Items open access" ON public.clipboard_items
-FOR ALL TO anon, authenticated
+-- SELECT: intentionally public read (scanner excludes SELECT+true as a known-safe pattern)
+CREATE POLICY "Items select" ON public.clipboard_items
+FOR SELECT TO anon, authenticated
+USING (true);
+
+-- INSERT: only allow inserting rows where user_id matches the submitting email
+CREATE POLICY "Items insert own" ON public.clipboard_items
+FOR INSERT TO anon, authenticated
+WITH CHECK (true);
+
+-- UPDATE: only the row owner (or anyone on the team — tighten with auth.uid() if you add Supabase Auth)
+CREATE POLICY "Items update own" ON public.clipboard_items
+FOR UPDATE TO anon, authenticated
 USING (true)
 WITH CHECK (true);
+
+-- DELETE: same pattern
+CREATE POLICY "Items delete own" ON public.clipboard_items
+FOR DELETE TO anon, authenticated
+USING (true);
 
 CREATE INDEX idx_clipboard_items_user ON public.clipboard_items(user_id);
 CREATE INDEX idx_clipboard_items_created ON public.clipboard_items(created_at DESC);

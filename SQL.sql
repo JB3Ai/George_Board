@@ -156,3 +156,20 @@ WITH CHECK (bucket_id = 'documents');
 CREATE POLICY "Documents delete own" ON storage.objects
 FOR DELETE TO anon, authenticated
 USING (bucket_id = 'documents');
+
+-- 14. Supabase Storage bucket for uploaded images and videos
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('media', 'media', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Media public read" ON storage.objects
+FOR SELECT TO anon, authenticated
+USING (bucket_id = 'media');
+
+CREATE POLICY "Media upload" ON storage.objects
+FOR INSERT TO anon, authenticated
+WITH CHECK (bucket_id = 'media');
+
+CREATE POLICY "Media delete own" ON storage.objects
+FOR DELETE TO anon, authenticated
+USING (bucket_id = 'media');

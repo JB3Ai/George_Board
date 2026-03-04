@@ -7,7 +7,7 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, showBackground = true }) => {
-  const backgroundUrl = `${import.meta.env.BASE_URL}Media/gtr3.png`;
+  const backgroundUrl = `${import.meta.env.BASE_URL}Media/GTR4.jpeg`;
 
   return (
     <div className="min-h-screen relative flex flex-col items-center px-6 py-12 md:py-24 overflow-hidden">
@@ -19,8 +19,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, showBackground = true 
       ) : (
         <div className="absolute inset-0 bg-[#0A0C10]" />
       )}
-      <div className="absolute inset-0 bg-black/70" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
+      <div className="absolute inset-0 bg-black/75" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
 
       <div className="relative z-10 w-full max-w-4xl flex flex-col gap-12">
         <header className="flex items-center justify-between">

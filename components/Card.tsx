@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { ExternalLink, Copy, Archive, Pin, CheckCircle2, Clock, Trash2, Globe, Loader2, Youtube, MapPin, Calendar, FileText, CheckSquare, Eye, Edit3, RefreshCw, Link2, FileArchive, Download } from 'lucide-react';
+import { ExternalLink, Copy, Archive, Pin, CheckCircle2, Clock, Trash2, Globe, Loader2, Youtube, MapPin, Calendar, FileText, CheckSquare, Eye, Edit3, RefreshCw, Link2, FileArchive, Download, Image as ImageIcon, Video as VideoIcon } from 'lucide-react';
 import { ClipboardItem, ItemType, TaskStatus, UserEmail, EnrichmentStatus } from '../types';
 import { useToast } from './Toast';
 import { formatFileSize, getFileIcon } from '../services/documentService';
@@ -66,6 +66,8 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
       case ItemType.TASK: return <CheckSquare size={12} />;
       case ItemType.NOTE: return <FileText size={12} />;
       case ItemType.DOCUMENT: return <FileArchive size={12} className="text-blue-400" />;
+      case ItemType.IMAGE: return <ImageIcon size={12} className="text-purple-400" />;
+      case ItemType.VIDEO: return <VideoIcon size={12} className="text-pink-400" />;
       default: return null;
     }
   };
@@ -128,6 +130,33 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
       onMouseMove={handleMouseMove}
       className={`glass rounded-[2rem] flex flex-col overflow-hidden group relative glow-card ${item.isArchived ? 'opacity-30 grayscale-[0.5]' : ''}`}
     >
+      {/* IMAGE banner — shows full image at top of card */}
+      {item.type === ItemType.IMAGE && item.fileUrl && (
+        <div className="w-full overflow-hidden bg-black/20 border-b border-white/[0.04] relative shrink-0 cursor-pointer group/img"
+          onClick={() => window.open(item.fileUrl, '_blank')}>
+          <img
+            src={item.fileUrl}
+            alt={item.fileName || item.title}
+            loading="lazy"
+            className="w-full max-h-[280px] object-cover transition-transform duration-700 group-hover/img:scale-[1.03]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-80 pointer-events-none" />
+          <div className="absolute top-3 right-3 opacity-0 group-hover/img:opacity-100 transition-opacity">
+            <div className="px-3 py-1.5 rounded-xl bg-black/60 border border-white/10 text-[9px] tracking-[0.2em] text-white/60 uppercase font-bold backdrop-blur-sm">
+              View Full
+            </div>
+          </div>
+          {item.fileName && (
+            <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between pointer-events-none">
+              <span className="text-[10px] tracking-widest text-white/50 uppercase font-bold truncate">{item.fileName}</span>
+              {item.fileSize && (
+                <span className="text-[9px] tracking-widest text-white/30 uppercase font-bold shrink-0 ml-2">{formatFileSize(item.fileSize)}</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Banner for Link Types (WEBPAGE/YOUTUBE) */}
       {(item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE) && (
         <div className="w-full h-[160px] md:h-[120px] sm:h-[96px] overflow-hidden bg-white/[0.02] border-b border-white/[0.04] relative shrink-0">
@@ -333,6 +362,80 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
             )}
             {!item.fileUrl && (
               <span className="text-[9px] tracking-[0.3em] text-red-400/40 uppercase font-bold">File unavailable</span>
+            )}
+          </div>
+        )}
+
+        {item.type === ItemType.IMAGE && (
+          <div className="flex flex-col gap-6">
+            {/* Caption / notes */}
+            {item.content && (
+              <p className="text-sm text-[var(--text-muted)] leading-relaxed font-normal whitespace-pre-wrap italic">{item.content}</p>
+            )}
+            {item.fileUrl && (
+              <div className="flex gap-3">
+                <a
+                  href={item.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 py-3 flex-1 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400 text-[11px] tracking-[0.2em] font-bold uppercase hover:bg-purple-500/20 transition-all"
+                >
+                  <ExternalLink size={14} />
+                  View Full
+                </a>
+                <a
+                  href={item.fileUrl}
+                  download={item.fileName}
+                  className="flex items-center justify-center gap-3 py-3 flex-1 rounded-2xl bg-white/[0.03] border border-white/[0.06] text-[#9AA3AD] text-[11px] tracking-[0.2em] font-bold uppercase hover:bg-white/10 transition-all"
+                >
+                  <Download size={14} />
+                  Download
+                </a>
+              </div>
+            )}
+            {!item.fileUrl && (
+              <span className="text-[9px] tracking-[0.3em] text-red-400/40 uppercase font-bold">Image unavailable</span>
+            )}
+          </div>
+        )}
+
+        {item.type === ItemType.VIDEO && (
+          <div className="flex flex-col gap-6">
+            {/* HTML5 video player */}
+            {item.fileUrl ? (
+              <div className="overflow-hidden rounded-2xl bg-black border border-white/[0.06]">
+                <video
+                  src={item.fileUrl}
+                  controls
+                  preload="metadata"
+                  className="w-full rounded-2xl"
+                  style={{ maxHeight: '320px', background: '#000' }}
+                />
+              </div>
+            ) : (
+              <span className="text-[9px] tracking-[0.3em] text-red-400/40 uppercase font-bold">Video unavailable</span>
+            )}
+            {/* File info + download */}
+            {item.fileName && (
+              <div className="flex items-center gap-5 bg-white/[0.03] p-4 rounded-2xl border border-white/[0.06]">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0 border border-white/10 text-lg">🎬</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[var(--text-primary)] font-medium truncate">{item.fileName}</p>
+                  {item.fileSize && (
+                    <p className="text-[11px] text-[var(--text-muted)] mt-1 tracking-widest uppercase">{formatFileSize(item.fileSize)}</p>
+                  )}
+                </div>
+                {item.fileUrl && (
+                  <a href={item.fileUrl} download={item.fileName}
+                    className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[#9AA3AD] hover:text-white transition-all border border-white/10"
+                    title="Download">
+                    <Download size={14} />
+                  </a>
+                )}
+              </div>
+            )}
+            {item.content && (
+              <p className="text-sm text-[var(--text-muted)] leading-relaxed font-normal whitespace-pre-wrap">{item.content}</p>
             )}
           </div>
         )}

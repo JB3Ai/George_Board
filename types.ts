@@ -6,7 +6,9 @@ export enum ItemType {
   EVENT = 'EVENT',
   WEBPAGE = 'WEBPAGE',
   YOUTUBE = 'YOUTUBE',
-  DOCUMENT = 'DOCUMENT'
+  DOCUMENT = 'DOCUMENT',
+  IMAGE = 'IMAGE',
+  VIDEO = 'VIDEO'
 }
 
 export enum Theme {

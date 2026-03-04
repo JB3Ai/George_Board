@@ -91,49 +91,48 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
     showToast('PIN reset. Sign in again to define a new PIN.', 'success');
   };
 
-  if (showSplash) {
-    return <Splash onComplete={() => setShowSplash(false)} username={splashUsername} />;
-  }
+  const firstTime = session ? isFirstTimeUser(session.email) : false;
 
-  if (!session) {
-    return (
-      <Layout showBackground={false}>
-        <div className="flex flex-col items-center justify-center min-h-[60vh]">
-          {isMagicLinkSent ? (
-            <div className="flex flex-col items-center gap-6 animate-in fade-in zoom-in-95 duration-500 text-center">
-              <div className="p-5 bg-white/5 rounded-full text-white/40 animate-pulse">
-                <Mail size={32} strokeWidth={1} />
+  return (
+    <>
+      {showSplash ? (
+        <Splash onComplete={() => setShowSplash(false)} username={splashUsername} />
+      ) : !session ? (
+        <Layout showBackground={false}>
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            {isMagicLinkSent ? (
+              <div className="flex flex-col items-center gap-6 animate-in fade-in zoom-in-95 duration-500 text-center">
+                <div className="p-5 bg-white/5 rounded-full text-white/40 animate-pulse">
+                  <Mail size={32} strokeWidth={1} />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-[10px] font-bold tracking-[0.3em] uppercase text-white/60">Dispatched</h3>
+                  <p className="text-[10px] text-white/20 max-w-[200px] font-light leading-relaxed">Check your secure inbox to finalize session initialization.</p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <h3 className="text-[10px] font-bold tracking-[0.3em] uppercase text-white/60">Dispatched</h3>
-                <p className="text-[10px] text-white/20 max-w-[200px] font-light leading-relaxed">Check your secure inbox to finalize session initialization.</p>
-              </div>
-            </div>
-          ) : (
-            <Login onLinkSent={handleLinkSent} />
-          )}
-        </div>
-      </Layout>
-    );
-  }
+            ) : (
+              <Login onLinkSent={handleLinkSent} />
+            )}
+          </div>
+        </Layout>
+      ) : !session.pinVerified ? (
+        <Layout showBackground={false}>
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <PinPad onComplete={handlePinComplete} isSetting={firstTime} onResetPin={handlePinResetFromGate} />
+            <button
+              onClick={() => setSession(null)}
+              className="mt-12 text-[9px] tracking-[0.3em] text-white/10 hover:text-white/40 transition-colors uppercase font-bold"
+            >
+              Cancel Session
+            </button>
+          </div>
+        </Layout>
+      ) : (
+        <>{children}</>
+      )}
 
-  if (!session.pinVerified) {
-    const firstTime = isFirstTimeUser(session.email);
-    return (
-      <Layout showBackground={false}>
-        <div className="flex flex-col items-center justify-center min-h-[60vh]">
-          <PinPad onComplete={handlePinComplete} isSetting={firstTime} onResetPin={handlePinResetFromGate} />
-          <button 
-            onClick={() => setSession(null)} 
-            className="mt-12 text-[9px] tracking-[0.3em] text-white/10 hover:text-white/40 transition-colors uppercase font-bold"
-          >
-            Cancel Session
-          </button>
-          <InstallInstructionsModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
-        </div>
-      </Layout>
-    );
-  }
-
-  return <>{children}</>;
+      {/* Global overlay — shows after first-time PIN creation, on top of the splash */}
+      <InstallInstructionsModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
+    </>
+  );
 };

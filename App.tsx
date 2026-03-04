@@ -367,13 +367,18 @@ const AppInner: React.FC = () => {
         setIsUploading(true);
         try {
           const result = await uploadDocument(newItemFile, session.email);
+          if (!result) {
+            showToast('Storage not configured — cannot upload documents', 'error');
+            setIsUploading(false);
+            return;
+          }
           db.addItem({
             userId: session.email,
             syncTabId: getActiveSyncTabId(),
             type: ItemType.DOCUMENT,
             title: newItemTitle || newItemFile.name,
             content: newItemContent,
-            fileUrl: result?.url,
+            fileUrl: result.url,
             fileName: newItemFile.name,
             fileSize: newItemFile.size,
             isDemo: newItemIsDemo,
@@ -421,7 +426,17 @@ const AppInner: React.FC = () => {
 
   return (
     <SessionGuard>
-        <div className="relative z-10 flex flex-col gap-16 px-4 sm:px-8 py-8 bg-[#0A0C10] min-h-screen">
+        <div className="relative min-h-screen">
+          {/* Fixed background — stays put while content scrolls */}
+          <div
+            className="fixed inset-0 bg-center bg-cover bg-no-repeat"
+            style={{ backgroundImage: `url('${import.meta.env.BASE_URL}GTR4.jpeg')` }}
+          />
+          {/* Dark overlay so UI stays readable */}
+          <div className="fixed inset-0 bg-[#0A0C10]/80" />
+          <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
+
+          <div className="relative z-10 flex flex-col gap-16 px-4 sm:px-8 py-8">
           <nav className="flex flex-col sm:flex-row items-center justify-between border border-white/10 rounded-2xl px-4 sm:px-6 py-4 gap-6 bg-[#121620]">
             <div className="flex gap-8 sm:gap-12 w-full sm:w-auto items-center overflow-x-auto no-scrollbar">
               {visibleTabs.map((tab) => (
@@ -763,7 +778,8 @@ const AppInner: React.FC = () => {
             )}
           </div>
         </div>
-      </SessionGuard>
+      </div>
+    </SessionGuard>
   );
 };
 

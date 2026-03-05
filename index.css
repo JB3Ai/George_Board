@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --color-jb-black: #050505;
+  --color-jb-gray: #0a0a0a;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --tracking-premium: 0.3em;
+  --tracking-ultra: 0.5em;
+}

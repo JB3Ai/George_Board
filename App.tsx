@@ -606,7 +606,7 @@ const AppInner: React.FC = () => {
           </nav>
 
           <div className="min-h-[60vh] space-y-12">
-            <div className="border border-edge rounded-2xl px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="glass rounded-2xl px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div className="text-[11px] tracking-[0.2em] uppercase text-primary font-bold">Welcome, {signedInName}</div>
               <div className="text-[10px] tracking-[0.2em] uppercase text-accent/70 font-bold">{signedInRole}</div>
             </div>

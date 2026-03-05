@@ -3,7 +3,6 @@ import { SessionGuard } from './components/SessionGuard';
 import { PinboardLane } from './components/PinboardLane';
 import { DemoTab } from './components/DemoTab';
 import { SettingsTab } from './components/SettingsTab';
-import { LinkPasteBar } from './components/LinkPasteBar';
 import { SearchInput } from './components/SearchInput';
 import { ToastProvider, useToast } from './components/Toast';
 import { db } from './services/db';
@@ -615,16 +614,7 @@ const AppInner: React.FC = () => {
             <div className="text-[10px] tracking-[0.3em] uppercase text-[#C6CED8] font-bold">{sectionTitle}</div>
 
             {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
-              <div className="flex flex-col lg:flex-row gap-8 items-end justify-between">
-                <div className="flex-1 w-full max-w-2xl">
-                  {canPost ? (
-                    <LinkPasteBar onAdd={handleAddLink} />
-                  ) : (
-                    <div className="h-16 flex items-center px-8 rounded-2xl text-[11px] tracking-[0.3em] text-[#9AA3AD]/30 uppercase font-bold border border-white/10">
-                      Read-only sync view
-                    </div>
-                  )}
-                </div>
+              <div className="flex justify-end">
                 <SearchInput value={searchTerm} onChange={setSearchTerm} />
               </div>
             )}

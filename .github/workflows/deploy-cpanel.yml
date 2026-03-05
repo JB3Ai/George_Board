@@ -41,7 +41,7 @@ jobs:
           port: 21
           security: loose
           local-dir: ./dist/
-          server-dir: ./public_html/os3grid/
+          server-dir: ./public_html/clipboard/
           timeout: 600000
           log-level: verbose
           dangerous-clean-slate: false

@@ -28,8 +28,10 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
     const saved = localStorage.getItem('jb3_session');
     if (saved) {
       const parsed: UserSession = JSON.parse(saved);
-      const isStillTrusted = parsed.trustUntil && parsed.trustUntil > Date.now();
-      setSession({ ...parsed, pinVerified: !!isStillTrusted });
+      // If trust was set and has expired, force re-verification.
+      // If trust was never set (volatile session), keep pinVerified as-is from the saved state.
+      const trustExpired = parsed.trustUntil !== undefined && parsed.trustUntil <= Date.now();
+      setSession({ ...parsed, pinVerified: trustExpired ? false : !!parsed.pinVerified });
     }
   }, []);
 

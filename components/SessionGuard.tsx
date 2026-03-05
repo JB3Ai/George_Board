@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect } from 'react';
 import { Layout } from './Layout';
 import { Login } from './Login';
@@ -104,12 +104,12 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
           <div className="flex flex-col items-center justify-center min-h-[60vh]">
             {isMagicLinkSent ? (
               <div className="flex flex-col items-center gap-6 animate-in fade-in zoom-in-95 duration-500 text-center">
-                <div className="p-5 bg-white/5 rounded-full text-white/40 animate-pulse">
+                <div className="p-5 bg-card/10 rounded-full text-primary/40 animate-pulse">
                   <Mail size={32} strokeWidth={1} />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-[10px] font-bold tracking-[0.3em] uppercase text-white/60">Dispatched</h3>
-                  <p className="text-[10px] text-white/20 max-w-[200px] font-light leading-relaxed">Check your secure inbox to finalize session initialization.</p>
+                  <h3 className="text-[10px] font-bold tracking-[0.3em] uppercase text-primary/60">Dispatched</h3>
+                  <p className="text-[10px] text-primary/20 max-w-[200px] font-light leading-relaxed">Check your secure inbox to finalize session initialization.</p>
                 </div>
               </div>
             ) : (
@@ -123,7 +123,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
             <PinPad onComplete={handlePinComplete} isSetting={firstTime} onResetPin={handlePinResetFromGate} />
             <button
               onClick={() => setSession(null)}
-              className="mt-12 text-[9px] tracking-[0.3em] text-white/10 hover:text-white/40 transition-colors uppercase font-bold"
+              className="mt-12 text-[9px] tracking-[0.3em] text-primary/10 hover:text-primary/40 transition-colors uppercase font-bold"
             >
               Cancel Session
             </button>

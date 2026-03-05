@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect } from 'react';
 import { Link, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
 
@@ -36,8 +36,8 @@ export const LinkPasteBar: React.FC<LinkPasteBarProps> = ({ onAdd, disabled }) =
 
   return (
     <form onSubmit={handleSubmit} className="w-full relative group">
-      <div className={`absolute left-5 top-1/2 -translate-y-1/2 transition-all duration-500 ${isValid ? 'text-[#66FF66] scale-125' : 'text-[#9AA3AD]/20'}`}>
-        {isValid ? <ShieldCheck size={20} className="text-[#66FF66]" /> : <Link size={20} />}
+      <div className={`absolute left-5 top-1/2 -translate-y-1/2 transition-all duration-500 ${isValid ? 'text-accent scale-125' : 'text-muted/20'}`}>
+        {isValid ? <ShieldCheck size={20} className="text-accent" /> : <Link size={20} />}
       </div>
       <input
         type="text"
@@ -45,10 +45,10 @@ export const LinkPasteBar: React.FC<LinkPasteBarProps> = ({ onAdd, disabled }) =
         onChange={(e) => setUrl(e.target.value)}
         disabled={disabled || loading}
         placeholder="Secure asset URL initialization..."
-        className={`w-full h-16 bg-white/[0.03] border rounded-2xl pl-16 pr-16 text-base font-light text-[#E6E6E6] placeholder:text-[#9AA3AD]/30 focus:outline-none transition-all duration-700 ${
+        className={`w-full h-16 bg-card/10 border rounded-2xl pl-16 pr-16 text-base font-light text-primary placeholder:text-muted/30 focus:outline-none transition-all duration-700 ${
           isValid 
-          ? 'border-[#66FF66]/30 bg-[#66FF66]/5 shadow-[0_0_40px_rgba(102,255,102,0.03)]' 
-          : 'border-white/5 focus:border-[#66FF66]/10'
+          ? 'border-accent/30 bg-accent/5 shadow-[0_0_40px_rgba(102,255,102,0.03)]' 
+          : 'border-edge focus:border-accent/10'
         }`}
       />
       {url && (
@@ -57,8 +57,8 @@ export const LinkPasteBar: React.FC<LinkPasteBarProps> = ({ onAdd, disabled }) =
           disabled={loading || !isValid}
           className={`absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-xl transition-all duration-500 ${
             isValid 
-            ? 'bg-[#66FF66] text-black hover:bg-[#80FF80] shadow-lg' 
-            : 'bg-white/5 text-[#9AA3AD]/20 cursor-not-allowed'
+            ? 'bg-accent text-contrast hover:bg-accent shadow-lg' 
+            : 'bg-card/10 text-muted/20 cursor-not-allowed'
           }`}
         >
           {loading ? <Loader2 size={20} className="animate-spin" /> : <ArrowRight size={20} />}

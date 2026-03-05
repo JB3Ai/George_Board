@@ -1,4 +1,4 @@
-
+﻿
 import React from 'react';
 
 interface LayoutProps {
@@ -17,7 +17,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, showBackground = true 
           style={{ backgroundImage: `url('${backgroundUrl}')` }}
         />
       ) : (
-        <div className="absolute inset-0 bg-[#0A0C10]" />
+        <div className="absolute inset-0 bg-dark" />
       )}
       <div className="absolute inset-0 bg-black/75" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
@@ -25,10 +25,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, showBackground = true 
       <div className="relative z-10 w-full max-w-4xl flex flex-col gap-12">
         <header className="flex items-center justify-between">
           <div className="flex flex-col gap-1">
-            <h1 className="text-xl font-light tracking-[0.2em] text-white">CLIPBOARD</h1>
-            <div className="h-[1px] w-8 bg-white/20" />
+            <h1 className="text-xl font-light tracking-[0.2em] text-primary">CLIPBOARD</h1>
+            <div className="h-[1px] w-8 bg-card/10" />
           </div>
-          <div className="text-[10px] tracking-widest text-white/30 uppercase">jb³ai secure access</div>
+          <div className="text-[10px] tracking-widest text-primary/30 uppercase">jb³ai secure access</div>
         </header>
         <main className="flex-1">
           {children}

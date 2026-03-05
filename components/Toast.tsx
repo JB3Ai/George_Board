@@ -1,4 +1,4 @@
-
+﻿
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
@@ -54,8 +54,8 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 toast.type === 'error' 
                   ? 'bg-red-500/10 border-red-500/20 text-red-400' 
                   : toast.type === 'success'
-                  ? 'bg-[#66FF66]/10 border-[#66FF66]/20 text-[#66FF66]'
-                  : 'bg-white/5 border-white/10 text-[#9AA3AD]'
+                  ? 'bg-accent/10 border-accent/20 text-accent'
+                  : 'bg-card/10 border-edge text-muted'
               }`}
             >
               <div className="shrink-0">
@@ -66,7 +66,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               <p className="text-[11px] tracking-[0.1em] uppercase font-bold flex-1">{toast.message}</p>
               <button 
                 onClick={() => removeToast(toast.id)}
-                className="p-1 hover:bg-white/5 rounded-lg transition-colors"
+                className="p-1 hover:bg-card/10 rounded-lg transition-colors"
               >
                 <X size={14} />
               </button>

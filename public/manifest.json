@@ -1,6 +1,6 @@
 {
-  "name": "George Board",
-  "short_name": "George Board",
+  "name": "OS³ Clipboard",
+  "short_name": "OS³ Clipboard",
   "description": "Secure shared clipboard for the JB3 team",
   "start_url": "/clipboard/",
   "scope": "/clipboard/",

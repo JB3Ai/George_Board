@@ -7,4 +7,15 @@
   --font-sans: 'Inter', system-ui, sans-serif;
   --tracking-premium: 0.3em;
   --tracking-ultra: 0.5em;
+
+  /* Theme-aware semantic colors (support opacity modifiers) */
+  --color-primary: var(--text-primary);
+  --color-muted: var(--text-muted);
+  --color-dark: var(--bg-dark);
+  --color-card: var(--bg-card);
+  --color-glass: var(--bg-glass);
+  --color-edge: var(--border-color);
+  --color-edge-active: var(--border-active);
+  --color-accent: var(--accent);
+  --color-contrast: var(--accent-contrast);
 }

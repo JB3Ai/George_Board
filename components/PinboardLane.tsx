@@ -1,4 +1,4 @@
-
+﻿
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardItem, UserEmail } from '../types';
@@ -46,8 +46,8 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
             className="space-y-10"
           >
             <div className="flex items-center gap-6">
-              <h4 className="text-[11px] tracking-[0.4em] text-[#66FF66]/60 uppercase font-bold">Priority Assets</h4>
-              <div className="h-[1px] flex-1 bg-gradient-to-r from-[#66FF66]/10 to-transparent" />
+              <h4 className="text-[11px] tracking-[0.4em] text-accent/60 uppercase font-bold">Priority Assets</h4>
+              <div className="h-[1px] flex-1 bg-gradient-to-r from-accent/10 to-transparent" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               {pinned.map(item => (
@@ -67,7 +67,7 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
           className="space-y-10"
         >
           <div className="flex items-center gap-6">
-            <h4 className="text-[11px] tracking-[0.4em] text-[#9AA3AD]/30 uppercase font-bold">Active Records</h4>
+            <h4 className="text-[11px] tracking-[0.4em] text-muted/30 uppercase font-bold">Active Records</h4>
             <div className="h-[1px] flex-1 bg-gradient-to-r from-white/5 to-transparent" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -81,9 +81,9 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
             {items.length === 0 && (
               <motion.div 
                 variants={itemVariants}
-                className="col-span-full py-48 text-center border border-dashed border-white/5 rounded-[2.5rem] bg-white/[0.01]"
+                className="col-span-full py-48 text-center border border-dashed border-edge rounded-[2.5rem] bg-card/5"
               >
-                <p className="text-[11px] text-[#9AA3AD]/20 tracking-[0.6em] uppercase font-bold">Awaiting initialization</p>
+                <p className="text-[11px] text-muted/20 tracking-[0.6em] uppercase font-bold">Awaiting initialization</p>
               </motion.div>
             )}
           </div>

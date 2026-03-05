@@ -113,14 +113,14 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
               exit={{ opacity: 0, scale: 1.2 }}
               className="flex flex-col items-center gap-8"
             >
-              <div className="w-24 h-24 border-2 border-[#66FF66] rounded-3xl flex items-center justify-center relative">
+              <div className="w-24 h-24 rounded-3xl flex items-center justify-center relative overflow-hidden">
                 <motion.div 
                   initial={{ height: 0 }}
                   animate={{ height: '100%' }}
                   transition={{ duration: 1, ease: "easeInOut" }}
                   className="absolute inset-0 bg-[#66FF66]/10 rounded-[22px]"
                 />
-                <span className="text-2xl font-bold text-[#66FF66] tracking-[0.08em] relative z-10">JB³Ai</span>
+                <img src={`${mediaBaseUrl}GBclipbaordicon.png`} alt="George Board" className="w-full h-full object-contain relative z-10" />
               </div>
               <div className="space-y-2 text-center">
                 <p className="text-[10px] tracking-[0.5em] text-[#66FF66] font-bold uppercase">Initializing</p>

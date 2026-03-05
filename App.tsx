@@ -12,7 +12,7 @@ import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession } from './types';
 import { OWNER_EMAIL } from './constants';
-import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon } from 'lucide-react';
+import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 
@@ -41,6 +41,7 @@ const AppInner: React.FC = () => {
   const [newItemIsDemo, setNewItemIsDemo] = useState(false);
   const [newItemFile, setNewItemFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
   const getCurrentSession = (): UserSession => {
     const saved = localStorage.getItem('jb3_session');
@@ -491,6 +492,66 @@ const AppInner: React.FC = () => {
           <div className="fixed inset-0 bg-[#0A0C10]/80" />
           <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
 
+          {/* Info Modal */}
+          {showInfo && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowInfo(false)}>
+              <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+              <div className="relative bg-[#121620] border border-white/10 rounded-3xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-8 space-y-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[11px] tracking-[0.3em] uppercase text-[#66FF66] font-bold">George Board — Quick Guide</h2>
+                  <button onClick={() => setShowInfo(false)} className="text-white/30 hover:text-white transition-colors"><X size={18} /></button>
+                </div>
+                <div className="h-[1px] bg-white/10" />
+
+                <section className="space-y-3">
+                  <h3 className="text-[10px] tracking-[0.25em] uppercase text-white/50 font-bold">What is this?</h3>
+                  <p className="text-[13px] text-white/40 leading-relaxed font-light">
+                    George Board is a shared clipboard for the JB3 team. Each team member has their own tab where they can post notes, links, tasks, events, documents, images, and videos — all synced in real time via Supabase.
+                  </p>
+                </section>
+
+                <section className="space-y-3">
+                  <h3 className="text-[10px] tracking-[0.25em] uppercase text-white/50 font-bold">How to add items</h3>
+                  <ul className="text-[13px] text-white/40 leading-relaxed font-light space-y-2 list-none">
+                    <li className="flex gap-3"><span className="text-[#66FF66]/60">1.</span> Paste a URL into the link bar to auto-detect YouTube or webpage links</li>
+                    <li className="flex gap-3"><span className="text-[#66FF66]/60">2.</span> Click the <span className="text-white/60">+</span> button to create a Note, Task, Event, Document, Image, or Video</li>
+                    <li className="flex gap-3"><span className="text-[#66FF66]/60">3.</span> Documents (PDF, DOC, XLS, etc.) up to 20 MB</li>
+                    <li className="flex gap-3"><span className="text-[#66FF66]/60">4.</span> Images (JPG, PNG, GIF, WEBP) and Videos (MP4, MOV, WEBM) up to 50 MB</li>
+                  </ul>
+                </section>
+
+                <section className="space-y-3">
+                  <h3 className="text-[10px] tracking-[0.25em] uppercase text-white/50 font-bold">Card actions</h3>
+                  <ul className="text-[13px] text-white/40 leading-relaxed font-light space-y-2 list-none">
+                    <li className="flex gap-3"><span className="text-yellow-400/60">Pin</span> — Keep a card at the top of the board</li>
+                    <li className="flex gap-3"><span className="text-blue-400/60">Edit</span> — Modify title, notes, or replace files</li>
+                    <li className="flex gap-3"><span className="text-red-400/60">Delete</span> — Remove a card (owner only for other users' tabs)</li>
+                    <li className="flex gap-3"><span className="text-purple-400/60">Archive</span> — Hide a card without deleting it</li>
+                  </ul>
+                </section>
+
+                <section className="space-y-3">
+                  <h3 className="text-[10px] tracking-[0.25em] uppercase text-white/50 font-bold">Tabs</h3>
+                  <ul className="text-[13px] text-white/40 leading-relaxed font-light space-y-2 list-none">
+                    <li className="flex gap-3"><span className="text-white/60">User tabs</span> — Each team member's personal board (scroll left/right)</li>
+                    <li className="flex gap-3"><span className="text-[#66FF66]/60">DEMO</span> — Shared showcase tab viewable by everyone</li>
+                    <li className="flex gap-3"><span className="text-white/60">SETTINGS</span> — Change PIN, theme, and font size</li>
+                  </ul>
+                </section>
+
+                <section className="space-y-3">
+                  <h3 className="text-[10px] tracking-[0.25em] uppercase text-white/50 font-bold">Owner features</h3>
+                  <p className="text-[13px] text-white/40 leading-relaxed font-light">
+                    The owner can view and post to all tabs, invite or remove team members, and manage the full board. Regular users only see their own tab, DEMO, and Settings.
+                  </p>
+                </section>
+
+                <div className="h-[1px] bg-white/10" />
+                <p className="text-[10px] tracking-[0.2em] text-white/20 text-center uppercase">JB3 AI &middot; George Board v1</p>
+              </div>
+            </div>
+          )}
+
           <div className="relative z-10 flex flex-col gap-16 px-4 sm:px-8 py-8">
           <nav className="flex items-center border border-white/10 rounded-2xl px-4 sm:px-6 py-4 gap-4 bg-[#121620]">
             {/* Scrollable user tabs */}
@@ -533,6 +594,9 @@ const AppInner: React.FC = () => {
                 }`}
               >
                 SETTINGS
+              </button>
+              <button onClick={() => setShowInfo(true)} title="Info & Help" className="text-[#9AA3AD]/40 hover:text-cyan-400 transition-colors">
+                <Info size={18} strokeWidth={1.5} />
               </button>
               <button onClick={handleLogout} title="Terminate Session" className="text-[#9AA3AD]/40 hover:text-red-400 transition-colors">
                 <LogOut size={18} strokeWidth={1.5} />

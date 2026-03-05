@@ -15,6 +15,14 @@ const hasValidUrl = (() => {
 
 export const isSupabaseConfigured = Boolean(hasValidUrl && supabaseAnonKey);
 
+/* diagnostic — visible in browser console (F12) */
+console.log('[Supabase]', {
+  hasUrl: !!supabaseUrl,
+  hasKey: !!supabaseAnonKey,
+  validUrl: hasValidUrl,
+  configured: isSupabaseConfigured,
+});
+
 let client: ReturnType<typeof createClient> | null = null;
 
 if (isSupabaseConfigured) {

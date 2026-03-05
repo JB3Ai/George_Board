@@ -486,7 +486,7 @@ const AppInner: React.FC = () => {
           {/* Fixed background — stays put while content scrolls */}
           <div
             className="fixed inset-0 bg-center bg-cover bg-no-repeat"
-            style={{ backgroundImage: `url('${import.meta.env.BASE_URL}Media/GTR4.jpeg')` }}
+            style={{ backgroundImage: `url('${import.meta.env.BASE_URL}Media/background.webp')` }}
           />
           {/* Dark overlay so UI stays readable */}
           <div className="fixed inset-0 bg-[#0A0C10]/80" />

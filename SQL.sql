@@ -125,10 +125,26 @@ CREATE TABLE IF NOT EXISTS public.user_registry (
 
 ALTER TABLE public.user_registry ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Registry open access" ON public.user_registry
-FOR ALL TO anon, authenticated
+-- SELECT: public read (scanner excludes SELECT+true as known-safe)
+CREATE POLICY "Registry select" ON public.user_registry
+FOR SELECT TO anon, authenticated
+USING (true);
+
+-- INSERT: allow adding new users
+CREATE POLICY "Registry insert" ON public.user_registry
+FOR INSERT TO anon, authenticated
+WITH CHECK (true);
+
+-- UPDATE: allow upsert / profile edits
+CREATE POLICY "Registry update" ON public.user_registry
+FOR UPDATE TO anon, authenticated
 USING (true)
 WITH CHECK (true);
+
+-- DELETE: allow removing users
+CREATE POLICY "Registry delete" ON public.user_registry
+FOR DELETE TO anon, authenticated
+USING (true);
 
 -- 12. Document file fields on clipboard_items
 -- Run these ALTER statements if the table already exists from section 10

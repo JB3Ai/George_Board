@@ -492,30 +492,37 @@ const AppInner: React.FC = () => {
           <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
 
           <div className="relative z-10 flex flex-col gap-16 px-4 sm:px-8 py-8">
-          <nav className="flex flex-col sm:flex-row items-center justify-between border border-white/10 rounded-2xl px-4 sm:px-6 py-4 gap-6 bg-[#121620]">
-            <div className="flex gap-8 sm:gap-12 w-full sm:w-auto items-center overflow-x-auto no-scrollbar">
-              {visibleTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => { setActiveTab(tab.id); setIsAdding(false); setSearchTerm(''); }}
-                  className={`text-[10px] sm:text-[11px] tracking-[0.3em] uppercase transition-all pb-6 -mb-6 border-b-2 font-bold whitespace-nowrap ${
-                    activeTab === tab.id ? 'text-[#66FF66] border-[#66FF66]' : 'text-[#C6CED8] border-transparent hover:text-white'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+          <nav className="flex items-center border border-white/10 rounded-2xl px-4 sm:px-6 py-4 gap-4 bg-[#121620]">
+            {/* Scrollable user tabs */}
+            <div className="flex-1 min-w-0 overflow-x-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#66FF6640 transparent' }}>
+              <div className="flex gap-6 sm:gap-10 items-center w-max pr-4">
+                {visibleTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => { setActiveTab(tab.id); setIsAdding(false); setSearchTerm(''); }}
+                    className={`text-[10px] sm:text-[11px] tracking-[0.3em] uppercase transition-all pb-6 -mb-6 border-b-2 font-bold whitespace-nowrap ${
+                      activeTab === tab.id ? 'text-[#66FF66] border-[#66FF66]' : 'text-[#C6CED8] border-transparent hover:text-white'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Pinned utility buttons — always visible */}
+            <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 border-l border-white/10 pl-4">
               <button
                 onClick={() => { setActiveTab(DEMO_TAB_ID); setIsAdding(false); setSearchTerm(''); }}
-                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border text-[11px] sm:text-[12px] tracking-[0.24em] uppercase transition-all font-bold whitespace-nowrap ${
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] sm:text-[11px] tracking-[0.24em] uppercase transition-all font-bold whitespace-nowrap ${
                   activeTab === DEMO_TAB_ID
                     ? 'text-[#66FF66] border-[#66FF66]/70 bg-[#66FF66]/15 shadow-[0_0_24px_rgba(102,255,102,0.35)]'
                     : 'text-[#66FF66]/90 border-[#66FF66]/30 bg-[#66FF66]/10 hover:bg-[#66FF66]/15 hover:border-[#66FF66]/60 shadow-[0_0_18px_rgba(102,255,102,0.18)]'
                 }`}
               >
-                <span className="relative inline-flex h-2.5 w-2.5">
+                <span className="relative inline-flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#66FF66] opacity-70" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#66FF66]" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#66FF66]" />
                 </span>
                 DEMO
               </button>
@@ -527,9 +534,6 @@ const AppInner: React.FC = () => {
               >
                 SETTINGS
               </button>
-            </div>
-
-            <div className="flex items-center gap-6 w-full sm:w-auto justify-end">
               <button onClick={handleLogout} title="Terminate Session" className="text-[#9AA3AD]/40 hover:text-red-400 transition-colors">
                 <LogOut size={18} strokeWidth={1.5} />
               </button>

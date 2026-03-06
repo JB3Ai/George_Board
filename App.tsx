@@ -979,6 +979,10 @@ const AppInner: React.FC = () => {
               </>
             )}
           </div>
+
+          <footer className="mt-16 pb-8 text-center">
+            <p className="text-[9px] tracking-[0.3em] uppercase text-muted/30 font-bold">&copy; 2026 JB³Ai. All Rights Reserved.</p>
+          </footer>
         </div>
       </div>
     </SessionGuard>

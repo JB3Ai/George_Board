@@ -553,8 +553,8 @@ const AppInner: React.FC = () => {
 
           <div className="relative z-10 flex flex-col gap-16 px-4 sm:px-8 py-8">
           <nav className="flex items-center border border-edge rounded-2xl px-4 sm:px-6 py-4 gap-4 bg-card">
-            {/* ShieldAi logo */}
-            <img src={`${import.meta.env.BASE_URL}Media/sheild_icon.png`} alt="ShieldAi" className="h-10 w-10 rounded-lg object-contain flex-shrink-0" />
+            {/* OS3 header badge */}
+            <img src={`${import.meta.env.BASE_URL}Media/landscape_header_icon.jpg`} alt="OS³ JB3Ai" className="h-10 rounded-lg object-contain flex-shrink-0" />
             {/* Scrollable user tabs */}
             <div className="flex-1 min-w-0 overflow-x-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--accent)40 transparent' }}>
               <div className="flex gap-6 sm:gap-10 items-center w-max pr-4">

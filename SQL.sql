@@ -113,6 +113,9 @@ USING (true);
 CREATE INDEX idx_clipboard_items_user ON public.clipboard_items(user_id);
 CREATE INDEX idx_clipboard_items_created ON public.clipboard_items(created_at DESC);
 
+-- 10b. Migration: add shared_group_id for multi-user card replication
+ALTER TABLE public.clipboard_items ADD COLUMN IF NOT EXISTS shared_group_id TEXT;
+
 -- 11. User Registry (replaces localStorage jb3_user_registry)
 CREATE TABLE IF NOT EXISTS public.user_registry (
   id TEXT PRIMARY KEY,

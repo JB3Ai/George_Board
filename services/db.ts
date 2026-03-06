@@ -50,6 +50,7 @@ const toRow = (item: ClipboardItem) => ({
   file_url: item.fileUrl ?? null,
   file_name: item.fileName ?? null,
   file_size: item.fileSize ?? null,
+  shared_group_id: item.sharedGroupId ?? null,
   updated_at: new Date().toISOString(),
 });
 
@@ -73,6 +74,7 @@ const fromRow = (row: any): ClipboardItem => ({
   fileUrl: row.file_url ?? undefined,
   fileName: row.file_name ?? undefined,
   fileSize: row.file_size ?? undefined,
+  sharedGroupId: row.shared_group_id ?? undefined,
 });
 
 const writeToSupabase = (item: ClipboardItem) => {
@@ -82,6 +84,16 @@ const writeToSupabase = (item: ClipboardItem) => {
     .upsert(toRow(item), { onConflict: 'id' })
     .then(({ error }: { error: any }) => {
       if (error) console.warn('Supabase item write failed:', error.message);
+    });
+};
+
+const writeMultipleToSupabase = (items: ClipboardItem[]) => {
+  if (!isSupabaseConfigured || !supabase || items.length === 0) return;
+  (supabase as any)
+    .from(ITEMS_TABLE)
+    .upsert(items.map(toRow), { onConflict: 'id' })
+    .then(({ error }: { error: any }) => {
+      if (error) console.warn('Supabase batch write failed:', error.message);
     });
 };
 
@@ -153,6 +165,28 @@ export const db = {
     db.saveItems([newItem, ...items]);
     writeToSupabase(newItem);
     return newItem;
+  },
+
+  addItemBatch: (
+    base: Omit<ClipboardItem, 'id' | 'createdAt' | 'isPinned' | 'isArchived' | 'syncTabId' | 'sharedGroupId'>,
+    targetSyncTabIds: string[]
+  ): ClipboardItem[] => {
+    const groupId = crypto.randomUUID();
+    const now = Date.now();
+    const existing = db.getItems();
+    const created: ClipboardItem[] = targetSyncTabIds.map(tabId => ({
+      ...base,
+      id: crypto.randomUUID(),
+      syncTabId: tabId,
+      sharedGroupId: groupId,
+      createdAt: now,
+      isPinned: false,
+      isArchived: false,
+      readBy: [],
+    }));
+    db.saveItems([...created, ...existing]);
+    writeMultipleToSupabase(created);
+    return created;
   },
 
   updateItem: (id: string, currentUser: UserEmail, updates: Partial<ClipboardItem>) => {

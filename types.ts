@@ -65,6 +65,7 @@ export interface ClipboardItem {
   enrichmentStatus?: EnrichmentStatus;
   readBy?: UserEmail[];
   isDemo?: boolean;
+  sharedGroupId?: string;
   preview_fail_count?: number;
   preview_last_fetched_at?: number;
   preview_next_allowed_at?: number;

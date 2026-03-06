@@ -11,7 +11,7 @@ import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession } from './types';
 import { OWNER_EMAIL } from './constants';
-import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X } from 'lucide-react';
+import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 
@@ -41,6 +41,7 @@ const AppInner: React.FC = () => {
   const [newItemFile, setNewItemFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [selectedTargetUsers, setSelectedTargetUsers] = useState<string[]>([]);
 
   const getCurrentSession = (): UserSession => {
     const saved = localStorage.getItem('jb3_session');
@@ -64,6 +65,8 @@ const AppInner: React.FC = () => {
     : currentUserTab
       ? [currentUserTab]
       : [];
+
+  const nonOwnerTabs = TABS.filter(t => !t.isOwner);
 
   useEffect(() => {
     const localItems = db.getItems();
@@ -381,6 +384,104 @@ const AppInner: React.FC = () => {
 
       db.updateItem(editingItem.id, session.email, updates);
       setEditingItem(null);
+    } else if (isOwnerSession && selectedTargetUsers.length > 0) {
+      // ─── Multi-user batch path ───
+      if (newItemType === ItemType.WEBPAGE || newItemType === ItemType.YOUTUBE) {
+        const url = newItemTitle;
+        let hostname = 'LINK';
+        try { hostname = new URL(url).hostname; } catch { hostname = url.split('/')[2] || 'LINK'; }
+        const finalType = newItemType === ItemType.YOUTUBE || url.includes('youtube.com') || url.includes('youtu.be')
+          ? ItemType.YOUTUBE : ItemType.WEBPAGE;
+
+        const batchItems = db.addItemBatch({
+          userId: session.email,
+          type: finalType,
+          title: hostname,
+          content: url,
+          enrichmentStatus: EnrichmentStatus.PENDING,
+          metadata: newItemContent ? { description: newItemContent } : {},
+          isDemo: newItemIsDemo,
+        }, selectedTargetUsers);
+
+        setItems(db.getItems());
+
+        try {
+          const metadata = await fetchLinkMetadata(url);
+          const hasMetadata = metadata && Object.keys(metadata).length > 0 && (metadata.title || metadata.siteName || metadata.og_image_url);
+          const finalMetadata = hasMetadata
+            ? { ...metadata, description: newItemContent || metadata.description }
+            : (newItemContent ? { description: newItemContent } : {});
+          const status = hasMetadata ? EnrichmentStatus.SUCCESS : EnrichmentStatus.FAILED;
+          for (const bi of batchItems) {
+            db.updateItem(bi.id, session.email, { metadata: finalMetadata, enrichmentStatus: status });
+          }
+        } catch {
+          for (const bi of batchItems) {
+            db.updateItem(bi.id, session.email, { enrichmentStatus: EnrichmentStatus.FAILED });
+          }
+        }
+        setItems(db.getItems());
+
+      } else if (newItemType === ItemType.DOCUMENT) {
+        if (!newItemFile) { showToast('Please select a file to upload', 'error'); return; }
+        setIsUploading(true);
+        try {
+          const result = await uploadDocument(newItemFile, session.email);
+          if (!result) { showToast('Storage not configured — cannot upload documents', 'error'); setIsUploading(false); return; }
+          db.addItemBatch({
+            userId: session.email,
+            type: ItemType.DOCUMENT,
+            title: newItemTitle || newItemFile.name,
+            content: newItemContent,
+            fileUrl: result.url,
+            fileName: newItemFile.name,
+            fileSize: newItemFile.size,
+            isDemo: newItemIsDemo,
+          }, selectedTargetUsers);
+        } catch (err: any) {
+          showToast(err.message || 'Upload failed', 'error');
+          setIsUploading(false);
+          return;
+        }
+        setIsUploading(false);
+
+      } else if (newItemType === ItemType.IMAGE || newItemType === ItemType.VIDEO) {
+        if (!newItemFile) { showToast('Please select a file to upload', 'error'); return; }
+        setIsUploading(true);
+        try {
+          const result = await uploadMedia(newItemFile, session.email);
+          if (!result) { showToast('Storage not configured — cannot upload media', 'error'); setIsUploading(false); return; }
+          db.addItemBatch({
+            userId: session.email,
+            type: newItemType,
+            title: newItemTitle || newItemFile.name,
+            content: newItemContent,
+            fileUrl: result.url,
+            fileName: newItemFile.name,
+            fileSize: newItemFile.size,
+            isDemo: newItemIsDemo,
+          }, selectedTargetUsers);
+        } catch (err: any) {
+          showToast(err.message || 'Upload failed', 'error');
+          setIsUploading(false);
+          return;
+        }
+        setIsUploading(false);
+
+      } else {
+        db.addItemBatch({
+          userId: session.email,
+          type: newItemType,
+          title: newItemTitle || 'Untitled Log',
+          content: newItemContent,
+          taskStatus: newItemType === ItemType.TASK ? TaskStatus.OPEN : undefined,
+          dueDate: newItemType === ItemType.TASK || newItemType === ItemType.EVENT ? newItemDueDate : undefined,
+          eventLocation: newItemType === ItemType.EVENT ? newItemLocation : undefined,
+          isDemo: newItemIsDemo,
+        }, selectedTargetUsers);
+      }
+
+      showToast(`Entry shared to ${selectedTargetUsers.length} user${selectedTargetUsers.length > 1 ? 's' : ''}`, 'success');
     } else {
       if (newItemType === ItemType.WEBPAGE || newItemType === ItemType.YOUTUBE) {
         await handleAddLink(newItemTitle, newItemType, newItemContent);
@@ -466,6 +567,7 @@ const AppInner: React.FC = () => {
     setNewItemDueDate('');
     setNewItemLocation('');
     setNewItemFile(null);
+    setSelectedTargetUsers([]);
   };
 
   const sectionTitle = activeTab === 'JONO'
@@ -726,6 +828,61 @@ const AppInner: React.FC = () => {
                     <span className="text-[10px] tracking-widest text-accent uppercase font-bold">Editing Mode</span>
                   )}
                 </div>
+
+                {/* Multi-user picker — owner only, new items only */}
+                {isOwnerSession && !editingItem && nonOwnerTabs.length > 0 && (
+                  <div className="space-y-4 border border-accent/10 rounded-2xl p-6 bg-accent/[0.02]">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[9px] tracking-widest text-muted/40 uppercase font-bold flex items-center gap-3">
+                        <Users size={14} className="text-accent/40" />
+                        Share to Users
+                        {selectedTargetUsers.length > 0 && (
+                          <span className="text-accent">({selectedTargetUsers.length})</span>
+                        )}
+                      </p>
+                      <div className="flex gap-6">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTargetUsers(nonOwnerTabs.map(t => t.id))}
+                          className="text-[9px] tracking-widest uppercase text-accent/40 hover:text-accent font-bold transition-colors"
+                        >
+                          All
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTargetUsers([])}
+                          className="text-[9px] tracking-widest uppercase text-muted/30 hover:text-muted font-bold transition-colors"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {nonOwnerTabs.map(tab => {
+                        const selected = selectedTargetUsers.includes(tab.id);
+                        return (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => setSelectedTargetUsers(prev =>
+                              selected ? prev.filter(id => id !== tab.id) : [...prev, tab.id]
+                            )}
+                            className={`text-[10px] tracking-widest px-5 py-2.5 rounded-full border transition-all uppercase font-bold ${
+                              selected
+                                ? 'bg-accent/10 border-accent/30 text-accent'
+                                : 'border-edge text-muted/40 hover:border-edge hover:text-muted'
+                            }`}
+                          >
+                            {tab.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {selectedTargetUsers.length === 0 && (
+                      <p className="text-[9px] tracking-widest text-muted/20 uppercase">No users selected — entry posts to current tab only</p>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <p className="text-[9px] tracking-widest text-muted/40 uppercase font-bold">

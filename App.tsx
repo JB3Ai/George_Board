@@ -11,7 +11,7 @@ import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession } from './types';
 import { OWNER_EMAIL } from './constants';
-import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3 } from 'lucide-react';
+import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, ShieldCheck } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 
@@ -42,7 +42,8 @@ const AppInner: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [selectedTargetUsers, setSelectedTargetUsers] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<'grid-big' | 'grid-small' | 'list'>('grid-big');
+  const [viewMode, setViewMode] = useState<'grid-big' | 'grid-small' | 'list'>(() => window.innerWidth < 768 ? 'list' : 'grid-big');
+  const [showAES, setShowAES] = useState(false);
   const [shareItem, setShareItem] = useState<ClipboardItem | null>(null);
   const [shareTargetUsers, setShareTargetUsers] = useState<string[]>([]);
 
@@ -624,6 +625,28 @@ const AppInner: React.FC = () => {
           <div className="fixed inset-0" style={{ backgroundColor: 'var(--bg-dark)', opacity: 0.75 }} />
           <div className="fixed inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
 
+          {/* AES-256 Modal */}
+          {showAES && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowAES(false)}>
+              <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+              <div className="relative bg-card border border-edge rounded-3xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-8 space-y-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[11px] tracking-[0.3em] uppercase text-accent font-bold flex items-center gap-3"><ShieldCheck size={16} /> AES-256 Encryption</h2>
+                  <button onClick={() => setShowAES(false)} className="text-primary/30 hover:text-primary transition-colors"><X size={18} /></button>
+                </div>
+                <div className="h-[1px] bg-card/20" />
+                <p className="text-[13px] text-primary/40 leading-relaxed font-light">
+                  AES-256 (Advanced Encryption Standard with a 256-bit key) is the ultimate digital fortress for the modern age. As a symmetric-key algorithm, it uses a single, top-secret key to both lock and unlock data through a complex series of mathematical &ldquo;rounds.&rdquo; It is so secure that it is the only publicly accessible cipher approved by the U.S. National Security Agency (NSA) for protecting &ldquo;Top Secret&rdquo; military communications and state secrets.
+                </p>
+                <p className="text-[13px] text-primary/40 leading-relaxed font-light">
+                  Beyond the battlefield, it is the backbone of global finance, used by banks to secure trillions of dollars in daily transactions. The &ldquo;256&rdquo; refers to the key&rsquo;s length, which creates a staggering 2<sup>256</sup> possible combinations. To put that in perspective, even if you harnessed every supercomputer on Earth, it would take billions of years to crack a single file via brute force. In practical terms, it is literally impossible to break with current technology, ensuring your private data remains yours alone.
+                </p>
+                <div className="h-[1px] bg-card/20" />
+                <p className="text-[10px] tracking-[0.2em] text-primary/20 text-center uppercase">AES-256 &middot; Military-Grade Encryption</p>
+              </div>
+            </div>
+          )}
+
           {/* Info Modal */}
           {showInfo && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowInfo(false)}>
@@ -759,6 +782,19 @@ const AppInner: React.FC = () => {
 
             {/* Pinned utility buttons — always visible */}
             <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 border-l border-edge pl-4">
+              <button onClick={() => setShowAES(true)} title="AES-256 Encryption" className="text-accent/50 hover:text-accent transition-colors">
+                <ShieldCheck size={18} strokeWidth={1.5} />
+              </button>
+              <button
+                onClick={() => { setActiveTab(currentUserTab?.id || 'JONO'); setIsAdding(false); setSearchTerm(''); }}
+                className="text-[10px] sm:text-[11px] tracking-[0.3em] uppercase transition-all font-bold whitespace-nowrap text-primary/60 hover:text-accent"
+                title="Home"
+              >
+                {signedInName}
+              </button>
+              <button onClick={() => setShowInfo(true)} title="Info & Help" className="text-muted/40 hover:text-cyan-400 transition-colors">
+                <Info size={18} strokeWidth={1.5} />
+              </button>
               <button
                 onClick={() => { setActiveTab(DEMO_TAB_ID); setIsAdding(false); setSearchTerm(''); }}
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] sm:text-[11px] tracking-[0.24em] uppercase transition-all font-bold whitespace-nowrap demo-pulse-glow ${
@@ -780,9 +816,6 @@ const AppInner: React.FC = () => {
                 }`}
               >
                 SETTINGS
-              </button>
-              <button onClick={() => setShowInfo(true)} title="Info & Help" className="text-muted/40 hover:text-cyan-400 transition-colors">
-                <Info size={18} strokeWidth={1.5} />
               </button>
               <button onClick={handleLogout} title="Terminate Session" className="text-muted/40 hover:text-red-400 transition-colors">
                 <LogOut size={18} strokeWidth={1.5} />

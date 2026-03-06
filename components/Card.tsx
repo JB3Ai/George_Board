@@ -142,7 +142,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
         <span className="flex-1 min-w-0 text-sm text-primary truncate font-medium">{displayTitle}</span>
         {item.isPinned && <Pin size={10} className="text-accent fill-accent shrink-0" />}
         {seenByOther && <Eye size={10} className="text-accent shrink-0" />}
-        <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover/row:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1.5 shrink-0 sm:opacity-0 sm:group-hover/row:opacity-100 transition-opacity">
           {(item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE || item.fileUrl) && (
             <button onClick={openItem} className="p-1.5 rounded-lg bg-card/10 hover:bg-accent/10 text-muted hover:text-accent border border-edge transition-all" title="Open">
               <ExternalLink size={12} />
@@ -250,7 +250,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
             )}
           </div>
           
-          <div className="flex flex-wrap sm:flex-nowrap gap-2 opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 transition-all duration-500 translate-x-2 group-hover:translate-x-0 shrink-0 justify-end">
+          <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:opacity-0 sm:pointer-events-none sm:group-hover:pointer-events-auto sm:group-hover:opacity-100 transition-all duration-500 sm:translate-x-2 sm:group-hover:translate-x-0 shrink-0 justify-end">
             {showRefresh && (
               <div className="relative">
                 <button 

@@ -11,9 +11,9 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
   const [step, setStep] = useState(0);
   const mediaBaseUrl = `${import.meta.env.BASE_URL}Media/`;
   const hasCompletedRef = useRef(false);
-  const [hubVisible, setHubVisible] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [textDone, setTextDone] = useState(false);
-  const [hubDone, setHubDone] = useState(false);
+  const [videoDone, setVideoDone] = useState(false);
 
   const completeOnce = useCallback(() => {
     if (hasCompletedRef.current) return;
@@ -21,15 +21,9 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
     onComplete();
   }, [onComplete]);
 
-  /* ── Transition Hub image fades in immediately ── */
+  /* ── Fallback: complete after 5s max regardless of video ── */
   useEffect(() => {
-    const t = setTimeout(() => setHubVisible(true), 80);
-    return () => clearTimeout(t);
-  }, []);
-
-  /* ── Hub timer: 1.5s exposure then done ── */
-  useEffect(() => {
-    const t = setTimeout(() => setHubDone(true), 1500);
+    const t = setTimeout(() => setVideoDone(true), 5000);
     return () => clearTimeout(t);
   }, []);
 
@@ -43,28 +37,28 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
     return () => timers.forEach(clearTimeout);
   }, []);
 
-  /* ── Complete once BOTH text and hub are done ── */
+  /* ── Complete once BOTH text and video are done ── */
   useEffect(() => {
-    if (textDone && hubDone) completeOnce();
-  }, [textDone, hubDone, completeOnce]);
+    if (textDone && videoDone) completeOnce();
+  }, [textDone, videoDone, completeOnce]);
 
   return (
     <div className="fixed inset-0 bg-dark z-[200] flex items-center justify-center overflow-hidden">
 
-      {/* ── Transition Hub background image ── */}
-      <motion.div
-        className="absolute inset-0"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: hubVisible ? 1 : 0 }}
-        transition={{ duration: 1.2 }}
+      {/* ── GTR intro video background ── */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        onEnded={() => setVideoDone(true)}
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ opacity: 1 }}
       >
-        <div
-          className="w-full h-full bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url('${mediaBaseUrl}Transition_Hub.jpg')` }}
-        />
-        {/* Dark overlay so text stays readable */}
-        <div className="absolute inset-0 bg-black/55" />
-      </motion.div>
+        <source src={`${mediaBaseUrl}gtr-intro-vid.mp4`} type="video/mp4" />
+      </video>
+      {/* Dark overlay so text stays readable */}
+      <div className="absolute inset-0 bg-black/55" />
 
       {/* ── Text overlay steps ── */}
       <div className="relative z-10 flex items-center justify-center">

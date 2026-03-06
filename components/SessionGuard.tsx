@@ -28,10 +28,16 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
     const saved = localStorage.getItem('jb3_session');
     if (saved) {
       const parsed: UserSession = JSON.parse(saved);
-      // If trust was set and has expired, force re-verification.
-      // If trust was never set (volatile session), keep pinVerified as-is from the saved state.
       const trustExpired = parsed.trustUntil !== undefined && parsed.trustUntil <= Date.now();
-      setSession({ ...parsed, pinVerified: trustExpired ? false : !!parsed.pinVerified });
+      const isVerified = !trustExpired && !!parsed.pinVerified;
+      setSession({ ...parsed, pinVerified: isVerified });
+
+      // Auto-sign-in: show splash/transition so animation always plays on load
+      if (isVerified) {
+        const user = userRegistry.getUserByEmail(parsed.email);
+        setSplashUsername(user?.label || parsed.email.split('@')[0].toUpperCase());
+        setShowSplash(true);
+      }
     }
   }, []);
 

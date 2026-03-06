@@ -630,24 +630,24 @@ const AppInner: React.FC = () => {
   return (
     <SessionGuard>
         <div className="relative min-h-screen">
-          {/* Fixed background — theme-reactive, stays put while content scrolls */}
+          {/* Fixed background — theme-reactive (z-0) */}
           <div
             key={bgImage}
-            className="fixed inset-0 bg-center bg-cover bg-no-repeat transition-all duration-1000"
+            className="fixed inset-0 z-0 bg-center bg-cover bg-no-repeat transition-all duration-1000"
             style={{ backgroundImage: `url('${bgImage}')` }}
           />
-          {/* Environment blur depth layer */}
+          {/* Atmospheric depth — Environment_Blur.jpg (z-10) */}
           <div
-            className="fixed inset-0 bg-center bg-cover bg-no-repeat opacity-15 blur-2xl"
+            className="fixed inset-0 z-10 bg-center bg-cover bg-no-repeat opacity-15 blur-2xl"
             style={{ backgroundImage: `url('${import.meta.env.BASE_URL}Media/Environment_Blur.jpg')` }}
           />
-          {/* Theme-aware overlay so UI stays readable */}
-          <div className="fixed inset-0" style={{ backgroundColor: 'var(--bg-dark)', opacity: 0.75 }} />
-          <div className="fixed inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
+          {/* Dark readability overlays (z-20) */}
+          <div className="fixed inset-0 z-20" style={{ backgroundColor: 'var(--bg-dark)', opacity: 0.75 }} />
+          <div className="fixed inset-0 z-20 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
 
-          {/* AES-256 Modal */}
+          {/* AES-256 Modal (z-[150] — above header, below Transition Hub) */}
           {showAES && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowAES(false)}>
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => setShowAES(false)}>
               <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
               <div className="relative bg-card border border-edge rounded-3xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-8 space-y-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
@@ -668,8 +668,9 @@ const AppInner: React.FC = () => {
           )}
 
           {/* Info Modal */}
+          {/* Info modal (z-[150]) */}
           {showInfo && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowInfo(false)}>
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => setShowInfo(false)}>
               <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
               <div className="relative bg-card border border-edge rounded-3xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-8 space-y-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
@@ -727,9 +728,9 @@ const AppInner: React.FC = () => {
             </div>
           )}
 
-          {/* Share Modal */}
+          {/* Share Modal (z-[150]) */}
           {shareItem && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShareItem(null)}>
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => setShareItem(null)}>
               <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
               <div className="relative bg-card border border-edge rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
@@ -779,8 +780,8 @@ const AppInner: React.FC = () => {
             </div>
           )}
 
-          <div className="relative z-10 flex flex-col gap-16 px-4 sm:px-8 py-8">
-          <nav className="flex items-center border border-edge rounded-2xl px-4 sm:px-6 py-4 gap-4 bg-card">
+          <div className="relative z-30 flex flex-col gap-16 px-4 sm:px-8 py-8">
+          <nav className="flex items-center border border-edge rounded-2xl px-4 sm:px-6 py-4 gap-4 bg-card z-[100] relative">
             {/* OS3 header badge — click to open Info / Clipboard guide */}
             <button onClick={() => setShowInfo(true)} className="aes-shield-btn flex-shrink-0" title="OS³ Clipboard Guide">
               <img src={`${import.meta.env.BASE_URL}Media/landscape_header_icon.jpg`} alt="OS³ JB3Ai" className="h-10 rounded-lg object-contain" />

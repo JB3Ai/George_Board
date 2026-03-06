@@ -49,7 +49,7 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
   }, [textDone, hubDone, completeOnce]);
 
   return (
-    <div className="fixed inset-0 bg-dark z-[100] flex items-center justify-center overflow-hidden">
+    <div className="fixed inset-0 bg-dark z-[200] flex items-center justify-center overflow-hidden">
 
       {/* ── Transition Hub background image ── */}
       <motion.div

@@ -17,7 +17,7 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       description: 'OS3Grid demo grid.',
       siteName: 'OS3Grid',
       finalUrl: '/os3grid/',
-      sameTab: true,
+      sameTab: false,
       icon: <Globe size={24} />,
       shieldGate: false // Ensure shieldGate is false
     },
@@ -28,7 +28,7 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       description: 'DadChefAi showcase.',
       siteName: 'DadChefAi',
       finalUrl: '/dadchefai/',
-      sameTab: true,
+      sameTab: false,
       icon: <ChefHat size={24} />,
       shieldGate: false
     },
@@ -39,7 +39,7 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       description: 'Kids GoExplore Gauteng interactive app.',
       siteName: 'Kids GoExplore',
       finalUrl: '/kids-goexplore/',
-      sameTab: true,
+      sameTab: false,
       icon: <MapPin size={24} />,
       shieldGate: false
     },
@@ -104,9 +104,10 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.1 }}
           onClick={() => {
-            const target = item.finalUrl || '/';
+            const raw = item.finalUrl || '/';
+            const target = raw.startsWith('http') ? raw : new URL(raw, window.location.origin).href;
             if (item.sameTab) {
-              window.location.href = target.startsWith('http') ? target : new URL(target, window.location.origin).href;
+              window.location.href = target;
               return;
             }
             window.open(target, '_blank');

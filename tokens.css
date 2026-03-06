@@ -284,3 +284,104 @@ input::placeholder, textarea::placeholder {
   opacity: 0.08;
 }
 
+/* ─── Horizontal Material Dock ───────────────────────────────────────────── */
+.os3-material-dock {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background-color: rgba(0, 0, 0, 0.25);
+  background-image: url('./Media/Environment_Blur.jpg');
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 100;
+  transition: opacity 0.3s ease;
+}
+
+.theme-swatch {
+  width: 56px;
+  height: 76px;
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.35s cubic-bezier(0.23, 1, 0.32, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+  background-size: cover;
+  background-position: center;
+  border: 1.5px solid transparent;
+  flex-shrink: 0;
+}
+
+.theme-swatch:hover {
+  transform: translateY(-8px) scale(1.05);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Fluid glow layer inside each swatch */
+.theme-swatch-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    80px circle at var(--swatch-x, 50%) var(--swatch-y, 50%),
+    color-mix(in srgb, var(--swatch-accent, var(--accent)) 35%, transparent),
+    transparent 80%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.theme-swatch:hover .theme-swatch-glow {
+  opacity: 1;
+}
+
+/* Theme name label — floats above on hover */
+.theme-swatch-label {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+}
+
+.theme-swatch:hover .theme-swatch-label {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Active swatch — accent border + outer glow */
+.theme-swatch.active {
+  border-color: var(--swatch-accent, var(--accent));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--swatch-accent, var(--accent)) 45%, transparent);
+}
+
+/* Active dot indicator at bottom of swatch */
+.theme-swatch-dot {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--swatch-accent, var(--accent));
+  box-shadow: 0 0 6px var(--swatch-accent, var(--accent));
+}
+

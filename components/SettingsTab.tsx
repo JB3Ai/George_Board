@@ -1,7 +1,7 @@
 ﻿
 import React from 'react';
-import { ShieldAlert, RefreshCw, KeyRound, Smartphone, Palette, Type } from 'lucide-react';
-import { UserSession, Theme, FontSize } from '../types';
+import { ShieldAlert, RefreshCw, KeyRound, Smartphone, Type } from 'lucide-react';
+import { UserSession, FontSize } from '../types';
 import { useUI } from '../src/context/UIContext';
 
 interface SettingsTabProps {
@@ -12,7 +12,7 @@ interface SettingsTabProps {
 export const SettingsTab: React.FC<SettingsTabProps> = ({ session, onResetPin }) => {
   const isTrusted = session.trustUntil && session.trustUntil > Date.now();
   const trustExpiry = isTrusted ? new Date(session.trustUntil!).toLocaleDateString() : 'N/A';
-  const { theme, fontSize, setTheme, setFontSize } = useUI();
+  const { fontSize, setFontSize } = useUI();
 
   return (
     <div className="max-w-xl space-y-12 animate-in fade-in slide-in-from-bottom-2 duration-1000">
@@ -63,33 +63,6 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ session, onResetPin })
       </div>
 
       <div className="space-y-6">
-        <div className="glass p-8 rounded-3xl space-y-6">
-          <div className="flex items-center gap-6">
-            <div className="w-12 h-12 rounded-2xl bg-card/10 border border-edge flex items-center justify-center text-primary/20">
-              <Palette size={20} strokeWidth={1} />
-            </div>
-            <div className="space-y-1">
-              <p className="text-[9px] tracking-premium text-primary/20 uppercase font-bold">Visual Theme</p>
-              <p className="text-sm text-primary font-light">Select Environment</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            {Object.values(Theme).map(t => (
-              <button
-                key={t}
-                onClick={() => setTheme(t)}
-                className={`py-3 rounded-xl border text-[9px] tracking-widest uppercase font-bold transition-all ${
-                  theme === t 
-                  ? 'bg-card/20 border-edge text-primary' 
-                  : 'border-edge text-primary/20 hover:text-primary/40 hover:border-edge'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="glass p-8 rounded-3xl space-y-6">
           <div className="flex items-center gap-6">
             <div className="w-12 h-12 rounded-2xl bg-card/10 border border-edge flex items-center justify-center text-primary/20">

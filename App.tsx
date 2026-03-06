@@ -15,6 +15,7 @@ import { OWNER_EMAIL } from './constants';
 import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
+import { ThemeDock } from './components/ThemeDock';
 
 const THEME_BACKGROUNDS: Record<Theme, string> = {
   [Theme.NEON]:     'Media/NEON.jpg',
@@ -1299,12 +1300,15 @@ const AppInner: React.FC = () => {
             )}
           </div>
 
-          <footer className="mt-16 pb-8 text-center space-y-1">
+          <footer className="mt-16 pb-32 text-center space-y-1">
             <p className="text-[9px] tracking-[0.3em] uppercase text-muted/30 font-bold">&copy; 2026 JB³Ai. All Rights Reserved.</p>
             <p className="text-[8px] tracking-[0.2em] text-muted/20 font-mono">v{__APP_VERSION__} &middot; {__COMMIT_HASH__}</p>
           </footer>
         </div>
       </div>
+
+      {/* Global Theme Dock — fixed bottom-center, always visible when authenticated */}
+      <ThemeDock />
     </SessionGuard>
   );
 };

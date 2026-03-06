@@ -789,7 +789,7 @@ const AppInner: React.FC = () => {
           <div className="relative z-30 flex flex-col gap-16 px-4 sm:px-8 py-8">
           <nav className="flex items-center border border-edge rounded-2xl px-4 sm:px-6 py-4 gap-4 bg-card z-[100] relative">
             {/* OS3 header badge — click to open Info / Clipboard guide */}
-            <button onClick={() => setShowInfo(true)} className="aes-shield-btn flex-shrink-0" title="OS³ Clipboard Guide">
+            <button onClick={() => setShowAES(true)} className="aes-shield-btn flex-shrink-0" title="AES-256 Encryption">
               <img src={`${import.meta.env.BASE_URL}Media/landscape_header_icon.jpg`} alt="OS³ JB3Ai" className="h-10 rounded-lg object-contain" />
             </button>
             {/* Tab scroll with arrow nav */}

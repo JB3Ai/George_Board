@@ -1,6 +1,6 @@
 ﻿
 import React, { useRef, useState, useEffect } from 'react';
-import { ExternalLink, Copy, Archive, Pin, CheckCircle2, Clock, Trash2, Globe, Loader2, Youtube, MapPin, Calendar, FileText, CheckSquare, Eye, Edit3, RefreshCw, Link2, FileArchive, Download, Image as ImageIcon, Video as VideoIcon } from 'lucide-react';
+import { ExternalLink, Copy, Archive, Pin, CheckCircle2, Clock, Trash2, Globe, Loader2, Youtube, MapPin, Calendar, FileText, CheckSquare, Eye, Edit3, RefreshCw, Link2, FileArchive, Download, Image as ImageIcon, Video as VideoIcon, Share2 } from 'lucide-react';
 import { ClipboardItem, ItemType, TaskStatus, UserEmail, EnrichmentStatus } from '../types';
 import { useToast } from './Toast';
 import { formatFileSize, getFileIcon } from '../services/documentService';
@@ -13,9 +13,10 @@ interface CardProps {
   onDelete: (id: string) => void;
   onEdit: (item: ClipboardItem) => void;
   onRefresh: (id: string) => void;
+  onShare?: (item: ClipboardItem) => void;
 }
 
-export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = false, onUpdate, onDelete, onEdit, onRefresh }) => {
+export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = false, onUpdate, onDelete, onEdit, onRefresh, onShare }) => {
   const isOwner = canManageAll || item.userId === currentUser;
   const isEnriching = item.enrichmentStatus === EnrichmentStatus.PENDING;
   const hasFailed = item.enrichmentStatus === EnrichmentStatus.FAILED || item.enrichmentStatus === EnrichmentStatus.DELAYED;
@@ -239,6 +240,11 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
             
             {isOwner && (
               <>
+                {onShare && (
+                  <button onClick={() => onShare(item)} className="p-2.5 sm:p-3 bg-card/10 hover:bg-accent/10 rounded-2xl text-muted hover:text-accent border border-edge transition-all" title="Share to Users">
+                    <Share2 size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
+                  </button>
+                )}
                 <button onClick={() => onEdit(item)} className="p-2.5 sm:p-3 bg-card/10 hover:bg-accent/10 rounded-2xl text-muted hover:text-accent border border-edge transition-all" title="Edit Record">
                   <Edit3 size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
                 </button>

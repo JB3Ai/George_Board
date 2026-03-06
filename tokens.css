@@ -98,6 +98,15 @@ body {
   border: 1px solid var(--border-color);
 }
 
+@keyframes demo-glow {
+  0%, 100% { box-shadow: 0 0 12px rgba(102,255,102,0.15), 0 0 4px rgba(102,255,102,0.08); }
+  50% { box-shadow: 0 0 28px rgba(102,255,102,0.4), 0 0 8px rgba(102,255,102,0.2); }
+}
+
+.demo-pulse-glow {
+  animation: demo-glow 3s ease-in-out infinite;
+}
+
 .glow-card {
   position: relative;
   transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);

@@ -11,7 +11,7 @@ import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession } from './types';
 import { OWNER_EMAIL } from './constants';
-import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users } from 'lucide-react';
+import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3 } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 
@@ -42,6 +42,9 @@ const AppInner: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [selectedTargetUsers, setSelectedTargetUsers] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<'grid-big' | 'grid-small' | 'list'>('grid-big');
+  const [shareItem, setShareItem] = useState<ClipboardItem | null>(null);
+  const [shareTargetUsers, setShareTargetUsers] = useState<string[]>([]);
 
   const getCurrentSession = (): UserSession => {
     const saved = localStorage.getItem('jb3_session');
@@ -570,6 +573,34 @@ const AppInner: React.FC = () => {
     setSelectedTargetUsers([]);
   };
 
+  const handleOpenShare = (item: ClipboardItem) => {
+    setShareItem(item);
+    setShareTargetUsers([]);
+  };
+
+  const handleShareConfirm = () => {
+    if (!shareItem || shareTargetUsers.length === 0) return;
+    db.addItemBatch({
+      userId: shareItem.userId,
+      type: shareItem.type,
+      title: shareItem.title,
+      content: shareItem.content,
+      taskStatus: shareItem.taskStatus,
+      dueDate: shareItem.dueDate,
+      eventLocation: shareItem.eventLocation,
+      metadata: shareItem.metadata,
+      enrichmentStatus: shareItem.enrichmentStatus,
+      isDemo: shareItem.isDemo,
+      fileUrl: shareItem.fileUrl,
+      fileName: shareItem.fileName,
+      fileSize: shareItem.fileSize,
+    }, shareTargetUsers);
+    setItems(db.getItems());
+    showToast(`Shared to ${shareTargetUsers.length} user${shareTargetUsers.length > 1 ? 's' : ''}`, 'success');
+    setShareItem(null);
+    setShareTargetUsers([]);
+  };
+
   const sectionTitle = activeTab === 'JONO'
     ? 'OWNER MAIN CLIPBOARD: JONO'
     : activeTab === DEMO_TAB_ID
@@ -653,6 +684,58 @@ const AppInner: React.FC = () => {
             </div>
           )}
 
+          {/* Share Modal */}
+          {shareItem && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShareItem(null)}>
+              <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+              <div className="relative bg-card border border-edge rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[11px] tracking-[0.3em] uppercase text-accent font-bold flex items-center gap-3">
+                    <Users size={16} />
+                    Share to Users
+                  </h2>
+                  <button onClick={() => setShareItem(null)} className="text-primary/30 hover:text-primary transition-colors"><X size={18} /></button>
+                </div>
+                <p className="text-[10px] tracking-widest text-muted/40 uppercase truncate">{shareItem.title}</p>
+                <div className="flex gap-4 mb-2">
+                  <button type="button" onClick={() => setShareTargetUsers(nonOwnerTabs.map(t => t.id))} className="text-[9px] tracking-widest uppercase text-accent/40 hover:text-accent font-bold transition-colors">All</button>
+                  <button type="button" onClick={() => setShareTargetUsers([])} className="text-[9px] tracking-widest uppercase text-muted/30 hover:text-muted font-bold transition-colors">Clear</button>
+                </div>
+                <div className="flex flex-wrap gap-3 max-h-48 overflow-y-auto">
+                  {nonOwnerTabs.map(tab => {
+                    const selected = shareTargetUsers.includes(tab.id);
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setShareTargetUsers(prev =>
+                          selected ? prev.filter(id => id !== tab.id) : [...prev, tab.id]
+                        )}
+                        className={`text-[10px] tracking-widest px-5 py-2.5 rounded-full border transition-all uppercase font-bold ${
+                          selected
+                            ? 'bg-accent/10 border-accent/30 text-accent'
+                            : 'border-edge text-muted/40 hover:border-edge hover:text-muted'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-end gap-6 pt-4 border-t border-edge">
+                  <button onClick={() => setShareItem(null)} className="text-[11px] tracking-[0.3em] text-muted/40 hover:text-primary transition-colors uppercase font-bold">Cancel</button>
+                  <button
+                    onClick={handleShareConfirm}
+                    disabled={shareTargetUsers.length === 0}
+                    className="px-8 py-3 bg-accent text-contrast text-[11px] font-bold tracking-[0.3em] rounded-xl uppercase disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    Share ({shareTargetUsers.length})
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="relative z-10 flex flex-col gap-16 px-4 sm:px-8 py-8">
           <nav className="flex items-center border border-edge rounded-2xl px-4 sm:px-6 py-4 gap-4 bg-card">
             {/* OS3 header badge */}
@@ -678,10 +761,10 @@ const AppInner: React.FC = () => {
             <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 border-l border-edge pl-4">
               <button
                 onClick={() => { setActiveTab(DEMO_TAB_ID); setIsAdding(false); setSearchTerm(''); }}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] sm:text-[11px] tracking-[0.24em] uppercase transition-all font-bold whitespace-nowrap ${
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] sm:text-[11px] tracking-[0.24em] uppercase transition-all font-bold whitespace-nowrap demo-pulse-glow ${
                   activeTab === DEMO_TAB_ID
-                    ? 'text-accent border-accent/70 bg-accent/15 shadow-[0_0_24px_rgba(102,255,102,0.35)]'
-                    : 'text-accent/90 border-accent/30 bg-accent/10 hover:bg-accent/15 hover:border-accent/60 shadow-[0_0_18px_rgba(102,255,102,0.18)]'
+                    ? 'text-accent border-accent/70 bg-accent/15'
+                    : 'text-accent/90 border-accent/30 bg-accent/10 hover:bg-accent/15 hover:border-accent/60'
                 }`}
               >
                 <span className="relative inline-flex h-2 w-2">
@@ -713,7 +796,32 @@ const AppInner: React.FC = () => {
               <div className="text-[10px] tracking-[0.2em] uppercase text-accent/70 font-bold">{signedInRole}</div>
             </div>
 
-            <div className="text-[10px] tracking-[0.3em] uppercase text-muted font-bold">{sectionTitle}</div>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="text-[10px] tracking-[0.3em] uppercase text-muted font-bold">{sectionTitle}</div>
+
+              {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
+                <div className="flex items-center gap-1 bg-card/10 rounded-xl border border-edge p-1">
+                  {([
+                    { mode: 'list' as const, icon: <LayoutList size={14} />, label: 'List' },
+                    { mode: 'grid-small' as const, icon: <Grid3X3 size={14} />, label: 'Grid S' },
+                    { mode: 'grid-big' as const, icon: <LayoutGrid size={14} />, label: 'Grid L' },
+                  ]).map(v => (
+                    <button
+                      key={v.mode}
+                      onClick={() => setViewMode(v.mode)}
+                      className={`p-2 rounded-lg transition-all ${
+                        viewMode === v.mode
+                          ? 'bg-accent/15 text-accent border border-accent/20'
+                          : 'text-muted/40 hover:text-muted border border-transparent'
+                      }`}
+                      title={v.label}
+                    >
+                      {v.icon}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
               <div className="flex justify-end">
@@ -1128,10 +1236,12 @@ const AppInner: React.FC = () => {
                   items={filteredItems}
                   currentUser={session.email}
                   canManageAll={isOwnerSession}
+                  viewMode={viewMode}
                   onUpdate={(id, updates) => { db.updateItem(id, session.email, updates); setItems(db.getItems()); }}
                   onDelete={(id) => { db.deleteItem(id, session.email); setItems(db.getItems()); }}
                   onEdit={handleEdit}
                   onRefresh={handleRefresh}
+                  onShare={isOwnerSession ? handleOpenShare : undefined}
                 />
               </>
             )}

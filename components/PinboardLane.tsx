@@ -8,13 +8,15 @@ interface PinboardLaneProps {
   items: ClipboardItem[];
   currentUser: UserEmail;
   canManageAll?: boolean;
+  viewMode?: 'grid-big' | 'grid-small' | 'list';
   onUpdate: (id: string, updates: Partial<ClipboardItem>) => void;
   onDelete: (id: string) => void;
   onEdit: (item: ClipboardItem) => void;
   onRefresh: (id: string) => void;
+  onShare?: (item: ClipboardItem) => void;
 }
 
-export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, canManageAll = false, onUpdate, onDelete, onEdit, onRefresh }) => {
+export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, canManageAll = false, viewMode = 'grid-big', onUpdate, onDelete, onEdit, onRefresh, onShare }) => {
   const pinned = items.filter(i => i.isPinned);
   const unpinned = items.filter(i => !i.isPinned);
 
@@ -34,6 +36,12 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
     exit: { opacity: 0, scale: 0.95, transition: { duration: 0.4 } }
   };
 
+  const gridClass = viewMode === 'list'
+    ? 'grid grid-cols-1 gap-4'
+    : viewMode === 'grid-small'
+    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
+    : 'grid grid-cols-1 md:grid-cols-2 gap-10';
+
   return (
     <div className="flex flex-col gap-24">
       <AnimatePresence mode="popLayout">
@@ -49,10 +57,10 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
               <h4 className="text-[11px] tracking-[0.4em] text-accent/60 uppercase font-bold">Priority Assets</h4>
               <div className="h-[1px] flex-1 bg-gradient-to-r from-accent/10 to-transparent" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className={gridClass}>
               {pinned.map(item => (
                 <motion.div key={item.id} variants={itemVariants} layout>
-                  <Card item={item} currentUser={currentUser} canManageAll={canManageAll} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} />
+                  <Card item={item} currentUser={currentUser} canManageAll={canManageAll} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} onShare={onShare} />
                 </motion.div>
               ))}
             </div>
@@ -70,11 +78,11 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
             <h4 className="text-[11px] tracking-[0.4em] text-muted/30 uppercase font-bold">Active Records</h4>
             <div className="h-[1px] flex-1 bg-gradient-to-r from-white/5 to-transparent" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className={gridClass}>
             <AnimatePresence mode="popLayout">
               {unpinned.map(item => (
                 <motion.div key={item.id} variants={itemVariants} layout>
-                  <Card item={item} currentUser={currentUser} canManageAll={canManageAll} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} />
+                  <Card item={item} currentUser={currentUser} canManageAll={canManageAll} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} onShare={onShare} />
                 </motion.div>
               ))}
             </AnimatePresence>

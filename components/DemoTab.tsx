@@ -105,13 +105,11 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
           transition={{ delay: idx * 0.1 }}
           onClick={() => {
             const target = item.finalUrl || '/';
-            // Always direct to /os3grid, never use shieldGate redirect
-            const directUrl = target;
             if (item.sameTab) {
-              window.location.href = directUrl;
+              window.location.href = target.startsWith('http') ? target : new URL(target, window.location.origin).href;
               return;
             }
-            window.open(directUrl, '_blank');
+            window.open(target, '_blank');
           }}
           className="group relative flex flex-col items-start p-10 glass rounded-[2.5rem] border-edge hover:border-accent/30 hover:bg-accent/5 transition-all duration-500 text-left overflow-hidden"
         >

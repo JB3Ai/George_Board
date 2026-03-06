@@ -631,7 +631,7 @@ const AppInner: React.FC = () => {
               <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
               <div className="relative bg-card border border-edge rounded-3xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-8 space-y-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
-                  <h2 className="text-[11px] tracking-[0.3em] uppercase text-accent font-bold flex items-center gap-3"><img src={`${import.meta.env.BASE_URL}Media/sheild_icon.png`} alt="AES-256" className="h-5 rounded-sm object-contain" /> AES-256 Encryption</h2>
+                  <h2 className="text-[11px] tracking-[0.3em] uppercase text-accent font-bold flex items-center gap-3"><img src={`${import.meta.env.BASE_URL}Media/landscape_header_icon.jpg`} alt="AES-256" className="h-6 rounded-md object-contain" /> AES-256 Encryption</h2>
                   <button onClick={() => setShowAES(false)} className="text-primary/30 hover:text-primary transition-colors"><X size={18} /></button>
                 </div>
                 <div className="h-[1px] bg-card/20" />
@@ -783,7 +783,7 @@ const AppInner: React.FC = () => {
             {/* Pinned utility buttons — always visible */}
             <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 border-l border-edge pl-4">
               <button onClick={() => setShowAES(true)} title="AES-256 Encryption" className="hover:opacity-80 transition-opacity">
-                <img src={`${import.meta.env.BASE_URL}Media/sheild_icon.png`} alt="AES-256" className="h-7 rounded-md object-contain" />
+                <img src={`${import.meta.env.BASE_URL}Media/landscape_header_icon.jpg`} alt="AES-256" className="h-7 rounded-lg object-contain" />
               </button>
               <button
                 onClick={() => { setActiveTab(currentUserTab?.id || 'JONO'); setIsAdding(false); setSearchTerm(''); }}

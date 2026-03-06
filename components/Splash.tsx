@@ -11,16 +11,27 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
   const [step, setStep] = useState(0);
   const mediaBaseUrl = `${import.meta.env.BASE_URL}Media/`;
   const hasCompletedRef = useRef(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [videoReady, setVideoReady] = useState(false);
+  const [hubVisible, setHubVisible] = useState(false);
   const [textDone, setTextDone] = useState(false);
-  const [videoDone, setVideoDone] = useState(false);
+  const [hubDone, setHubDone] = useState(false);
 
   const completeOnce = useCallback(() => {
     if (hasCompletedRef.current) return;
     hasCompletedRef.current = true;
     onComplete();
   }, [onComplete]);
+
+  /* ── Transition Hub image fades in immediately ── */
+  useEffect(() => {
+    const t = setTimeout(() => setHubVisible(true), 80);
+    return () => clearTimeout(t);
+  }, []);
+
+  /* ── Hub timer: 1.5s exposure then done ── */
+  useEffect(() => {
+    const t = setTimeout(() => setHubDone(true), 1500);
+    return () => clearTimeout(t);
+  }, []);
 
   /* ── Step timers: logo → welcome → text done ── */
   useEffect(() => {
@@ -32,74 +43,27 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
     return () => timers.forEach(clearTimeout);
   }, []);
 
-  /* ── Start video immediately on mount ── */
+  /* ── Complete once BOTH text and hub are done ── */
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const fallback = setTimeout(() => setVideoDone(true), 14000);
-
-    const onCanPlay = () => setVideoReady(true);
-    const onEnded = () => { clearTimeout(fallback); setVideoDone(true); };
-    const onError = () => { clearTimeout(fallback); setVideoDone(true); };
-
-    video.addEventListener('canplay', onCanPlay);
-    video.addEventListener('ended', onEnded);
-    video.addEventListener('error', onError);
-
-    let retries = 0;
-    const attemptPlay = () => {
-      if (hasCompletedRef.current) return;
-      video.muted = true;
-      const p = video.play();
-      if (p && typeof p.catch === 'function') {
-        p.catch(() => {
-          retries += 1;
-          if (retries < 8) setTimeout(attemptPlay, 350);
-        });
-      }
-    };
-
-    video.currentTime = 0;
-    video.load();
-    setTimeout(attemptPlay, 120);
-
-    return () => {
-      clearTimeout(fallback);
-      video.removeEventListener('canplay', onCanPlay);
-      video.removeEventListener('ended', onEnded);
-      video.removeEventListener('error', onError);
-    };
-  }, []);
-
-  /* ── Complete once BOTH text and video are done ── */
-  useEffect(() => {
-    if (textDone && videoDone) completeOnce();
-  }, [textDone, videoDone, completeOnce]);
+    if (textDone && hubDone) completeOnce();
+  }, [textDone, hubDone, completeOnce]);
 
   return (
     <div className="fixed inset-0 bg-dark z-[100] flex items-center justify-center overflow-hidden">
 
-      {/* ── Video background layer ── */}
+      {/* ── Transition Hub background image ── */}
       <motion.div
         className="absolute inset-0"
         initial={{ opacity: 0 }}
-        animate={{ opacity: videoReady ? 1 : 0 }}
+        animate={{ opacity: hubVisible ? 1 : 0 }}
         transition={{ duration: 1.2 }}
       >
-        <video
-          ref={videoRef}
-          className="w-full h-full object-cover"
-          muted
-          playsInline
-          preload="auto"
-          poster={`${mediaBaseUrl}GTR3.jpeg`}
-        >
-          <source src={`${mediaBaseUrl}gtr-intro-vid.webm`} type="video/webm" />
-          <source src={`${mediaBaseUrl}gtr-intro-vid.mp4`} type="video/mp4" />
-        </video>
+        <div
+          className="w-full h-full bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url('${mediaBaseUrl}Transition_Hub.jpg')` }}
+        />
         {/* Dark overlay so text stays readable */}
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-black/55" />
       </motion.div>
 
       {/* ── Text overlay steps ── */}

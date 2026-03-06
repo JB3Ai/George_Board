@@ -780,8 +780,10 @@ const AppInner: React.FC = () => {
 
           <div className="relative z-10 flex flex-col gap-16 px-4 sm:px-8 py-8">
           <nav className="flex items-center border border-edge rounded-2xl px-4 sm:px-6 py-4 gap-4 bg-card">
-            {/* OS3 header badge */}
-            <img src={`${import.meta.env.BASE_URL}Media/landscape_header_icon.jpg`} alt="OS³ JB3Ai" className="h-10 rounded-lg object-contain flex-shrink-0" />
+            {/* OS3 header badge — click to open Info / Clipboard guide */}
+            <button onClick={() => setShowInfo(true)} className="aes-shield-btn flex-shrink-0" title="OS³ Clipboard Guide">
+              <img src={`${import.meta.env.BASE_URL}Media/landscape_header_icon.jpg`} alt="OS³ JB3Ai" className="h-10 rounded-lg object-contain" />
+            </button>
             {/* Scrollable user tabs */}
             <div className="flex-1 min-w-0 overflow-x-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--accent)40 transparent' }}>
               <div className="flex gap-6 sm:gap-10 items-center w-max pr-4">
@@ -801,9 +803,6 @@ const AppInner: React.FC = () => {
 
             {/* Pinned utility buttons — always visible */}
             <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 border-l border-edge pl-4">
-              <button onClick={() => setShowAES(true)} title="AES-256 Encryption" className="hover:opacity-80 transition-opacity">
-                <img src={`${import.meta.env.BASE_URL}Media/landscape_header_icon.jpg`} alt="AES-256" className="h-7 rounded-lg object-contain" />
-              </button>
               <button
                 onClick={() => { setActiveTab(currentUserTab?.id || 'JONO'); setIsAdding(false); setSearchTerm(''); }}
                 className="text-[10px] sm:text-[11px] tracking-[0.3em] uppercase transition-all font-bold whitespace-nowrap text-primary/60 hover:text-accent"

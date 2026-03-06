@@ -127,9 +127,9 @@ body {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), color-mix(in srgb, var(--accent) 23%, transparent), transparent 50%);
+  background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), color-mix(in srgb, var(--accent) 25%, transparent), transparent 50%);
   opacity: 0;
-  transition: opacity 0.6s ease;
+  transition: opacity 0.6s ease-out;
   pointer-events: none;
   z-index: 1;
 }

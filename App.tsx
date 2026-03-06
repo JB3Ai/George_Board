@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
+﻿import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { SessionGuard } from './components/SessionGuard';
 import { PinboardLane } from './components/PinboardLane';
 import { DemoTab } from './components/DemoTab';
@@ -12,7 +12,7 @@ import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme } from './types';
 import { OWNER_EMAIL } from './constants';
-import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings } from 'lucide-react';
+import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 import { ThemeDock } from './components/ThemeDock';
@@ -627,6 +627,12 @@ const AppInner: React.FC = () => {
   const signedInName = (currentUserTab?.label || session.email.split('@')[0] || 'USER').toUpperCase();
   const signedInRole = isOwnerSession ? 'OWNER ACCESS' : 'USER ACCESS';
 
+  const tabsScrollRef = useRef<HTMLDivElement>(null);
+  const scrollTabs = (dir: 'left' | 'right') => {
+    if (!tabsScrollRef.current) return;
+    tabsScrollRef.current.scrollBy({ left: dir === 'right' ? 140 : -140, behavior: 'smooth' });
+  };
+
   return (
     <SessionGuard>
         <div className="relative min-h-screen">
@@ -786,8 +792,11 @@ const AppInner: React.FC = () => {
             <button onClick={() => setShowInfo(true)} className="aes-shield-btn flex-shrink-0" title="OS³ Clipboard Guide">
               <img src={`${import.meta.env.BASE_URL}Media/landscape_header_icon.jpg`} alt="OS³ JB3Ai" className="h-10 rounded-lg object-contain" />
             </button>
-            {/* Scrollable user tabs */}
-            <div className="flex-1 min-w-0 overflow-x-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--accent)40 transparent' }}>
+            {/* Tab scroll with arrow nav */}
+            <button onClick={() => scrollTabs('left')} className="flex-shrink-0 text-muted/30 hover:text-accent transition-colors" title="Scroll left">
+              <ChevronLeft size={14} strokeWidth={2} />
+            </button>
+            <div ref={tabsScrollRef} className="flex-1 min-w-0 overflow-x-auto" style={{ scrollbarWidth: 'none', scrollbarColor: 'transparent transparent' }}>
               <div className="flex gap-6 sm:gap-10 items-center w-max pr-4">
                 {visibleTabs.map((tab) => (
                   <button
@@ -802,16 +811,12 @@ const AppInner: React.FC = () => {
                 ))}
               </div>
             </div>
+            <button onClick={() => scrollTabs('right')} className="flex-shrink-0 text-muted/30 hover:text-accent transition-colors" title="Scroll right">
+              <ChevronRight size={14} strokeWidth={2} />
+            </button>
 
             {/* Pinned utility buttons — always visible */}
             <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 border-l border-edge pl-4">
-              <button
-                onClick={() => { setActiveTab(currentUserTab?.id || 'JONO'); setIsAdding(false); setSearchTerm(''); }}
-                className="text-[10px] sm:text-[11px] tracking-[0.3em] uppercase transition-all font-bold whitespace-nowrap text-primary/60 hover:text-accent"
-                title="Home"
-              >
-                {signedInName}
-              </button>
               <button onClick={() => setShowInfo(true)} title="Info & Help" className="text-muted/40 hover:text-cyan-400 transition-colors">
                 <Info size={18} strokeWidth={1.5} />
               </button>

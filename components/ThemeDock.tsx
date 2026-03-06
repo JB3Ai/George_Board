@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Theme } from '../types';
 import { useUI } from '../src/context/UIContext';
 
@@ -31,7 +31,13 @@ export const ThemeDock: React.FC = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionVisible, setTransitionVisible] = useState(false);
   const [pendingTheme, setPendingTheme] = useState<Theme | null>(null);
+  const [dockReady, setDockReady] = useState(false);
   const baseUrl = import.meta.env.BASE_URL;
+
+  useEffect(() => {
+    const t = setTimeout(() => setDockReady(true), 150);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleSwatchClick = useCallback((t: Theme) => {
     if (isTransitioning || t === theme) return;
@@ -74,7 +80,7 @@ export const ThemeDock: React.FC = () => {
 
       {/* Material Dock */}
       <div
-        className="os3-material-dock"
+        className={`os3-material-dock${dockReady ? ' dock-ready' : ''}`}
         style={{ pointerEvents: isTransitioning ? 'none' : 'auto', opacity: isTransitioning ? 0.5 : 1 }}
       >
         {THEME_ORDER.map((t) => {

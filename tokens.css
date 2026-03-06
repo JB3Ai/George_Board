@@ -385,3 +385,36 @@ input::placeholder, textarea::placeholder {
   box-shadow: 0 0 6px var(--swatch-accent, var(--accent));
 }
 
+/* ─── Dock swatch stagger entry animation ─────────────────────────────── */
+@keyframes swatchSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);   }
+}
+
+.theme-swatch {
+  animation: swatchSlideUp 0.4s cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation-play-state: paused;
+}
+
+.os3-material-dock.dock-ready .theme-swatch {
+  animation-play-state: running;
+}
+
+.os3-material-dock.dock-ready .theme-swatch:nth-child(1) { animation-delay: 0.00s; }
+.os3-material-dock.dock-ready .theme-swatch:nth-child(2) { animation-delay: 0.07s; }
+.os3-material-dock.dock-ready .theme-swatch:nth-child(3) { animation-delay: 0.14s; }
+.os3-material-dock.dock-ready .theme-swatch:nth-child(4) { animation-delay: 0.21s; }
+.os3-material-dock.dock-ready .theme-swatch:nth-child(5) { animation-delay: 0.28s; }
+.os3-material-dock.dock-ready .theme-swatch:nth-child(6) { animation-delay: 0.35s; }
+
+/* ─── Card headline alignment fix ────────────────────────────────────── */
+.card-message-headline {
+  display: block;
+  width: 100%;
+  text-align: left;
+  line-height: 1.25;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+

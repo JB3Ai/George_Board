@@ -1307,8 +1307,8 @@ const AppInner: React.FC = () => {
         </div>
       </div>
 
-      {/* Global Theme Dock — fixed bottom-center, always visible when authenticated */}
-      <ThemeDock />
+      {/* Material Theme Dock — shown on clipboard tabs, not on SETTINGS or DEMO */}
+      {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && <ThemeDock />}
     </SessionGuard>
   );
 };

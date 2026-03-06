@@ -118,7 +118,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ session, onResetPin })
         </div>
       </div>
 
-      <div className="p-8 border border-edge rounded-3xl bg-card/5">
+      <div className="glass p-8 rounded-3xl">
         <div className="flex items-start gap-4">
           <ShieldAlert size={16} className="text-primary/10 mt-1" strokeWidth={1} />
           <div className="space-y-2">

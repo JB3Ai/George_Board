@@ -1281,8 +1281,9 @@ const AppInner: React.FC = () => {
             )}
           </div>
 
-          <footer className="mt-16 pb-8 text-center">
+          <footer className="mt-16 pb-8 text-center space-y-1">
             <p className="text-[9px] tracking-[0.3em] uppercase text-muted/30 font-bold">&copy; 2026 JB³Ai. All Rights Reserved.</p>
+            <p className="text-[8px] tracking-[0.2em] text-muted/20 font-mono">v{__APP_VERSION__} &middot; {__COMMIT_HASH__}</p>
           </footer>
         </div>
       </div>

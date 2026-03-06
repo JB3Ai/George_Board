@@ -5,15 +5,25 @@ import { DemoTab } from './components/DemoTab';
 import { SettingsTab } from './components/SettingsTab';
 import { SearchInput } from './components/SearchInput';
 import { ToastProvider, useToast } from './components/Toast';
+import { useUI } from './src/context/UIContext';
 import { db } from './services/db';
 import { userRegistry, hydrateRegistryFromCloud } from './services/userRegistry';
 import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
-import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession } from './types';
+import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme } from './types';
 import { OWNER_EMAIL } from './constants';
 import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
+
+const THEME_BACKGROUNDS: Record<Theme, string> = {
+  [Theme.NEON]:     'Media/NEON.jpg',
+  [Theme.MIDNIGHT]: 'Media/MIDNIGHT.jpg',
+  [Theme.PAPER]:    'Media/PAPER.jpg',
+  [Theme.SAND]:     'Media/SAND.jpg',
+  [Theme.OCEAN]:    'Media/OCEAN.jpg',
+  [Theme.CARBON]:   'Media/background.jpg',
+};
 
 const DEFAULT_NOTE_KEY = 'jb3_default_note_all';
 
@@ -46,6 +56,9 @@ const AppInner: React.FC = () => {
   const [showAES, setShowAES] = useState(false);
   const [shareItem, setShareItem] = useState<ClipboardItem | null>(null);
   const [shareTargetUsers, setShareTargetUsers] = useState<string[]>([]);
+
+  const { theme } = useUI();
+  const bgImage = `${import.meta.env.BASE_URL}${THEME_BACKGROUNDS[theme] ?? 'Media/NEON.jpg'}`;
 
   const getCurrentSession = (): UserSession => {
     const saved = localStorage.getItem('jb3_session');
@@ -616,10 +629,16 @@ const AppInner: React.FC = () => {
   return (
     <SessionGuard>
         <div className="relative min-h-screen">
-          {/* Fixed background — stays put while content scrolls */}
+          {/* Fixed background — theme-reactive, stays put while content scrolls */}
           <div
-            className="fixed inset-0 bg-center bg-cover bg-no-repeat"
-            style={{ backgroundImage: `url('${import.meta.env.BASE_URL}Media/background.webp')` }}
+            key={bgImage}
+            className="fixed inset-0 bg-center bg-cover bg-no-repeat transition-all duration-1000"
+            style={{ backgroundImage: `url('${bgImage}')` }}
+          />
+          {/* Environment blur depth layer */}
+          <div
+            className="fixed inset-0 bg-center bg-cover bg-no-repeat opacity-15 blur-2xl"
+            style={{ backgroundImage: `url('${import.meta.env.BASE_URL}Media/Environment_Blur.jpg')` }}
           />
           {/* Theme-aware overlay so UI stays readable */}
           <div className="fixed inset-0" style={{ backgroundColor: 'var(--bg-dark)', opacity: 0.75 }} />
@@ -804,8 +823,8 @@ const AppInner: React.FC = () => {
                 }`}
               >
                 <span className="relative inline-flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-70" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-70" style={{ backgroundColor: 'var(--accent-status)' }} />
+                  <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: 'var(--accent-status)' }} />
                 </span>
                 DEMO
               </button>

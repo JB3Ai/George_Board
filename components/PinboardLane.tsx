@@ -37,9 +37,9 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
   };
 
   const gridClass = viewMode === 'list'
-    ? 'grid grid-cols-1 gap-4'
+    ? 'flex flex-col gap-2'
     : viewMode === 'grid-small'
-    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
+    ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'
     : 'grid grid-cols-1 md:grid-cols-2 gap-10';
 
   return (
@@ -60,7 +60,7 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
             <div className={gridClass}>
               {pinned.map(item => (
                 <motion.div key={item.id} variants={itemVariants} layout>
-                  <Card item={item} currentUser={currentUser} canManageAll={canManageAll} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} onShare={onShare} />
+                  <Card item={item} currentUser={currentUser} canManageAll={canManageAll} viewMode={viewMode} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} onShare={onShare} />
                 </motion.div>
               ))}
             </div>
@@ -82,7 +82,7 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
             <AnimatePresence mode="popLayout">
               {unpinned.map(item => (
                 <motion.div key={item.id} variants={itemVariants} layout>
-                  <Card item={item} currentUser={currentUser} canManageAll={canManageAll} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} onShare={onShare} />
+                  <Card item={item} currentUser={currentUser} canManageAll={canManageAll} viewMode={viewMode} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} onShare={onShare} />
                 </motion.div>
               ))}
             </AnimatePresence>

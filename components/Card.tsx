@@ -14,9 +14,10 @@ interface CardProps {
   onEdit: (item: ClipboardItem) => void;
   onRefresh: (id: string) => void;
   onShare?: (item: ClipboardItem) => void;
+  viewMode?: 'grid-big' | 'grid-small' | 'list';
 }
 
-export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = false, onUpdate, onDelete, onEdit, onRefresh, onShare }) => {
+export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = false, onUpdate, onDelete, onEdit, onRefresh, onShare, viewMode = 'grid-big' }) => {
   const isOwner = canManageAll || item.userId === currentUser;
   const isEnriching = item.enrichmentStatus === EnrichmentStatus.PENDING;
   const hasFailed = item.enrichmentStatus === EnrichmentStatus.FAILED || item.enrichmentStatus === EnrichmentStatus.DELAYED;
@@ -124,6 +125,48 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
   const readerName = lastReader ? lastReader.split('@')[0].toUpperCase() : 'USER';
 
   const showRefresh = hasFailed || (item.preview_last_fetched_at && Date.now() - item.preview_last_fetched_at > 24 * 60 * 60 * 1000);
+
+  // ─── LIST VIEW: compact single-line row ───
+  if (viewMode === 'list') {
+    const openItem = () => {
+      if (item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE) {
+        window.open(item.content, '_blank');
+      } else if (item.fileUrl) {
+        window.open(item.fileUrl, '_blank');
+      }
+    };
+    const displayTitle = item.metadata?.title || item.title || 'Untitled';
+    return (
+      <div className="flex items-center gap-4 px-5 py-3 glass rounded-xl group/row hover:border-accent/20 transition-all">
+        <span className="text-muted/50 shrink-0">{getTypeIcon()}</span>
+        <span className="flex-1 min-w-0 text-sm text-primary truncate font-medium">{displayTitle}</span>
+        {item.isPinned && <Pin size={10} className="text-accent fill-accent shrink-0" />}
+        {seenByOther && <Eye size={10} className="text-accent shrink-0" />}
+        <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover/row:opacity-100 transition-opacity">
+          {(item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE || item.fileUrl) && (
+            <button onClick={openItem} className="p-1.5 rounded-lg bg-card/10 hover:bg-accent/10 text-muted hover:text-accent border border-edge transition-all" title="Open">
+              <ExternalLink size={12} />
+            </button>
+          )}
+          {isOwner && onShare && (
+            <button onClick={() => onShare(item)} className="p-1.5 rounded-lg bg-card/10 hover:bg-accent/10 text-muted hover:text-accent border border-edge transition-all" title="Share">
+              <Share2 size={12} />
+            </button>
+          )}
+          {isOwner && (
+            <button onClick={() => onEdit(item)} className="p-1.5 rounded-lg bg-card/10 hover:bg-accent/10 text-muted hover:text-accent border border-edge transition-all" title="Edit">
+              <Edit3 size={12} />
+            </button>
+          )}
+          {isOwner && (
+            <button onClick={() => onDelete(item.id)} className="p-1.5 rounded-lg bg-card/10 hover:bg-red-500/10 text-muted hover:text-red-400 border border-edge transition-all" title="Delete">
+              <Trash2 size={12} />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 

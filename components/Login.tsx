@@ -52,7 +52,9 @@ export const Login: React.FC<LoginProps> = ({ onLinkSent }) => {
             value={email}
             onChange={(e) => setEmail(e.target.value.toLowerCase())}
             placeholder="Authorized Stakeholder Email"
+            autoFocus
             className="w-full h-16 bg-card/10 border border-edge rounded-2xl pl-16 pr-6 text-base text-primary focus:outline-none focus:border-accent/30 transition-all font-light"
+            style={{ position: 'relative', zIndex: 500 }}
             required
           />
         </div>

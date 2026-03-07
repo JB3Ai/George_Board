@@ -42,7 +42,7 @@ export const PinPad: React.FC<PinPadProps> = ({ onComplete, isSetting, onResetPi
   };
 
   return (
-    <div className="flex flex-col items-center gap-14 w-full max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="flex flex-col items-center gap-14 w-full max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ position: 'relative', zIndex: 500 }}>
       <div className="text-center flex flex-col gap-4">
         <div className="inline-flex justify-center text-accent/40 mb-3">
           <ShieldCheck size={48} strokeWidth={1} className="text-accent/60" />

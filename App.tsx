@@ -886,7 +886,7 @@ const AppInner: React.FC = () => {
             </div>
 
             {/* Pinned utility buttons — always visible */}
-            <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 border-l border-edge pl-4">
+            <div className="header-utility-icons flex items-center gap-3 sm:gap-4 flex-shrink-0 border-l border-edge pl-4">
               <button onClick={() => setShowInfo(true)} title="Info & Help" className="text-muted/40 hover:text-cyan-400 transition-colors">
                 <Info size={18} strokeWidth={1.5} />
               </button>
@@ -907,7 +907,7 @@ const AppInner: React.FC = () => {
               <button
                 onClick={() => { setActiveTab(SETTINGS_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
                 title="Settings"
-                className={`desktop-only-action transition-colors ${
+                className={`settings-icon transition-colors ${
                   activeTab === SETTINGS_TAB_ID ? 'text-accent' : 'text-muted/40 hover:text-primary'
                 }`}
               >
@@ -925,7 +925,7 @@ const AppInner: React.FC = () => {
                 <button
                   onClick={() => setShowThemeDock(prev => !prev)}
                   title={showThemeDock ? 'Hide Theme Selector' : 'Show Theme Selector'}
-                  className={`transition-colors ${showThemeDock ? 'text-accent' : 'text-muted/40 hover:text-primary'}`}
+                  className={`theme-toggle-icon transition-colors ${showThemeDock ? 'text-accent' : 'text-muted/40 hover:text-primary'}`}
                 >
                   <Palette size={18} strokeWidth={1.5} />
                 </button>

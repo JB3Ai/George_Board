@@ -14,9 +14,10 @@ interface PinboardLaneProps {
   onEdit: (item: ClipboardItem) => void;
   onRefresh: (id: string) => void;
   onShare?: (item: ClipboardItem) => void;
+  onResetVisibility?: (id: string) => void;
 }
 
-export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, canManageAll = false, viewMode = 'grid-big', onUpdate, onDelete, onEdit, onRefresh, onShare }) => {
+export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, canManageAll = false, viewMode = 'grid-big', onUpdate, onDelete, onEdit, onRefresh, onShare, onResetVisibility }) => {
   const pinned = items.filter(i => i.isPinned);
   const unpinned = items.filter(i => !i.isPinned);
 
@@ -60,7 +61,7 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
             <div className={gridClass}>
               {pinned.map(item => (
                 <motion.div key={item.id} variants={itemVariants} layout>
-                  <Card item={item} currentUser={currentUser} canManageAll={canManageAll} viewMode={viewMode} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} onShare={onShare} />
+                  <Card item={item} currentUser={currentUser} canManageAll={canManageAll} viewMode={viewMode} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} onShare={onShare} onResetVisibility={onResetVisibility} />
                 </motion.div>
               ))}
             </div>
@@ -82,7 +83,7 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
             <AnimatePresence mode="popLayout">
               {unpinned.map(item => (
                 <motion.div key={item.id} variants={itemVariants} layout>
-                  <Card item={item} currentUser={currentUser} canManageAll={canManageAll} viewMode={viewMode} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} onShare={onShare} />
+                  <Card item={item} currentUser={currentUser} canManageAll={canManageAll} viewMode={viewMode} onUpdate={onUpdate} onDelete={onDelete} onEdit={onEdit} onRefresh={onRefresh} onShare={onShare} onResetVisibility={onResetVisibility} />
                 </motion.div>
               ))}
             </AnimatePresence>

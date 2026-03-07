@@ -15,9 +15,10 @@ interface CardProps {
   onRefresh: (id: string) => void;
   onShare?: (item: ClipboardItem) => void;
   viewMode?: 'grid-big' | 'grid-small' | 'list';
+  onResetVisibility?: (id: string) => void;
 }
 
-export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = false, onUpdate, onDelete, onEdit, onRefresh, onShare, viewMode = 'grid-big' }) => {
+export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = false, onUpdate, onDelete, onEdit, onRefresh, onShare, viewMode = 'grid-big', onResetVisibility }) => {
   const isOwner = canManageAll || item.userId === currentUser;
   const isEnriching = item.enrichmentStatus === EnrichmentStatus.PENDING;
   const hasFailed = item.enrichmentStatus === EnrichmentStatus.FAILED || item.enrichmentStatus === EnrichmentStatus.DELAYED;
@@ -549,9 +550,19 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
                    Confirmed Visibility
                 </span>
              </div>
-             <div className="flex flex-col items-end">
-                <span className="text-[9px] tracking-widest text-muted uppercase font-bold opacity-40">Stakeholder: {readerName}</span>
-                <span className="text-[8px] tracking-premium text-muted uppercase opacity-20">Protocol JB³-Read</span>
+             <div className="flex items-center gap-3">
+               {onResetVisibility && (
+                 <button
+                   className="reset-visibility-btn"
+                   onClick={(e) => { e.stopPropagation(); onResetVisibility(item.id); }}
+                 >
+                   RESET VISIBILITY
+                 </button>
+               )}
+               <div className="flex flex-col items-end">
+                  <span className="text-[9px] tracking-widest text-muted uppercase font-bold opacity-40">Stakeholder: {readerName}</span>
+                  <span className="text-[8px] tracking-premium text-muted uppercase opacity-20">Protocol JB³-Read</span>
+               </div>
              </div>
           </div>
         )}

@@ -12,7 +12,7 @@ import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme } from './types';
 import { OWNER_EMAIL } from './constants';
-import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, ChevronLeft, ChevronRight, RotateCcw, Palette } from 'lucide-react';
+import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, ChevronLeft, ChevronRight, RotateCcw, Palette, Menu } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 import { ThemeDock } from './components/ThemeDock';
@@ -56,6 +56,7 @@ const AppInner: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid-big' | 'grid-small' | 'list'>(() => window.innerWidth < 768 ? 'list' : 'grid-big');
   const [showAES, setShowAES] = useState(false);
   const [showThemeDock, setShowThemeDock] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [shareItem, setShareItem] = useState<ClipboardItem | null>(null);
   const [shareTargetUsers, setShareTargetUsers] = useState<string[]>([]);
 
@@ -854,33 +855,35 @@ const AppInner: React.FC = () => {
           )}
 
           <div className="relative z-30 flex flex-col gap-16 px-4 sm:px-8 py-8">
-          <nav className="flex items-center border border-edge rounded-2xl px-4 sm:px-6 py-4 gap-4 bg-card z-[100] relative">
+          <nav className="nav-main flex items-center border border-edge rounded-2xl px-4 sm:px-6 py-4 gap-4 bg-card z-[100] relative">
             {/* OS3 header badge — click to open Info / Clipboard guide */}
             <button onClick={() => setShowAES(true)} className="aes-shield-btn flex-shrink-0" title="AES-256 Encryption">
               <img src={`${import.meta.env.BASE_URL}Media/landscape_header_icon.jpg`} alt="OS³ JB3Ai" className="h-10 rounded-lg object-contain" />
             </button>
-            {/* Tab scroll with arrow nav */}
-            <button onClick={() => scrollTabs('left')} className="flex-shrink-0 text-muted/30 hover:text-accent transition-colors" title="Scroll left">
-              <ChevronLeft size={14} strokeWidth={2} />
-            </button>
-            <div ref={tabsScrollRef} className="flex-1 min-w-0 overflow-x-auto" style={{ scrollbarWidth: 'none', scrollbarColor: 'transparent transparent' }}>
-              <div className="flex gap-6 sm:gap-10 items-center w-max pr-4">
-                {visibleTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => { setActiveTab(tab.id); setIsAdding(false); setSearchTerm(''); }}
-                    className={`text-[10px] sm:text-[11px] tracking-[0.3em] uppercase transition-all pb-6 -mb-6 border-b-2 font-bold whitespace-nowrap ${
-                      activeTab === tab.id ? 'text-accent border-accent' : 'text-muted border-transparent hover:text-primary'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+            {/* Tab scroll with arrow nav — hidden on mobile via CSS */}
+            <div className="nav-scroll-container flex-1 min-w-0 flex items-center gap-0">
+              <button onClick={() => scrollTabs('left')} className="flex-shrink-0 text-muted/30 hover:text-accent transition-colors" title="Scroll left">
+                <ChevronLeft size={14} strokeWidth={2} />
+              </button>
+              <div ref={tabsScrollRef} className="flex-1 min-w-0 overflow-x-auto" style={{ scrollbarWidth: 'none', scrollbarColor: 'transparent transparent' }}>
+                <div className="flex gap-6 sm:gap-10 items-center w-max pr-4">
+                  {visibleTabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => { setActiveTab(tab.id); setIsAdding(false); setSearchTerm(''); }}
+                      className={`text-[10px] sm:text-[11px] tracking-[0.3em] uppercase transition-all pb-6 -mb-6 border-b-2 font-bold whitespace-nowrap ${
+                        activeTab === tab.id ? 'text-accent border-accent' : 'text-muted border-transparent hover:text-primary'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
               </div>
+              <button onClick={() => scrollTabs('right')} className="flex-shrink-0 text-muted/30 hover:text-accent transition-colors" title="Scroll right">
+                <ChevronRight size={14} strokeWidth={2} />
+              </button>
             </div>
-            <button onClick={() => scrollTabs('right')} className="flex-shrink-0 text-muted/30 hover:text-accent transition-colors" title="Scroll right">
-              <ChevronRight size={14} strokeWidth={2} />
-            </button>
 
             {/* Pinned utility buttons — always visible */}
             <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 border-l border-edge pl-4">
@@ -888,8 +891,8 @@ const AppInner: React.FC = () => {
                 <Info size={18} strokeWidth={1.5} />
               </button>
               <button
-                onClick={() => { setActiveTab(DEMO_TAB_ID); setIsAdding(false); setSearchTerm(''); }}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] sm:text-[11px] tracking-[0.24em] uppercase transition-all font-bold whitespace-nowrap demo-pulse-glow ${
+                onClick={() => { setActiveTab(DEMO_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
+                className={`desktop-only-action inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] sm:text-[11px] tracking-[0.24em] uppercase transition-all font-bold whitespace-nowrap demo-pulse-glow ${
                   activeTab === DEMO_TAB_ID
                     ? 'text-accent border-accent/70 bg-accent/15'
                     : 'text-accent/90 border-accent/30 bg-accent/10 hover:bg-accent/15 hover:border-accent/60'
@@ -902,13 +905,21 @@ const AppInner: React.FC = () => {
                 DEMO
               </button>
               <button
-                onClick={() => { setActiveTab(SETTINGS_TAB_ID); setIsAdding(false); setSearchTerm(''); }}
+                onClick={() => { setActiveTab(SETTINGS_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
                 title="Settings"
-                className={`transition-colors ${
+                className={`desktop-only-action transition-colors ${
                   activeTab === SETTINGS_TAB_ID ? 'text-accent' : 'text-muted/40 hover:text-primary'
                 }`}
               >
                 <Settings size={18} strokeWidth={1.5} />
+              </button>
+              {/* Mobile hamburger — visible only on small screens */}
+              <button
+                onClick={() => setShowMobileMenu(true)}
+                title="Menu"
+                className="sm:hidden text-muted/40 hover:text-accent transition-colors"
+              >
+                <Menu size={20} strokeWidth={1.5} />
               </button>
               {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
                 <button
@@ -924,6 +935,49 @@ const AppInner: React.FC = () => {
               </button>
             </div>
           </nav>
+
+          {/* Mobile slide-out drawer */}
+          {showMobileMenu && (
+            <>
+              <div className="mobile-drawer-overlay" onClick={() => setShowMobileMenu(false)} />
+              <div className="mobile-drawer">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[10px] tracking-[0.3em] uppercase text-muted font-bold">Menu</span>
+                  <button onClick={() => setShowMobileMenu(false)} className="text-muted hover:text-primary transition-colors">
+                    <X size={18} strokeWidth={1.5} />
+                  </button>
+                </div>
+                {visibleTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => { setActiveTab(tab.id); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
+                    className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
+                      activeTab === tab.id ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+                <div className="h-px bg-edge my-2" />
+                <button
+                  onClick={() => { setActiveTab(DEMO_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
+                  className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
+                    activeTab === DEMO_TAB_ID ? 'text-accent bg-accent/10 border border-accent/20' : 'text-accent/70 hover:bg-accent/10 border border-transparent'
+                  }`}
+                >
+                  DEMO
+                </button>
+                <button
+                  onClick={() => { setActiveTab(SETTINGS_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
+                  className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
+                    activeTab === SETTINGS_TAB_ID ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
+                  }`}
+                >
+                  Settings
+                </button>
+              </div>
+            </>
+          )}
 
           <div className="min-h-[60vh] space-y-12">
             <div className="glass rounded-2xl px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -1394,6 +1448,7 @@ const AppInner: React.FC = () => {
                   onEdit={handleEdit}
                   onRefresh={handleRefresh}
                   onShare={isOwnerSession ? handleOpenShare : undefined}
+                  onResetVisibility={isOwnerSession && activeTab !== 'JONO' ? (id) => { db.updateItem(id, session.email, { readBy: [] }); setItems(db.getItems()); showToast('Visibility reset', 'success'); } : undefined}
                 />
               </>
             )}

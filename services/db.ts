@@ -232,3 +232,31 @@ export const db = {
     deleteFromSupabase(id);
   }
 };
+
+const NOTE_STATE_KEY = 'default_note';
+
+export async function saveDefaultNoteToCloud(note: string): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
+  try {
+    await (supabase as any)
+      .from('clipboard_state')
+      .upsert({ id: NOTE_STATE_KEY, payload: { text: note }, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+  } catch (err) {
+    console.warn('Default note cloud save failed:', err);
+  }
+}
+
+export async function loadDefaultNote(): Promise<string | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    const { data } = await (supabase as any)
+      .from('clipboard_state')
+      .select('payload')
+      .eq('id', NOTE_STATE_KEY)
+      .maybeSingle();
+    const text = (data as any)?.payload?.text;
+    return typeof text === 'string' ? text : null;
+  } catch {
+    return null;
+  }
+}

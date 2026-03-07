@@ -36,7 +36,7 @@ export function isAllowlisted(email: string): boolean {
 
 export function isFirstTimeUser(email: string): boolean {
   const normalized = pinKey(email);
-  const legacy = `pin_hash_${email}`;
+  const legacy = `pin_hash_${email.trim().toLowerCase()}`;
   return !localStorage.getItem(normalized) && !localStorage.getItem(legacy);
 }
 
@@ -46,7 +46,7 @@ export const supabaseAuth = {
 
     const normalizedEmail = email.trim().toLowerCase();
     const localKey = pinKey(email);
-    const legacyKey = `pin_hash_${email}`;
+    const legacyKey = `pin_hash_${normalizedEmail}`;
 
     // 1. Try Supabase first (source of truth)
     if (isSupabaseConfigured && supabase) {

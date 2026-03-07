@@ -7,6 +7,7 @@ import { SearchInput } from './components/SearchInput';
 import { ToastProvider, useToast } from './components/Toast';
 import { useUI } from './src/context/UIContext';
 import { db } from './services/db';
+import { loadDefaultNote, saveDefaultNoteToCloud } from './services/db';
 import { userRegistry, hydrateRegistryFromCloud } from './services/userRegistry';
 import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
@@ -93,6 +94,14 @@ const AppInner: React.FC = () => {
     setItems(localItems);
     setDefaultNote(localStorage.getItem(DEFAULT_NOTE_KEY) || '');
 
+    // Hydrate default note from Supabase (survives localStorage purge on mobile)
+    loadDefaultNote().then((cloudNote) => {
+      if (cloudNote !== null) {
+        setDefaultNote(cloudNote);
+        localStorage.setItem(DEFAULT_NOTE_KEY, cloudNote);
+      }
+    }).catch(() => undefined);
+
     // Hydrate registry from Supabase first, then items
     hydrateRegistryFromCloud()
       .then(() => setTabsVersion(v => v + 1))
@@ -154,6 +163,8 @@ const AppInner: React.FC = () => {
 
   const saveDefaultNote = () => {
     localStorage.setItem(DEFAULT_NOTE_KEY, defaultNote);
+    saveDefaultNoteToCloud(defaultNote);
+    showToast('Announcement saved', 'success');
   };
 
   const refreshTabs = useCallback(() => setTabsVersion((v) => v + 1), []);

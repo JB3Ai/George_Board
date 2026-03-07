@@ -27,9 +27,19 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
   useEffect(() => {
     const saved = localStorage.getItem('jb3_session');
     if (saved) {
-      const parsed: UserSession = JSON.parse(saved);
-      // Always require PIN on every visit — load email but clear pinVerified
-      setSession({ email: parsed.email, pinVerified: false, trustUntil: parsed.trustUntil });
+      try {
+        const parsed: UserSession = JSON.parse(saved);
+        const isTrusted = parsed.trustUntil && Date.now() < parsed.trustUntil;
+        if (isTrusted && parsed.pinVerified) {
+          // Trust window still active — skip PIN
+          setSession(parsed);
+        } else {
+          // Expired or no trust — require PIN re-entry
+          setSession({ email: parsed.email, pinVerified: false });
+        }
+      } catch {
+        localStorage.removeItem('jb3_session');
+      }
     }
   }, []);
 

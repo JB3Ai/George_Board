@@ -16,7 +16,16 @@ const DEFAULT_PINS: Record<string, string> = {
   'mussa@jb3ai.com': '1234',
   'jason@jb3ai.com': '1234',
   'nicolette@jb3ai.com': '1234',
-  'tracy@jb3ai.com': '1234'
+  'tracy@jb3ai.com': '1234',
+  'moussa@eaglestar.co.za': '1234',
+  'jason@computech-solutions.co.za': '1234',
+  'gsourlis@yahoo.com': '1234',
+  'berasmus@gmail.com': '1234',
+  'jonathantimothyrankin@gmail.com': '1234',
+  'stephan@ppisolutions.co.za': '1234',
+  'tammy.hughes1@gmail.com': '1234',
+  'tracy.trace.1981@gmail.com': '1234',
+  'candice.017@icloud.com': '1234'
 };
 
 export function isAllowlisted(email: string): boolean {

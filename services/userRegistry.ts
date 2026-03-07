@@ -28,6 +28,15 @@ const SEED_USERS: RegisteredUser[] = [
   { id: 'NICOLETTE', label: 'NICOLETTE', email: 'nicolette@jb3ai.com', addedAt: 0 },
   { id: 'TRACY', label: 'TRACY', email: 'tracy@jb3ai.com', addedAt: 0 },
   { id: 'TEST', label: 'TEST', email: 'jonoelite@gmail.com', addedAt: 0 },
+  { id: 'MOUSSA_ES', label: 'MOUSSA', email: 'moussa@eaglestar.co.za', addedAt: 0 },
+  { id: 'JASON_CT', label: 'JASON C', email: 'jason@computech-solutions.co.za', addedAt: 0 },
+  { id: 'GEORGE_S', label: 'GEORGE S', email: 'gsourlis@yahoo.com', addedAt: 0 },
+  { id: 'BARTHO_E', label: 'BARTHO E', email: 'berasmus@gmail.com', addedAt: 0 },
+  { id: 'JONATHAN_R', label: 'JONATHAN', email: 'jonathantimothyrankin@gmail.com', addedAt: 0 },
+  { id: 'STEPHAN_P', label: 'STEPHAN P', email: 'stephan@ppisolutions.co.za', addedAt: 0 },
+  { id: 'TAMMY_H', label: 'TAMMY H', email: 'tammy.hughes1@gmail.com', addedAt: 0 },
+  { id: 'TRACY_T', label: 'TRACY T', email: 'tracy.trace.1981@gmail.com', addedAt: 0 },
+  { id: 'CANDICE_I', label: 'CANDICE', email: 'candice.017@icloud.com', addedAt: 0 },
 ];
 
 // Map DB row (snake_case) → RegisteredUser

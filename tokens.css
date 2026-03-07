@@ -480,25 +480,93 @@ input::placeholder, textarea::placeholder {
   background: rgba(0,0,0,0.5);
   z-index: 9998;
   backdrop-filter: blur(4px);
+  transition: opacity 0.3s ease;
 }
 .mobile-drawer {
   position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
-  width: 260px;
+  width: 280px;
   max-width: 75vw;
-  background: var(--bg-base);
-  border-left: 1px solid var(--border-color);
+  background-color: var(--bg-base);
+  background-image: url('Media/Environment_Blur.jpg');
+  background-size: cover;
+  background-position: center;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
   z-index: 9999;
   display: flex;
   flex-direction: column;
   padding: 1.5rem 1rem;
-  gap: 1rem;
-  animation: slideInRight 0.25s ease;
+  gap: 0.75rem;
+  backdrop-filter: blur(20px);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateX(0);
 }
-@keyframes slideInRight {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
+.mobile-drawer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--bg-base);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.mobile-drawer > * {
+  position: relative;
+  z-index: 1;
+}
+@media (min-width: 641px) {
+  .mobile-drawer,
+  .mobile-drawer-overlay {
+    display: none !important;
+  }
+}
+
+/* Drawer demo status pill */
+.drawer-demo-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--accent);
+  background: rgba(102, 255, 102, 0.08);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.drawer-demo-pill .pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-status);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; box-shadow: 0 0 4px var(--accent-status); }
+  50% { opacity: 1; box-shadow: 0 0 12px var(--accent-status); }
+}
+
+/* ─── JONO Pinned Announcement ────────────────────────────────────────── */
+.announcement-fixed {
+  order: -1 !important;
+  border: 1px solid var(--accent);
+  background: rgba(102, 255, 102, 0.05);
+  margin-bottom: 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.announcement-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-transform: uppercase;
+  opacity: 0.7;
 }
 

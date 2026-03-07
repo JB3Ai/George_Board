@@ -930,7 +930,7 @@ const AppInner: React.FC = () => {
                   <Palette size={18} strokeWidth={1.5} />
                 </button>
               )}
-              <button onClick={handleLogout} title="Terminate Session" className="text-muted/40 hover:text-red-400 transition-colors">
+              <button onClick={handleLogout} title="Terminate Session" className="desktop-only-action text-muted/40 hover:text-red-400 transition-colors">
                 <LogOut size={18} strokeWidth={1.5} />
               </button>
             </div>
@@ -961,11 +961,11 @@ const AppInner: React.FC = () => {
                 <div className="h-px bg-edge my-2" />
                 <button
                   onClick={() => { setActiveTab(DEMO_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
-                  className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
+                  className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold flex items-center gap-3 ${
                     activeTab === DEMO_TAB_ID ? 'text-accent bg-accent/10 border border-accent/20' : 'text-accent/70 hover:bg-accent/10 border border-transparent'
                   }`}
                 >
-                  DEMO
+                  <span className="drawer-demo-pill"><span className="pulse-dot" /> DEMO</span>
                 </button>
                 <button
                   onClick={() => { setActiveTab(SETTINGS_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
@@ -974,6 +974,13 @@ const AppInner: React.FC = () => {
                   }`}
                 >
                   Settings
+                </button>
+                <div className="h-px bg-edge my-2" />
+                <button
+                  onClick={() => { setShowMobileMenu(false); handleLogout(); }}
+                  className="w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold text-red-400/70 hover:bg-red-500/10 border border-transparent"
+                >
+                  Log Out
                 </button>
               </div>
             </>
@@ -1037,17 +1044,17 @@ const AppInner: React.FC = () => {
 
             {showOwnerAdminPanels && (
               <div className="glass rounded-2xl p-6 space-y-4">
-                <p className="text-[10px] tracking-[0.2em] uppercase text-muted/50 font-bold">JONO default note (pinned to top of every user tab)</p>
+                <p className="text-[10px] tracking-[0.2em] uppercase text-muted/50 font-bold">JONO Pinned Announcement (fixed to top of every user tab)</p>
                 <textarea
                   value={defaultNote}
                   onChange={(event) => setDefaultNote(event.target.value)}
-                  placeholder="This note will appear as a pinned card on every user tab..."
+                  placeholder="This announcement will appear as a fixed card on every user tab..."
                   className="w-full bg-transparent text-sm text-primary border border-edge rounded-xl p-4 min-h-[90px] resize-none focus:outline-none"
                 />
-                <p className="text-[9px] tracking-[0.15em] uppercase text-accent/70 font-bold">Appears as a read-only pinned note at the top of every user tab.</p>
+                <p className="text-[9px] tracking-[0.15em] uppercase text-accent/70 font-bold">Appears as a read-only pinned announcement at the top of every user tab.</p>
                 <div className="flex justify-end">
                   <button onClick={saveDefaultNote} className="px-6 py-2 rounded-xl bg-accent text-contrast text-[10px] tracking-[0.2em] uppercase font-bold">
-                    Save Default Note
+                    Save Announcement
                   </button>
                 </div>
               </div>
@@ -1423,17 +1430,14 @@ const AppInner: React.FC = () => {
             ) : (
               <>
                 {activeTab !== 'JONO' && defaultNote.trim() && (
-                  <div className="space-y-10">
+                  <div className="announcement-fixed rounded-[2rem] p-8 space-y-4">
                     <div className="flex items-center gap-6">
-                      <h4 className="text-[11px] tracking-[0.4em] text-accent/60 uppercase font-bold">JONO Standard Note</h4>
+                      <h4 className="text-[11px] tracking-[0.4em] text-accent/60 uppercase font-bold">JONO Pinned Announcement</h4>
                       <div className="h-[1px] flex-1 bg-gradient-to-r from-accent/10 to-transparent" />
                     </div>
-                    <div className="border border-accent/20 rounded-[2rem] p-8 bg-accent/[0.03] relative">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-2 h-2 rounded-full bg-accent/60" />
-                        <span className="text-[9px] tracking-[0.3em] uppercase text-accent/50 font-bold">Pinned by JONO — Read Only</span>
-                      </div>
-                      <p className="text-sm text-primary/80 whitespace-pre-wrap leading-relaxed">{defaultNote}</p>
+                    <p className="text-sm text-primary/80 whitespace-pre-wrap leading-relaxed">{defaultNote}</p>
+                    <div className="announcement-tag pt-4 border-t border-accent/10">
+                      Pinned by JONO — Read Only
                     </div>
                   </div>
                 )}

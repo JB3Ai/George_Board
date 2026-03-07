@@ -28,16 +28,8 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
     const saved = localStorage.getItem('jb3_session');
     if (saved) {
       const parsed: UserSession = JSON.parse(saved);
-      const trustExpired = parsed.trustUntil !== undefined && parsed.trustUntil <= Date.now();
-      const isVerified = !trustExpired && !!parsed.pinVerified;
-      setSession({ ...parsed, pinVerified: isVerified });
-
-      // Auto-sign-in: show splash/transition so animation always plays on load
-      if (isVerified) {
-        const user = userRegistry.getUserByEmail(parsed.email);
-        setSplashUsername(user?.label || parsed.email.split('@')[0].toUpperCase());
-        setShowSplash(true);
-      }
+      // Always require PIN on every visit — load email but clear pinVerified
+      setSession({ email: parsed.email, pinVerified: false, trustUntil: parsed.trustUntil });
     }
   }, []);
 
@@ -77,12 +69,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
 
       showToast(firstTime ? 'PIN Created & Session Authorized' : 'Session Authorized', 'success');
       setShowSplash(true);
-
-      // Show install instructions modal if first time and not previously shown
-      if (firstTime && !localStorage.getItem('jb3_install_modal_shown')) {
-        setShowInstallModal(true);
-        localStorage.setItem('jb3_install_modal_shown', 'true');
-      }
+      // Install guide fires after splash completes (see handleSplashComplete)
     } else {
       showToast(result.error || 'Verification failed', 'error');
     }
@@ -101,10 +88,15 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
 
   const firstTime = session ? isFirstTimeUser(session.email) : false;
 
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    setShowInstallModal(true);
+  };
+
   return (
     <>
       {showSplash ? (
-        <Splash onComplete={() => setShowSplash(false)} username={splashUsername} />
+        <Splash onComplete={handleSplashComplete} username={splashUsername} />
       ) : !session ? (
         <Layout showBackground={false}>
           <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -139,7 +131,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
         <>{children}</>
       )}
 
-      {/* Global overlay — shows after first-time PIN creation, on top of the splash */}
+      {/* Install guide — shown after splash completes, on top of the clipboard */}
       <InstallInstructionsModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
     </>
   );

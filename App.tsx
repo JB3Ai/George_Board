@@ -253,6 +253,17 @@ const AppInner: React.FC = () => {
       metadata: manualNote ? { description: manualNote } : {}
     });
 
+    // Owner always gets a copy on their own board when posting to a user tab
+    const ownerCopy = (isOwnerSession && syncTabId) ? db.addItem({
+      userId: session.email,
+      syncTabId: undefined,
+      type: finalType,
+      title: hostname,
+      content: url,
+      enrichmentStatus: EnrichmentStatus.PENDING,
+      metadata: manualNote ? { description: manualNote } : {}
+    }) : null;
+
     setItems(db.getItems());
 
     try {
@@ -262,15 +273,13 @@ const AppInner: React.FC = () => {
       const finalMetadata = hasMetadata
         ? { ...metadata, description: manualNote || metadata.description }
         : (manualNote ? { description: manualNote } : {});
+      const enrichStatus = hasMetadata ? EnrichmentStatus.SUCCESS : EnrichmentStatus.FAILED;
 
-      db.updateItem(item.id, session.email, {
-        metadata: finalMetadata,
-        enrichmentStatus: hasMetadata ? EnrichmentStatus.SUCCESS : EnrichmentStatus.FAILED
-      });
+      db.updateItem(item.id, session.email, { metadata: finalMetadata, enrichmentStatus: enrichStatus });
+      if (ownerCopy) db.updateItem(ownerCopy.id, session.email, { metadata: finalMetadata, enrichmentStatus: enrichStatus });
     } catch {
-      db.updateItem(item.id, session.email, {
-        enrichmentStatus: EnrichmentStatus.FAILED
-      });
+      db.updateItem(item.id, session.email, { enrichmentStatus: EnrichmentStatus.FAILED });
+      if (ownerCopy) db.updateItem(ownerCopy.id, session.email, { enrichmentStatus: EnrichmentStatus.FAILED });
     } finally {
       setItems(db.getItems());
     }
@@ -516,9 +525,21 @@ const AppInner: React.FC = () => {
             setIsUploading(false);
             return;
           }
+          const activeSyncTabDoc = getActiveSyncTabId();
           db.addItem({
             userId: session.email,
-            syncTabId: getActiveSyncTabId(),
+            syncTabId: activeSyncTabDoc,
+            type: ItemType.DOCUMENT,
+            title: newItemTitle || newItemFile.name,
+            content: newItemContent,
+            fileUrl: result.url,
+            fileName: newItemFile.name,
+            fileSize: newItemFile.size,
+            isDemo: newItemIsDemo,
+          });
+          if (isOwnerSession && activeSyncTabDoc) db.addItem({
+            userId: session.email,
+            syncTabId: undefined,
             type: ItemType.DOCUMENT,
             title: newItemTitle || newItemFile.name,
             content: newItemContent,
@@ -546,9 +567,21 @@ const AppInner: React.FC = () => {
             setIsUploading(false);
             return;
           }
+          const activeSyncTabMedia = getActiveSyncTabId();
           db.addItem({
             userId: session.email,
-            syncTabId: getActiveSyncTabId(),
+            syncTabId: activeSyncTabMedia,
+            type: newItemType,
+            title: newItemTitle || newItemFile.name,
+            content: newItemContent,
+            fileUrl: result.url,
+            fileName: newItemFile.name,
+            fileSize: newItemFile.size,
+            isDemo: newItemIsDemo,
+          });
+          if (isOwnerSession && activeSyncTabMedia) db.addItem({
+            userId: session.email,
+            syncTabId: undefined,
             type: newItemType,
             title: newItemTitle || newItemFile.name,
             content: newItemContent,
@@ -564,9 +597,21 @@ const AppInner: React.FC = () => {
         }
         setIsUploading(false);
       } else {
+        const activeSyncTabPlain = getActiveSyncTabId();
         db.addItem({
           userId: session.email,
-          syncTabId: getActiveSyncTabId(),
+          syncTabId: activeSyncTabPlain,
+          type: newItemType,
+          title: newItemTitle || 'Untitled Log',
+          content: newItemContent,
+          taskStatus: newItemType === ItemType.TASK ? TaskStatus.OPEN : undefined,
+          dueDate: newItemType === ItemType.TASK || newItemType === ItemType.EVENT ? newItemDueDate : undefined,
+          eventLocation: newItemType === ItemType.EVENT ? newItemLocation : undefined,
+          isDemo: newItemIsDemo
+        });
+        if (isOwnerSession && activeSyncTabPlain) db.addItem({
+          userId: session.email,
+          syncTabId: undefined,
           type: newItemType,
           title: newItemTitle || 'Untitled Log',
           content: newItemContent,

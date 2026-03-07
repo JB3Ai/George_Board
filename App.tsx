@@ -1018,7 +1018,7 @@ const AppInner: React.FC = () => {
             )}
 
             {isAdding && (
-              <div className="border border-edge p-12 rounded-[2.5rem] space-y-10">
+              <div className="glass p-12 rounded-[2.5rem] space-y-10">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap gap-4">
                     {Object.values(ItemType).map((type) => (

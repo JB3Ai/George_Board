@@ -75,7 +75,7 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
           className="space-y-10"
         >
           <div className="flex items-center gap-6">
-            <h4 className="text-[11px] tracking-[0.4em] text-muted/30 uppercase font-bold">Active Records</h4>
+            <h4 className="text-[11px] tracking-[0.4em] text-accent/60 uppercase font-bold">Active Records</h4>
             <div className="h-[1px] flex-1 bg-gradient-to-r from-white/5 to-transparent" />
           </div>
           <div className={gridClass}>

@@ -555,9 +555,7 @@ input::placeholder, textarea::placeholder {
   border: 1px solid var(--accent);
   background: rgba(102, 255, 102, 0.05);
   margin-bottom: 2rem;
-  position: sticky;
-  top: 0;
-  z-index: 40;
+  z-index: 10;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 

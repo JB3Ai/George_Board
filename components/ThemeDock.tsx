@@ -14,7 +14,7 @@ const THEME_META: Record<Theme, ThemeMeta> = {
   [Theme.PAPER]:    { label: 'PAPER',    bg: 'Media/PAPER.jpg',      accent: '#141414' },
   [Theme.SAND]:     { label: 'SAND',     bg: 'Media/SAND.jpg',       accent: '#C8961E' },
   [Theme.OCEAN]:    { label: 'OCEAN',    bg: 'Media/OCEAN.jpg',      accent: '#48D1CC' },
-  [Theme.CARBON]:   { label: 'CARBON',   bg: 'Media/background.jpg', accent: '#F27D26' },
+  [Theme.CARBON]:   { label: 'CARBON',   bg: 'Media/background.jpg', accent: '#4DB8FF' },
 };
 
 const THEME_ORDER: Theme[] = [

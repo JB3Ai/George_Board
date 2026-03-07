@@ -54,7 +54,7 @@
   --text-primary: #2C2C2C;
   --text-muted: #555555;
   --border-color: rgba(139, 69, 19, 0.14);
-  --bg-glass: rgba(255, 248, 220, 0.92);
+  --bg-glass: rgba(253, 245, 230, 0.72);
   --border-active: rgba(200, 150, 30, 0.4);
   font-weight: 500;
 }
@@ -72,7 +72,7 @@
 }
 
 [data-theme="carbon"] {
-  --accent: #F27D26;
+  --accent: #4DB8FF;
   --accent-contrast: #000000;
   --accent-status: #39FF14;
   --bg-dark: #090A0C;
@@ -81,7 +81,7 @@
   --text-muted: #8E939C;
   --border-color: rgba(201, 205, 211, 0.12);
   --bg-glass: rgba(17, 19, 23, 0.9);
-  --border-active: rgba(242, 125, 38, 0.3);
+  --border-active: rgba(77, 184, 255, 0.3);
 }
 
 [data-font-size="large"] {
@@ -406,6 +406,13 @@ input::placeholder, textarea::placeholder {
 .os3-material-dock.dock-ready .theme-swatch:nth-child(4) { animation-delay: 0.21s; }
 .os3-material-dock.dock-ready .theme-swatch:nth-child(5) { animation-delay: 0.28s; }
 .os3-material-dock.dock-ready .theme-swatch:nth-child(6) { animation-delay: 0.35s; }
+
+/* ─── Hide theme dock on small screens — theme accessible via Settings ── */
+@media (max-width: 640px) {
+  .os3-material-dock {
+    display: none;
+  }
+}
 
 /* ─── Card headline alignment fix ────────────────────────────────────── */
 .card-message-headline {

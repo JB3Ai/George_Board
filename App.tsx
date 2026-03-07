@@ -934,7 +934,7 @@ const AppInner: React.FC = () => {
             )}
 
             {isOwnerSession && activeTab === 'JONO' && (
-              <div className="border border-edge rounded-2xl p-6 space-y-4">
+              <div className="glass rounded-2xl p-6 space-y-4">
                 <p className="text-[10px] tracking-[0.2em] uppercase text-muted/50 font-bold">JONO default note (pinned to top of every user tab)</p>
                 <textarea
                   value={defaultNote}
@@ -952,7 +952,7 @@ const AppInner: React.FC = () => {
             )}
 
             {isOwnerSession && activeTab === 'JONO' && (
-              <div className="border border-edge rounded-2xl p-6 space-y-6">
+              <div className="glass rounded-2xl p-6 space-y-6">
                 <p className="text-[10px] tracking-[0.2em] uppercase text-muted/50 font-bold">Invite Team Member</p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <input
@@ -1018,7 +1018,7 @@ const AppInner: React.FC = () => {
             )}
 
             {isAdding && (
-              <div className="glass p-12 rounded-[2.5rem] space-y-10">
+              <div className="border border-edge p-12 rounded-[2.5rem] space-y-10">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap gap-4">
                     {Object.values(ItemType).map((type) => (

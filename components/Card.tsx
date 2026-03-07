@@ -238,7 +238,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
               {item.isPinned && <Pin size={12} className="text-accent fill-accent group-hover:animate-pin-glow" />}
             </div>
             
-            <h3 className={`text-xl font-medium text-primary leading-snug tracking-tight ${isEnriching ? 'animate-skeleton text-primary/10' : ''}`}>
+            <h3 className={`text-xl font-medium text-primary leading-snug tracking-tight break-words ${isEnriching ? 'animate-skeleton text-primary/10' : ''}`}>
               {item.metadata?.title || item.title || "Observation Unit"}
             </h3>
             {(item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE) && (

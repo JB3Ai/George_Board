@@ -420,8 +420,23 @@ input::placeholder, textarea::placeholder {
   width: 100%;
   text-align: left;
   line-height: 1.25;
-  word-break: keep-all;
-  overflow-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: anywhere;
   white-space: normal;
+  hyphens: auto;
+}
+
+/* Prevent title squeeze when action buttons share the same row */
+.glow-card .flex-1.min-w-0 {
+  min-width: 0;
+}
+
+.glow-card h3 {
+  display: block;
+  width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.25;
 }
 

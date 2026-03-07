@@ -193,6 +193,8 @@ const AppInner: React.FC = () => {
   const getActiveSyncTabId = () => (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID ? undefined : activeTab);
 
   const canPost = activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (isOwnerSession || activeTab === currentUserTab?.id);
+  const isOwnerMainTab = isOwnerSession && activeTab === 'JONO';
+  const showOwnerAdminPanels = isOwnerMainTab;
 
   if (!isOwnerSession && !currentUserTab) {
     return (
@@ -933,7 +935,7 @@ const AppInner: React.FC = () => {
               </div>
             )}
 
-            {isOwnerSession && activeTab === 'JONO' && (
+            {showOwnerAdminPanels && (
               <div className="glass rounded-2xl p-6 space-y-4">
                 <p className="text-[10px] tracking-[0.2em] uppercase text-muted/50 font-bold">JONO default note (pinned to top of every user tab)</p>
                 <textarea
@@ -951,7 +953,7 @@ const AppInner: React.FC = () => {
               </div>
             )}
 
-            {isOwnerSession && activeTab === 'JONO' && (
+            {showOwnerAdminPanels && (
               <div className="glass rounded-2xl p-6 space-y-6">
                 <p className="text-[10px] tracking-[0.2em] uppercase text-muted/50 font-bold">Invite Team Member</p>
                 <div className="flex flex-col sm:flex-row gap-4">

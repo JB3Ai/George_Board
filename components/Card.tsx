@@ -126,18 +126,37 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
 
   const showRefresh = hasFailed || (item.preview_last_fetched_at && Date.now() - item.preview_last_fetched_at > 24 * 60 * 60 * 1000);
 
+  const getAssetUrl = () => {
+    if (item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE) {
+      return item.content;
+    }
+    return item.fileUrl || null;
+  };
+
+  const openAsset = () => {
+    const assetUrl = getAssetUrl();
+    if (!assetUrl) return;
+    window.open(assetUrl, '_blank');
+  };
+
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Allow buttons/links/inputs inside the card to keep their own behavior.
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a, input, textarea, select, label, [role="button"]')) {
+      return;
+    }
+    openAsset();
+  };
+
   // ─── LIST VIEW: compact single-line row ───
   if (viewMode === 'list') {
-    const openItem = () => {
-      if (item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE) {
-        window.open(item.content, '_blank');
-      } else if (item.fileUrl) {
-        window.open(item.fileUrl, '_blank');
-      }
-    };
+    const openItem = () => openAsset();
     const displayTitle = item.metadata?.title || item.title || 'Untitled';
     return (
-      <div className="flex items-center gap-4 px-5 py-3 glass rounded-xl group/row hover:border-accent/20 transition-all">
+      <div
+        className={`flex items-center gap-4 px-5 py-3 glass rounded-xl group/row hover:border-accent/20 transition-all ${getAssetUrl() ? 'cursor-pointer' : ''}`}
+        onClick={handleCardClick}
+      >
         <span className="text-muted/50 shrink-0">{getTypeIcon()}</span>
         <span className="flex-1 min-w-0 text-sm text-primary truncate font-medium">{displayTitle}</span>
         {item.isPinned && <Pin size={10} className="text-accent fill-accent shrink-0" />}
@@ -172,7 +191,8 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
     <div 
       ref={cardRef}
       onMouseMove={handleMouseMove}
-      className={`glass rounded-[2rem] flex flex-col overflow-hidden group relative glow-card ${item.isArchived ? 'opacity-30 grayscale-[0.5]' : ''}`}
+      onClick={handleCardClick}
+      className={`glass rounded-[2rem] flex flex-col overflow-hidden group relative glow-card ${item.isArchived ? 'opacity-30 grayscale-[0.5]' : ''} ${getAssetUrl() ? 'cursor-pointer' : ''}`}
     >
       {/* IMAGE banner — shows full image at top of card */}
       {item.type === ItemType.IMAGE && item.fileUrl && (
@@ -228,8 +248,8 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
       )}
 
       <div className="p-10 flex flex-col gap-8 relative z-10">
-        <div className="flex justify-between items-start gap-6">
-          <div className="flex flex-col gap-4 flex-1 min-w-0">
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4 min-w-0">
             <div className="flex items-center gap-4">
               <span className={`text-[11px] tracking-[0.3em] text-muted uppercase font-bold flex items-center gap-2 ${isEnriching ? 'animate-skeleton' : ''}`}>
                 {getTypeIcon()}
@@ -238,7 +258,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
               {item.isPinned && <Pin size={12} className="text-accent fill-accent group-hover:animate-pin-glow" />}
             </div>
             
-            <h3 className={`text-xl font-medium text-primary leading-snug tracking-tight break-words ${isEnriching ? 'animate-skeleton text-primary/10' : ''}`}>
+            <h3 className={`text-xl font-medium text-primary leading-snug tracking-tight break-words whitespace-normal [overflow-wrap:anywhere] ${isEnriching ? 'animate-skeleton text-primary/10' : ''}`}>
               {item.metadata?.title || item.title || "Observation Unit"}
             </h3>
             {(item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE) && (
@@ -250,7 +270,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
             )}
           </div>
           
-          <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:opacity-0 sm:pointer-events-none sm:group-hover:pointer-events-auto sm:group-hover:opacity-100 transition-all duration-500 sm:translate-x-2 sm:group-hover:translate-x-0 shrink-0 justify-end">
+          <div className="flex flex-wrap gap-2 sm:opacity-0 sm:pointer-events-none sm:group-hover:pointer-events-auto sm:group-hover:opacity-100 transition-all duration-500 sm:translate-x-2 sm:group-hover:translate-x-0">
             {showRefresh && (
               <div className="relative">
                 <button 

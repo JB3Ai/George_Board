@@ -12,7 +12,7 @@ import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme } from './types';
 import { OWNER_EMAIL } from './constants';
-import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, ChevronLeft, ChevronRight, RotateCcw, Palette } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 import { ThemeDock } from './components/ThemeDock';
@@ -55,6 +55,7 @@ const AppInner: React.FC = () => {
   const [selectedTargetUsers, setSelectedTargetUsers] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'grid-big' | 'grid-small' | 'list'>(() => window.innerWidth < 768 ? 'list' : 'grid-big');
   const [showAES, setShowAES] = useState(false);
+  const [showThemeDock, setShowThemeDock] = useState(false);
   const [shareItem, setShareItem] = useState<ClipboardItem | null>(null);
   const [shareTargetUsers, setShareTargetUsers] = useState<string[]>([]);
 
@@ -909,6 +910,15 @@ const AppInner: React.FC = () => {
               >
                 <Settings size={18} strokeWidth={1.5} />
               </button>
+              {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
+                <button
+                  onClick={() => setShowThemeDock(prev => !prev)}
+                  title={showThemeDock ? 'Hide Theme Selector' : 'Show Theme Selector'}
+                  className={`transition-colors ${showThemeDock ? 'text-accent' : 'text-muted/40 hover:text-primary'}`}
+                >
+                  <Palette size={18} strokeWidth={1.5} />
+                </button>
+              )}
               <button onClick={handleLogout} title="Terminate Session" className="text-muted/40 hover:text-red-400 transition-colors">
                 <LogOut size={18} strokeWidth={1.5} />
               </button>
@@ -1397,7 +1407,7 @@ const AppInner: React.FC = () => {
       </div>
 
       {/* Material Theme Dock — shown on clipboard tabs, not on SETTINGS or DEMO */}
-      {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && <ThemeDock />}
+      {showThemeDock && activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && <ThemeDock />}
     </SessionGuard>
   );
 };

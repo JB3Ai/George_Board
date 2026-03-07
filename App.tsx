@@ -12,7 +12,7 @@ import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme } from './types';
 import { OWNER_EMAIL } from './constants';
-import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 import { ThemeDock } from './components/ThemeDock';
@@ -186,6 +186,25 @@ const AppInner: React.FC = () => {
     } catch (err: any) {
       showToast(err.message || 'Failed to remove user', 'error');
     }
+  };
+
+  const handleResetUserVisibility = (targetUserId: string) => {
+    if (!isOwnerSession) return;
+    if (!targetUserId || targetUserId === 'JONO' || targetUserId === DEMO_TAB_ID || targetUserId === SETTINGS_TAB_ID) return;
+
+    const channelItems = items.filter((item) => item.syncTabId === targetUserId && (item.readBy || []).length > 0);
+    if (channelItems.length === 0) {
+      showToast('No visibility markers to reset in this channel', 'info');
+      return;
+    }
+
+    channelItems.forEach((item) => {
+      // Reset visibility/read receipt state only. Keep content intact.
+      db.updateItem(item.id, session.email, { readBy: [] });
+    });
+
+    setItems(db.getItems());
+    showToast(`Visibility reset on ${channelItems.length} record${channelItems.length > 1 ? 's' : ''}`, 'success');
   };
 
 
@@ -903,7 +922,24 @@ const AppInner: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="text-[10px] tracking-[0.3em] uppercase text-muted font-bold">{sectionTitle}</div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="text-[10px] tracking-[0.3em] uppercase text-muted font-bold">{sectionTitle}</div>
+                {isOwnerSession && activeTab !== 'JONO' && activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
+                  <button
+                    onClick={() => handleResetUserVisibility(activeTab)}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-[9px] tracking-[0.2em] uppercase font-bold transition-all"
+                    style={{
+                      borderColor: theme === Theme.CARBON ? '#F27D26' : 'var(--border-color)',
+                      color: theme === Theme.CARBON ? '#F27D26' : 'var(--text-primary)',
+                      backgroundColor: theme === Theme.SAND ? 'rgba(255, 255, 255, 0.05)' : 'transparent'
+                    }}
+                    title="Reset confirmed visibility markers for this user channel"
+                  >
+                    <RotateCcw size={12} />
+                    Reset Visibility
+                  </button>
+                )}
+              </div>
 
               {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
                 <div className="flex items-center gap-1 bg-card/10 rounded-xl border border-edge p-1">

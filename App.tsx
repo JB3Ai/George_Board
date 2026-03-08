@@ -871,6 +871,9 @@ const AppInner: React.FC = () => {
             <button onClick={() => setShowAES(true)} className="aes-shield-btn flex-shrink-0" title="AES-256 Encryption">
               <img src={`${import.meta.env.BASE_URL}Media/landscape_header_icon.jpg`} alt="OS³ JB3Ai" className="h-10 rounded-lg object-contain" />
             </button>
+            <button onClick={() => setShowInfo(true)} title="Info & Help" className="flex-shrink-0 text-muted/40 hover:text-cyan-400 transition-colors">
+              <Info size={18} strokeWidth={1.5} />
+            </button>
             {/* Tab scroll with arrow nav — hidden on mobile via CSS */}
             <div className="nav-scroll-container flex-1 min-w-0 flex items-center gap-0">
               <button onClick={() => scrollTabs('left')} className="flex-shrink-0 text-muted/30 hover:text-accent transition-colors" title="Scroll left">
@@ -898,9 +901,6 @@ const AppInner: React.FC = () => {
 
             {/* Pinned utility buttons — always visible */}
             <div className="header-utility-icons flex items-center gap-3 sm:gap-4 flex-shrink-0 border-l border-edge pl-4">
-              <button onClick={() => setShowInfo(true)} title="Info & Help" className="text-muted/40 hover:text-cyan-400 transition-colors">
-                <Info size={18} strokeWidth={1.5} />
-              </button>
               <button
                 onClick={() => { setActiveTab(DEMO_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
                 className={`desktop-only-action inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] sm:text-[11px] tracking-[0.24em] uppercase transition-all font-bold whitespace-nowrap demo-pulse-glow ${

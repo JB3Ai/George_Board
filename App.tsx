@@ -7,7 +7,7 @@ import { SearchInput } from './components/SearchInput';
 import { ToastProvider, useToast } from './components/Toast';
 import { useUI } from './src/context/UIContext';
 import { db } from './services/db';
-import { loadDefaultNote, saveDefaultNoteToCloud } from './services/db';
+import { loadDefaultNote, saveDefaultNoteToCloud, sendPresenceHeartbeat, getUserPresence } from './services/db';
 import { userRegistry, hydrateRegistryFromCloud } from './services/userRegistry';
 import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
@@ -150,6 +150,37 @@ const AppInner: React.FC = () => {
     setItems(db.getItems());
   }, [activeTab, items.length, session.email]);
 
+  // ─── Presence heartbeat: ping every 30s so owner can see who's active ───
+  useEffect(() => {
+    sendPresenceHeartbeat(session.email);
+    const interval = setInterval(() => sendPresenceHeartbeat(session.email), 30_000);
+    return () => clearInterval(interval);
+  }, [session.email]);
+
+  // ─── Owner: live status polling for the currently-viewed user tab ───
+  const [viewedUserStatus, setViewedUserStatus] = useState<'ACTIVE NOW' | 'IDLE' | 'OFFLINE'>('OFFLINE');
+  const [viewedUserLastSeen, setViewedUserLastSeen] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOwnerSession) return;
+    if (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID) return;
+
+    const targetTab = TABS.find(t => t.id === activeTab);
+    if (!targetTab) return;
+
+    const poll = async () => {
+      const data = await getUserPresence(targetTab.email);
+      if (!data) { setViewedUserStatus('OFFLINE'); setViewedUserLastSeen(null); return; }
+      const age = Date.now() - data.timestamp;
+      setViewedUserStatus(age < 60_000 ? 'ACTIVE NOW' : age < 300_000 ? 'IDLE' : 'OFFLINE');
+      setViewedUserLastSeen(new Date(data.timestamp).toLocaleTimeString());
+    };
+
+    poll();
+    const interval = setInterval(poll, 15_000);
+    return () => clearInterval(interval);
+  }, [isOwnerSession, activeTab, TABS]);
+
   const handleLogout = () => {
     localStorage.removeItem('jb3_session');
     window.location.reload();
@@ -223,6 +254,18 @@ const AppInner: React.FC = () => {
 
 
   const getActiveSyncTabId = () => (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID ? undefined : activeTab);
+
+  const usersList = useMemo(() => TABS.map(t => t.id), [TABS]);
+
+  const cycleUser = (direction: 'next' | 'prev') => {
+    const currentIndex = usersList.indexOf(activeTab);
+    let nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+    if (nextIndex >= usersList.length) nextIndex = 0;
+    if (nextIndex < 0) nextIndex = usersList.length - 1;
+    setActiveTab(usersList[nextIndex]);
+    setIsAdding(false);
+    setSearchTerm('');
+  };
 
   const canPost = activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (isOwnerSession || activeTab === currentUserTab?.id);
   const isOwnerMainTab = isOwnerSession && activeTab === 'JONO';
@@ -874,7 +917,8 @@ const AppInner: React.FC = () => {
             <button onClick={() => setShowInfo(true)} title="Info & Help" className="flex-shrink-0 text-muted/40 hover:text-cyan-400 transition-colors">
               <Info size={18} strokeWidth={1.5} />
             </button>
-            {/* Tab scroll with arrow nav — hidden on mobile via CSS */}
+            {/* Tab scroll with arrow nav — hidden on mobile via CSS; hidden for owner (uses admin console instead) */}
+            {!isOwnerSession && (
             <div className="nav-scroll-container flex-1 min-w-0 flex items-center gap-0">
               <button onClick={() => scrollTabs('left')} className="flex-shrink-0 text-muted/30 hover:text-accent transition-colors" title="Scroll left">
                 <ChevronLeft size={14} strokeWidth={2} />
@@ -898,6 +942,7 @@ const AppInner: React.FC = () => {
                 <ChevronRight size={14} strokeWidth={2} />
               </button>
             </div>
+            )}
 
             {/* Pinned utility buttons — always visible */}
             <div className="header-utility-icons flex items-center gap-3 sm:gap-4 flex-shrink-0 border-l border-edge pl-4">
@@ -946,6 +991,29 @@ const AppInner: React.FC = () => {
               </button>
             </div>
           </nav>
+
+          {/* Master Admin Console — Owner-only yellow box with user switcher */}
+          {isOwnerSession && activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
+            <div className="owner-admin-console">
+              <div className="user-switcher">
+                <div className="switch-arrow" onClick={() => cycleUser('prev')}>&#8249;</div>
+                <div className="current-user-box">
+                  <span style={{ color: 'var(--accent)', fontSize: '1.2rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' as const }}>{activeTab}</span>
+                </div>
+                <div className="switch-arrow" onClick={() => cycleUser('next')}>&#8250;</div>
+              </div>
+              <div className="admin-info-pane">
+                <div className="status-row">
+                  <span className={`status-dot ${viewedUserStatus.toLowerCase().replace(' ', '-')}`}>&#9679;</span>
+                  <span>{activeTab}: {viewedUserStatus}</span>
+                </div>
+                <div className="metadata-row">
+                  <span>LAST SEEN: {viewedUserLastSeen || 'NEVER'}</span>
+                  <span>1:1 SYNC: SECURE AES-256</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Mobile slide-out drawer */}
           {showMobileMenu && (

@@ -260,3 +260,32 @@ export async function loadDefaultNote(): Promise<string | null> {
     return null;
   }
 }
+
+// ─── User Presence Heartbeat ──────────────────────────────────────────
+const PRESENCE_PREFIX = 'presence_';
+
+export async function sendPresenceHeartbeat(email: string): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
+  try {
+    await (supabase as any)
+      .from('clipboard_state')
+      .upsert({ id: `${PRESENCE_PREFIX}${email}`, payload: { timestamp: Date.now() }, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+  } catch (err) {
+    console.warn('Presence heartbeat failed:', err);
+  }
+}
+
+export async function getUserPresence(email: string): Promise<{ timestamp: number } | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  try {
+    const { data } = await (supabase as any)
+      .from('clipboard_state')
+      .select('payload')
+      .eq('id', `${PRESENCE_PREFIX}${email}`)
+      .maybeSingle();
+    const ts = (data as any)?.payload?.timestamp;
+    return typeof ts === 'number' ? { timestamp: ts } : null;
+  } catch {
+    return null;
+  }
+}

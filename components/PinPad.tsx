@@ -1,5 +1,5 @@
 ﻿
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Delete, ShieldCheck, ShieldAlert } from 'lucide-react';
 
 interface PinPadProps {
@@ -12,6 +12,16 @@ export const PinPad: React.FC<PinPadProps> = ({ onComplete, isSetting, onResetPi
   const [pin, setPin] = useState('');
   const [trust, setTrust] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus lock — grab focus on mount and re-grab on any click
+  useEffect(() => {
+    const el = inputRef.current;
+    el?.focus();
+    const handleGlobalClick = () => el?.focus();
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, []);
 
   useEffect(() => {
     if (pin.length !== 4 || isSubmitting) return;
@@ -42,7 +52,27 @@ export const PinPad: React.FC<PinPadProps> = ({ onComplete, isSetting, onResetPi
   };
 
   return (
-    <div className="flex flex-col items-center gap-14 w-full max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ position: 'relative', zIndex: 500 }}>
+    <div className="pin-entry-container flex flex-col items-center gap-14 w-full max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Hidden input for mobile keyboard & paste support */}
+      <input
+        ref={inputRef}
+        id="os3-pin-input"
+        type="password"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        autoComplete="one-time-code"
+        autoFocus
+        maxLength={4}
+        value={pin}
+        onChange={(e) => {
+          if (isSubmitting) return;
+          const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+          setPin(digits);
+        }}
+        className="pin-input-field"
+        placeholder="ENTER PIN"
+        aria-label="Enter 4-digit PIN"
+      />
       <div className="text-center flex flex-col gap-4">
         <div className="inline-flex justify-center text-accent/40 mb-3">
           <ShieldCheck size={48} strokeWidth={1} className="text-accent/60" />

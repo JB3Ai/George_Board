@@ -496,6 +496,36 @@ input::placeholder, textarea::placeholder {
   }
 }
 
+/* ─── PIN Entry Focus & Drill-Through ────────────────────────────────── */
+#os3-pin-input {
+  position: relative;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+.pin-input-field {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  pointer-events: auto !important;
+}
+
+.bg-environment-blur,
+.transition-overlay,
+.atmosphere-layer {
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+.pin-entry-container {
+  z-index: 500 !important;
+  position: relative;
+}
+
 /* Reset Visibility Button Style */
 .reset-visibility-btn {
   background: transparent;

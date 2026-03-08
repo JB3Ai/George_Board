@@ -6,8 +6,12 @@ import { isSupabaseConfigured, supabase } from '../../services/supabaseClient';
 interface UIContextType {
   theme: Theme;
   fontSize: FontSize;
+  welcomeVideoEnabled: boolean;
+  installGuideEnabled: boolean;
   setTheme: (theme: Theme) => void;
   setFontSize: (size: FontSize) => void;
+  setWelcomeVideoEnabled: (v: boolean) => void;
+  setInstallGuideEnabled: (v: boolean) => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -39,6 +43,16 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [fontSize, setFontSizeState] = useState<FontSize>(() => {
     const saved = localStorage.getItem('jb3_fontSize');
     return (saved as FontSize) || FontSize.SMALL;
+  });
+
+  const [welcomeVideoEnabled, setWelcomeVideoEnabledState] = useState<boolean>(() => {
+    const saved = localStorage.getItem('jb3_welcomeVideo');
+    return saved === null ? true : saved === 'true';
+  });
+
+  const [installGuideEnabled, setInstallGuideEnabledState] = useState<boolean>(() => {
+    const saved = localStorage.getItem('jb3_installGuide');
+    return saved === null ? true : saved === 'true';
   });
 
   // Apply on first render from localStorage cache
@@ -96,8 +110,18 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     }
   };
 
+  const setWelcomeVideoEnabled = (v: boolean) => {
+    setWelcomeVideoEnabledState(v);
+    localStorage.setItem('jb3_welcomeVideo', String(v));
+  };
+
+  const setInstallGuideEnabled = (v: boolean) => {
+    setInstallGuideEnabledState(v);
+    localStorage.setItem('jb3_installGuide', String(v));
+  };
+
   return (
-    <UIContext.Provider value={{ theme, fontSize, setTheme, setFontSize }}>
+    <UIContext.Provider value={{ theme, fontSize, welcomeVideoEnabled, installGuideEnabled, setTheme, setFontSize, setWelcomeVideoEnabled, setInstallGuideEnabled }}>
       {children}
     </UIContext.Provider>
   );

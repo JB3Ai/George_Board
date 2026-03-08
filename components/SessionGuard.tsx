@@ -10,6 +10,7 @@ import { supabaseAuth, isFirstTimeUser } from '../services/auth';
 import { userRegistry } from '../services/userRegistry';
 import { Mail } from 'lucide-react';
 import { useToast } from './Toast';
+import { useUI } from '../src/context/UIContext';
 
 interface SessionGuardProps {
   children: React.ReactNode;
@@ -23,6 +24,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [splashUsername, setSplashUsername] = useState('');
   const { showToast } = useToast();
+  const { welcomeVideoEnabled, installGuideEnabled } = useUI();
 
   useEffect(() => {
     const saved = localStorage.getItem('jb3_session');
@@ -78,7 +80,11 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
       setSplashUsername(user?.label || session.email.split('@')[0].toUpperCase());
 
       showToast(firstTime ? 'PIN Created & Session Authorized' : 'Session Authorized', 'success');
-      setShowSplash(true);
+      if (welcomeVideoEnabled) {
+        setShowSplash(true);
+      } else if (installGuideEnabled) {
+        setShowInstallModal(true);
+      }
       // Install guide fires after splash completes (see handleSplashComplete)
     } else {
       showToast(result.error || 'Verification failed', 'error');
@@ -100,7 +106,9 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
 
   const handleSplashComplete = () => {
     setShowSplash(false);
-    setShowInstallModal(true);
+    if (installGuideEnabled) {
+      setShowInstallModal(true);
+    }
   };
 
   return (

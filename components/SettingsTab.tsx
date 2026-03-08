@@ -1,6 +1,6 @@
 ﻿
 import React from 'react';
-import { ShieldAlert, RefreshCw, KeyRound, Smartphone, Palette, Type } from 'lucide-react';
+import { ShieldAlert, RefreshCw, KeyRound, Smartphone, Palette, Type, Play, Download } from 'lucide-react';
 import { UserSession, Theme, FontSize } from '../types';
 import { useUI } from '../src/context/UIContext';
 
@@ -12,7 +12,7 @@ interface SettingsTabProps {
 export const SettingsTab: React.FC<SettingsTabProps> = ({ session, onResetPin }) => {
   const isTrusted = session.trustUntil && session.trustUntil > Date.now();
   const trustExpiry = isTrusted ? new Date(session.trustUntil!).toLocaleDateString() : 'N/A';
-  const { theme, fontSize, setTheme, setFontSize } = useUI();
+  const { theme, fontSize, welcomeVideoEnabled, installGuideEnabled, setTheme, setFontSize, setWelcomeVideoEnabled, setInstallGuideEnabled } = useUI();
 
   return (
     <div className="max-w-xl space-y-12 animate-in fade-in slide-in-from-bottom-2 duration-1000">
@@ -115,6 +115,51 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ session, onResetPin })
               </button>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h4 className="text-[10px] tracking-ultra text-primary/40 uppercase font-bold">Experience</h4>
+        <div className="h-[1px] w-12 bg-card/20" />
+      </div>
+
+      <div className="space-y-6">
+        <div className="glass p-8 rounded-3xl flex items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <div className="w-12 h-12 rounded-2xl bg-card/10 border border-edge flex items-center justify-center text-primary/20">
+              <Play size={20} strokeWidth={1} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[9px] tracking-premium text-primary/20 uppercase font-bold">Welcome Video</p>
+              <p className="text-sm text-primary font-light">{welcomeVideoEnabled ? 'Plays on sign-in' : 'Skipped'}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setWelcomeVideoEnabled(!welcomeVideoEnabled)}
+            className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${welcomeVideoEnabled ? 'bg-green-500/60' : 'bg-primary/10'}`}
+            aria-label="Toggle welcome video"
+          >
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${welcomeVideoEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+          </button>
+        </div>
+
+        <div className="glass p-8 rounded-3xl flex items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <div className="w-12 h-12 rounded-2xl bg-card/10 border border-edge flex items-center justify-center text-primary/20">
+              <Download size={20} strokeWidth={1} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[9px] tracking-premium text-primary/20 uppercase font-bold">Install Guide</p>
+              <p className="text-sm text-primary font-light">{installGuideEnabled ? 'Shows after sign-in' : 'Skipped'}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setInstallGuideEnabled(!installGuideEnabled)}
+            className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${installGuideEnabled ? 'bg-green-500/60' : 'bg-primary/10'}`}
+            aria-label="Toggle install guide"
+          >
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-300 ${installGuideEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+          </button>
         </div>
       </div>
 

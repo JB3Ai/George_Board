@@ -13,7 +13,7 @@ import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme, UserProject } from './types';
 import { OWNER_EMAIL } from './constants';
-import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, RotateCcw, Palette, Menu, FolderPlus } from 'lucide-react';
+import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, RotateCcw, Palette, Menu, FolderPlus, Search } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 import { ThemeDock } from './components/ThemeDock';
@@ -32,7 +32,9 @@ const DEFAULT_NOTE_KEY = 'jb3_default_note_all';
 
 const DEMO_TAB_ID = '__DEMO__';
 const SETTINGS_TAB_ID = '__SETTINGS__';
-const CHAT_TAB_ID = '__CHAT__';
+
+const getChatAnchorId = (userId: string) => `${userId}_CHAT`;
+const isChatAnchor = (id: string | null) => typeof id === 'string' && id.endsWith('_CHAT');
 
 const AppInner: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('JONO');
@@ -64,6 +66,8 @@ const AppInner: React.FC = () => {
   const [shareTargetUsers, setShareTargetUsers] = useState<string[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [userProjectsMap, setUserProjectsMap] = useState<Record<string, UserProject[]>>({});
+  const [showAdminSearch, setShowAdminSearch] = useState(false);
+  const [adminSearchQuery, setAdminSearchQuery] = useState('');
 
   const { theme } = useUI();
   const bgImage = `${import.meta.env.BASE_URL}${THEME_BACKGROUNDS[theme] ?? 'Media/NEON.jpg'}`;
@@ -95,12 +99,12 @@ const AppInner: React.FC = () => {
 
   const viewedUserProjects = useMemo(() => {
     if (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID) return [];
-    return userProjectsMap[activeTab] || [{ id: 'default', name: 'Project 1', createdAt: 0 }];
+    return userProjectsMap[activeTab] || [{ id: `${activeTab}_P1`, name: 'Project 1', index: 1, createdAt: 0 }];
   }, [activeTab, userProjectsMap]);
 
   const myProjects = useMemo(() => {
     if (!currentUserTab || isOwnerSession) return [];
-    return userProjectsMap[currentUserTab.id] || [{ id: 'default', name: 'Project 1', createdAt: 0 }];
+    return userProjectsMap[currentUserTab.id] || [{ id: `${currentUserTab.id}_P1`, name: 'Project 1', index: 1, createdAt: 0 }];
   }, [currentUserTab, isOwnerSession, userProjectsMap]);
 
   useEffect(() => {
@@ -166,7 +170,7 @@ const AppInner: React.FC = () => {
       setActiveProjectId(null);
       return;
     }
-    const projects = userProjectsMap[activeTab] || [{ id: 'default', name: 'Project 1', createdAt: 0 }];
+    const projects = userProjectsMap[activeTab] || [{ id: `${activeTab}_P1`, name: 'Project 1', index: 1, createdAt: 0 }];
     setActiveProjectId(projects[0].id);
   }, [activeTab, userProjectsMap]);
 
@@ -175,7 +179,7 @@ const AppInner: React.FC = () => {
 
     const unreadFromOtherSide = items.filter((item) => {
       const inThisSyncTab = item.syncTabId === activeTab;
-      const inThisView = activeProjectId === CHAT_TAB_ID
+      const inThisView = isChatAnchor(activeProjectId)
         ? item.type === ItemType.CHAT
         : (item.projectId || 'default') === (activeProjectId || 'default') && item.type !== ItemType.CHAT;
       const fromOtherUser = item.userId !== session.email;
@@ -191,7 +195,7 @@ const AppInner: React.FC = () => {
 
   // ─── Chat polling: refresh items every 5s when chat is active ───
   useEffect(() => {
-    if (activeProjectId !== CHAT_TAB_ID) return;
+    if (!isChatAnchor(activeProjectId)) return;
     const poll = async () => {
       const cloudItems = await db.hydrateFromCloud();
       if (cloudItems && cloudItems.length > 0) {
@@ -309,26 +313,32 @@ const AppInner: React.FC = () => {
 
   const getActiveProjectId = (): string | undefined => {
     if (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID) return undefined;
-    if (activeProjectId === CHAT_TAB_ID) return undefined;
+    if (isChatAnchor(activeProjectId)) return undefined;
     return activeProjectId || 'default';
   };
 
   const handleCreateNewProject = async (userId: string) => {
-    const projects = userProjectsMap[userId] || [{ id: 'default', name: 'Project 1', createdAt: 0 }];
+    const projects = userProjectsMap[userId] || [{ id: `${userId}_P1`, name: 'Project 1', index: 1, createdAt: 0 }];
     if (projects.length >= 7) {
-      showToast('Maximum 7 projects per user', 'error');
+      showToast('Maximum 7 project tabs per user', 'error');
       return;
     }
+    // Push-stack: shift all existing indices up by 1
+    const shifted = projects.map(p => ({ ...p, index: p.index + 1 }));
+    // Archive anything beyond position 7
+    const kept = shifted.filter(p => p.index <= 7);
+    // Insert new project at index 1
     const newProject: UserProject = {
-      id: crypto.randomUUID(),
-      name: `Project ${projects.length + 1}`,
+      id: `${userId}_P${Date.now()}`,
+      name: `Project ${kept.length + 1}`,
+      index: 1,
       createdAt: Date.now(),
     };
-    const updated = [newProject, ...projects];
+    const updated = [newProject, ...kept].sort((a, b) => a.index - b.index);
     setUserProjectsMap(prev => ({ ...prev, [userId]: updated }));
     await saveUserProjects(userId, updated);
     setActiveProjectId(newProject.id);
-    showToast('New project created', 'success');
+    showToast('New project created — existing tabs shifted right', 'success');
   };
 
   const handleSendChat = (content: string) => {
@@ -344,20 +354,7 @@ const AppInner: React.FC = () => {
     setItems(db.getItems());
   };
 
-  const usersList = useMemo(() => TABS.map(t => t.id), [TABS]);
-
-  const cycleUser = (direction: 'next' | 'prev') => {
-    const currentIndex = usersList.indexOf(activeTab);
-    let nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
-    if (nextIndex >= usersList.length) nextIndex = 0;
-    if (nextIndex < 0) nextIndex = usersList.length - 1;
-    setActiveTab(usersList[nextIndex]);
-    setActiveProjectId(null);
-    setIsAdding(false);
-    setSearchTerm('');
-  };
-
-  const canPost = activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && activeProjectId !== CHAT_TAB_ID && (isOwnerSession || activeTab === currentUserTab?.id);
+  const canPost = activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && !isChatAnchor(activeProjectId) && (isOwnerSession || activeTab === currentUserTab?.id);
   const isOwnerMainTab = isOwnerSession && activeTab === 'JONO';
   const showOwnerAdminPanels = isOwnerMainTab;
 
@@ -460,7 +457,7 @@ const AppInner: React.FC = () => {
 
     if (activeTab === 'JONO') {
       baseItems = items.filter((item) => item.userId === OWNER_EMAIL && !item.syncTabId);
-    } else if (activeProjectId === CHAT_TAB_ID) {
+    } else if (isChatAnchor(activeProjectId)) {
       baseItems = items.filter((item) => item.syncTabId === activeTab && item.type === ItemType.CHAT);
     } else {
       const pid = activeProjectId || 'default';
@@ -858,7 +855,7 @@ const AppInner: React.FC = () => {
       ? 'DEMO PROJECT SHOWCASE'
       : activeTab === SETTINGS_TAB_ID
         ? 'INTERFACE SETTINGS'
-      : activeProjectId === CHAT_TAB_ID
+      : isChatAnchor(activeProjectId)
         ? `1:1 SECURE CHAT: JONO ↔ ${activeTab}`
         : `SYNC CHANNEL: JONO ↔ ${activeTab}`;
 
@@ -1027,23 +1024,29 @@ const AppInner: React.FC = () => {
             <button onClick={() => setShowInfo(true)} title="Info & Help" className="flex-shrink-0 text-muted/40 hover:text-cyan-400 transition-colors">
               <Info size={18} strokeWidth={1.5} />
             </button>
-            {/* Project tabs + Chat for non-owner users */}
+            {/* Project tabs + Chat for non-owner users — 8-slot grid */}
             {!isOwnerSession && (
-            <div className="nav-center-tabs">
-              {myProjects.map((project, index) => (
+            <div className="project-tab-container">
+              {myProjects
+                .sort((a, b) => a.index - b.index)
+                .map((project) => (
                 <button
                   key={project.id}
-                  className={`tab-btn ${activeProjectId === project.id ? 'active' : ''}`}
+                  className={`tab-item ${activeProjectId === project.id ? 'active' : ''}`}
                   onClick={() => { setActiveProjectId(project.id); setIsAdding(false); setSearchTerm(''); }}
                 >
-                  PROJECT {myProjects.length - index}
+                  TAB {project.index}
                 </button>
               ))}
+              {/* Fill empty slots up to 7 */}
+              {Array.from({ length: Math.max(0, 7 - myProjects.length) }).map((_, i) => (
+                <span key={`empty-${i}`} className="tab-item tab-empty" />
+              ))}
               <button
-                className={`tab-btn chat-tab ${activeProjectId === CHAT_TAB_ID ? 'active' : ''}`}
-                onClick={() => { setActiveProjectId(CHAT_TAB_ID); setIsAdding(false); setSearchTerm(''); }}
+                className={`tab-item chat-anchor ${isChatAnchor(activeProjectId) ? 'active' : ''}`}
+                onClick={() => { setActiveProjectId(getChatAnchorId(currentUserTab!.id)); setIsAdding(false); setSearchTerm(''); }}
               >
-                1:1 SECURE CHAT
+                CHAT
               </button>
             </div>
             )}
@@ -1096,15 +1099,14 @@ const AppInner: React.FC = () => {
             </div>
           </nav>
 
-          {/* Master Admin Console — Owner-only yellow box with user switcher */}
+          {/* Master Admin Console — Owner-only with user search selector */}
           {isOwnerSession && activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
             <div className="owner-admin-console">
               <div className="user-switcher">
-                <div className="switch-arrow" onClick={() => cycleUser('prev')}>&#8249;</div>
-                <div className="current-user-box">
-                  <span style={{ color: 'var(--accent)', fontSize: '1.2rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' as const }}>{activeTab}</span>
-                </div>
-                <div className="switch-arrow" onClick={() => cycleUser('next')}>&#8250;</div>
+                <button className="admin-search-trigger" onClick={() => { setShowAdminSearch(true); setAdminSearchQuery(''); }}>
+                  <Search size={14} />
+                  <span>{activeTab}</span>
+                </button>
               </div>
               <div className="admin-info-pane">
                 <div className="status-row">
@@ -1117,24 +1119,30 @@ const AppInner: React.FC = () => {
                 </div>
               </div>
               {activeTab !== 'JONO' && (
-                <div className="admin-project-tabs">
-                  {viewedUserProjects.map((project, index) => (
+                <div className="project-tab-container admin-tab-grid">
+                  {viewedUserProjects
+                    .sort((a, b) => a.index - b.index)
+                    .map((project) => (
                     <button
                       key={project.id}
-                      className={`tab-btn ${activeProjectId === project.id ? 'active' : ''}`}
+                      className={`tab-item ${activeProjectId === project.id ? 'active' : ''}`}
                       onClick={() => setActiveProjectId(project.id)}
                     >
-                      TAB {index + 1}
+                      TAB {project.index}
                     </button>
                   ))}
+                  {/* Fill empty slots up to 7 */}
+                  {Array.from({ length: Math.max(0, 7 - viewedUserProjects.length) }).map((_, i) => (
+                    <span key={`empty-${i}`} className="tab-item tab-empty" />
+                  ))}
                   <button
-                    className={`tab-btn chat-tab ${activeProjectId === CHAT_TAB_ID ? 'active' : ''}`}
-                    onClick={() => setActiveProjectId(CHAT_TAB_ID)}
+                    className={`tab-item chat-anchor ${isChatAnchor(activeProjectId) ? 'active' : ''}`}
+                    onClick={() => setActiveProjectId(getChatAnchorId(activeTab))}
                   >
                     CHAT
                   </button>
                   <button
-                    className="tab-btn new-project-btn"
+                    className="tab-item new-project-btn"
                     onClick={() => handleCreateNewProject(activeTab)}
                     title="Create new project for this user"
                   >
@@ -1142,6 +1150,49 @@ const AppInner: React.FC = () => {
                   </button>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Admin User Search Overlay */}
+          {showAdminSearch && (
+            <div className="admin-search-overlay" onClick={() => setShowAdminSearch(false)}>
+              <div className="admin-search-panel" onClick={(e) => e.stopPropagation()}>
+                <div className="admin-search-header">
+                  <Search size={16} className="text-accent" />
+                  <input
+                    autoFocus
+                    type="text"
+                    value={adminSearchQuery}
+                    onChange={(e) => setAdminSearchQuery(e.target.value)}
+                    placeholder="Search users..."
+                    className="admin-search-input"
+                  />
+                  <button onClick={() => setShowAdminSearch(false)} className="text-muted/40 hover:text-primary transition-colors"><X size={16} /></button>
+                </div>
+                <div className="admin-search-results">
+                  {TABS.filter(t => {
+                    if (!adminSearchQuery.trim()) return true;
+                    const q = adminSearchQuery.toLowerCase();
+                    return t.id.toLowerCase().includes(q) || t.label.toLowerCase().includes(q) || t.email.toLowerCase().includes(q);
+                  }).map(t => (
+                    <button
+                      key={t.id}
+                      className={`admin-search-item ${activeTab === t.id ? 'active' : ''}`}
+                      onClick={() => {
+                        setActiveTab(t.id);
+                        setActiveProjectId(null);
+                        setIsAdding(false);
+                        setSearchTerm('');
+                        setShowAdminSearch(false);
+                      }}
+                    >
+                      <span className="admin-search-label">{t.label}</span>
+                      <span className="admin-search-email">{t.email}</span>
+                      {t.isOwner && <span className="admin-search-badge">OWNER</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -1170,7 +1221,9 @@ const AppInner: React.FC = () => {
                   ))
                 ) : (
                   <>
-                    {myProjects.map((project, index) => (
+                    {myProjects
+                      .sort((a, b) => a.index - b.index)
+                      .map((project) => (
                       <button
                         key={project.id}
                         onClick={() => { setActiveProjectId(project.id); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
@@ -1178,13 +1231,13 @@ const AppInner: React.FC = () => {
                           activeProjectId === project.id ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
                         }`}
                       >
-                        PROJECT {myProjects.length - index}
+                        TAB {project.index}
                       </button>
                     ))}
                     <button
-                      onClick={() => { setActiveProjectId(CHAT_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
+                      onClick={() => { setActiveProjectId(getChatAnchorId(currentUserTab!.id)); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
                       className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
-                        activeProjectId === CHAT_TAB_ID ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
+                        isChatAnchor(activeProjectId) ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
                       }`}
                     >
                       1:1 SECURE CHAT
@@ -1660,7 +1713,7 @@ const AppInner: React.FC = () => {
               <DemoTab items={items} />
             ) : activeTab === SETTINGS_TAB_ID ? (
               <SettingsTab session={session} onResetPin={handleResetPin} />
-            ) : activeProjectId === CHAT_TAB_ID ? (
+            ) : isChatAnchor(activeProjectId) ? (
               <ChatWindow
                 messages={filteredItems}
                 currentUser={session.email}

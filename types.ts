@@ -86,5 +86,6 @@ export interface UserSession {
 export interface UserProject {
   id: string;
   name: string;
+  index: number;
   createdAt: number;
 }

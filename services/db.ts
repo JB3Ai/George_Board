@@ -299,7 +299,15 @@ export async function loadUserProjects(userId: string): Promise<UserProject[]> {
   const key = `jb3_projects_${userId}`;
   const local = localStorage.getItem(key);
   if (local) {
-    try { return JSON.parse(local); } catch { /* fall through */ }
+    try {
+      const parsed = JSON.parse(local);
+      // Migrate old projects without index
+      const migrated = (parsed as UserProject[]).map((p: any, i: number) => ({
+        ...p,
+        index: typeof p.index === 'number' ? p.index : i + 1,
+      }));
+      return migrated;
+    } catch { /* fall through */ }
   }
   if (isSupabaseConfigured && supabase) {
     try {
@@ -310,12 +318,16 @@ export async function loadUserProjects(userId: string): Promise<UserProject[]> {
         .maybeSingle();
       const projects = (data as any)?.payload?.projects;
       if (Array.isArray(projects) && projects.length > 0) {
-        localStorage.setItem(key, JSON.stringify(projects));
-        return projects;
+        const migrated = projects.map((p: any, i: number) => ({
+          ...p,
+          index: typeof p.index === 'number' ? p.index : i + 1,
+        }));
+        localStorage.setItem(key, JSON.stringify(migrated));
+        return migrated;
       }
     } catch { /* fall through */ }
   }
-  const defaults: UserProject[] = [{ id: 'default', name: 'Project 1', createdAt: 0 }];
+  const defaults: UserProject[] = [{ id: `${userId}_P1`, name: 'Project 1', index: 1, createdAt: 0 }];
   localStorage.setItem(key, JSON.stringify(defaults));
   return defaults;
 }

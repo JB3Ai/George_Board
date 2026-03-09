@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { SessionGuard } from './components/SessionGuard';
 import { PinboardLane } from './components/PinboardLane';
 import { DemoTab } from './components/DemoTab';
@@ -13,7 +13,7 @@ import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme, UserProject } from './types';
 import { OWNER_EMAIL } from './constants';
-import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, ChevronLeft, ChevronRight, RotateCcw, Palette, Menu, FolderPlus } from 'lucide-react';
+import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, RotateCcw, Palette, Menu, FolderPlus } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 import { ThemeDock } from './components/ThemeDock';
@@ -864,12 +864,6 @@ const AppInner: React.FC = () => {
 
   const signedInName = (currentUserTab?.label || session.email.split('@')[0] || 'USER').toUpperCase();
   const signedInRole = isOwnerSession ? 'OWNER ACCESS' : 'USER ACCESS';
-
-  const tabsScrollRef = useRef<HTMLDivElement>(null);
-  const scrollTabs = (dir: 'left' | 'right') => {
-    if (!tabsScrollRef.current) return;
-    tabsScrollRef.current.scrollBy({ left: dir === 'right' ? 140 : -140, behavior: 'smooth' });
-  };
 
   return (
     <SessionGuard>

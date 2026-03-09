@@ -12,15 +12,17 @@ export const Layout: React.FC<LayoutProps> = ({ children, showBackground = true 
   return (
     <div className="min-h-screen relative flex flex-col items-center px-6 py-12 md:py-24 overflow-hidden">
       {showBackground ? (
-        <div
-          className="absolute inset-0 bg-center bg-cover bg-no-repeat pointer-events-none"
-          style={{ backgroundImage: `url('${backgroundUrl}')`, zIndex: 0 }}
-        />
+        <>
+          <div
+            className="absolute inset-0 bg-center bg-cover bg-no-repeat pointer-events-none"
+            style={{ backgroundImage: `url('${backgroundUrl}')`, zIndex: 0 }}
+          />
+          <div className="absolute inset-0 bg-black/75 pointer-events-none" style={{ zIndex: 1 }} />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none" style={{ zIndex: 2 }} />
+        </>
       ) : (
-        <div className="absolute inset-0 bg-dark pointer-events-none" style={{ zIndex: 0 }} />
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: 'var(--bg-dark)', zIndex: 0 }} />
       )}
-      <div className="absolute inset-0 bg-black/75 pointer-events-none" style={{ zIndex: 1 }} />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none" style={{ zIndex: 2 }} />
 
       <div className="relative w-full max-w-4xl flex flex-col gap-12" style={{ zIndex: 500 }}>
         <header className="flex items-center justify-between">

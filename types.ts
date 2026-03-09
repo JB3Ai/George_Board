@@ -8,7 +8,8 @@ export enum ItemType {
   YOUTUBE = 'YOUTUBE',
   DOCUMENT = 'DOCUMENT',
   IMAGE = 'IMAGE',
-  VIDEO = 'VIDEO'
+  VIDEO = 'VIDEO',
+  CHAT = 'CHAT'
 }
 
 export enum Theme {
@@ -66,6 +67,7 @@ export interface ClipboardItem {
   readBy?: UserEmail[];
   isDemo?: boolean;
   sharedGroupId?: string;
+  projectId?: string;
   preview_fail_count?: number;
   preview_last_fetched_at?: number;
   preview_next_allowed_at?: number;
@@ -79,4 +81,10 @@ export interface UserSession {
   email: UserEmail;
   pinVerified: boolean;
   trustUntil?: number;
+}
+
+export interface UserProject {
+  id: string;
+  name: string;
+  createdAt: number;
 }

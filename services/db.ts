@@ -1,5 +1,5 @@
 
-import { ClipboardItem, ItemType, TaskStatus, UserEmail } from '../types';
+import { ClipboardItem, ItemType, TaskStatus, UserEmail, UserProject } from '../types';
 import { OWNER_EMAIL } from '../constants';
 import { isSupabaseConfigured, supabase } from './supabaseClient';
 
@@ -51,6 +51,7 @@ const toRow = (item: ClipboardItem) => ({
   file_name: item.fileName ?? null,
   file_size: item.fileSize ?? null,
   shared_group_id: item.sharedGroupId ?? null,
+  project_id: item.projectId ?? null,
   updated_at: new Date().toISOString(),
 });
 
@@ -75,6 +76,7 @@ const fromRow = (row: any): ClipboardItem => ({
   fileName: row.file_name ?? undefined,
   fileSize: row.file_size ?? undefined,
   sharedGroupId: row.shared_group_id ?? undefined,
+  projectId: row.project_id ?? undefined,
 });
 
 const writeToSupabase = (item: ClipboardItem) => {
@@ -287,5 +289,46 @@ export async function getUserPresence(email: string): Promise<{ timestamp: numbe
     return typeof ts === 'number' ? { timestamp: ts } : null;
   } catch {
     return null;
+  }
+}
+
+// ─── User Projects (multi-tab per user) ──────────────────────────────
+const PROJECTS_PREFIX = 'projects_';
+
+export async function loadUserProjects(userId: string): Promise<UserProject[]> {
+  const key = `jb3_projects_${userId}`;
+  const local = localStorage.getItem(key);
+  if (local) {
+    try { return JSON.parse(local); } catch { /* fall through */ }
+  }
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data } = await (supabase as any)
+        .from('clipboard_state')
+        .select('payload')
+        .eq('id', `${PROJECTS_PREFIX}${userId}`)
+        .maybeSingle();
+      const projects = (data as any)?.payload?.projects;
+      if (Array.isArray(projects) && projects.length > 0) {
+        localStorage.setItem(key, JSON.stringify(projects));
+        return projects;
+      }
+    } catch { /* fall through */ }
+  }
+  const defaults: UserProject[] = [{ id: 'default', name: 'Project 1', createdAt: 0 }];
+  localStorage.setItem(key, JSON.stringify(defaults));
+  return defaults;
+}
+
+export async function saveUserProjects(userId: string, projects: UserProject[]): Promise<void> {
+  const key = `jb3_projects_${userId}`;
+  localStorage.setItem(key, JSON.stringify(projects));
+  if (!isSupabaseConfigured || !supabase) return;
+  try {
+    await (supabase as any)
+      .from('clipboard_state')
+      .upsert({ id: `${PROJECTS_PREFIX}${userId}`, payload: { projects }, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+  } catch (err) {
+    console.warn('Project save failed:', err);
   }
 }

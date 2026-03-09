@@ -7,16 +7,17 @@ import { SearchInput } from './components/SearchInput';
 import { ToastProvider, useToast } from './components/Toast';
 import { useUI } from './src/context/UIContext';
 import { db } from './services/db';
-import { loadDefaultNote, saveDefaultNoteToCloud, sendPresenceHeartbeat, getUserPresence } from './services/db';
+import { loadDefaultNote, saveDefaultNoteToCloud, sendPresenceHeartbeat, getUserPresence, loadUserProjects, saveUserProjects } from './services/db';
 import { userRegistry, hydrateRegistryFromCloud } from './services/userRegistry';
 import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
-import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme } from './types';
+import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme, UserProject } from './types';
 import { OWNER_EMAIL } from './constants';
-import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, ChevronLeft, ChevronRight, RotateCcw, Palette, Menu } from 'lucide-react';
+import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, ChevronLeft, ChevronRight, RotateCcw, Palette, Menu, FolderPlus } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 import { ThemeDock } from './components/ThemeDock';
+import { ChatWindow } from './components/ChatWindow';
 
 const THEME_BACKGROUNDS: Record<Theme, string> = {
   [Theme.NEON]:     'Media/NEON.jpg',
@@ -31,6 +32,7 @@ const DEFAULT_NOTE_KEY = 'jb3_default_note_all';
 
 const DEMO_TAB_ID = '__DEMO__';
 const SETTINGS_TAB_ID = '__SETTINGS__';
+const CHAT_TAB_ID = '__CHAT__';
 
 const AppInner: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('JONO');
@@ -60,6 +62,8 @@ const AppInner: React.FC = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [shareItem, setShareItem] = useState<ClipboardItem | null>(null);
   const [shareTargetUsers, setShareTargetUsers] = useState<string[]>([]);
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [userProjectsMap, setUserProjectsMap] = useState<Record<string, UserProject[]>>({});
 
   const { theme } = useUI();
   const bgImage = `${import.meta.env.BASE_URL}${THEME_BACKGROUNDS[theme] ?? 'Media/NEON.jpg'}`;
@@ -89,6 +93,16 @@ const AppInner: React.FC = () => {
 
   const nonOwnerTabs = TABS.filter(t => !t.isOwner);
 
+  const viewedUserProjects = useMemo(() => {
+    if (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID) return [];
+    return userProjectsMap[activeTab] || [{ id: 'default', name: 'Project 1', createdAt: 0 }];
+  }, [activeTab, userProjectsMap]);
+
+  const myProjects = useMemo(() => {
+    if (!currentUserTab || isOwnerSession) return [];
+    return userProjectsMap[currentUserTab.id] || [{ id: 'default', name: 'Project 1', createdAt: 0 }];
+  }, [currentUserTab, isOwnerSession, userProjectsMap]);
+
   useEffect(() => {
     const localItems = db.getItems();
     setItems(localItems);
@@ -116,6 +130,18 @@ const AppInner: React.FC = () => {
       .catch(() => undefined);
   }, []);
 
+  // ─── Load user projects for all non-owner tabs ───
+  useEffect(() => {
+    const loadAllProjects = async () => {
+      const map: Record<string, UserProject[]> = {};
+      for (const tab of TABS.filter(t => !t.isOwner)) {
+        map[tab.id] = await loadUserProjects(tab.id);
+      }
+      setUserProjectsMap(map);
+    };
+    if (TABS.length > 0) loadAllProjects();
+  }, [tabsVersion]);
+
   useEffect(() => {
     if (isOwnerSession) {
       const activeExists = TABS.some((tab) => tab.id === activeTab) || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID;
@@ -134,21 +160,47 @@ const AppInner: React.FC = () => {
     }
   }, [isOwnerSession, currentUserTab?.id, activeTab]);
 
+  // ─── Auto-select first project when switching user tabs ───
+  useEffect(() => {
+    if (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID) {
+      setActiveProjectId(null);
+      return;
+    }
+    const projects = userProjectsMap[activeTab] || [{ id: 'default', name: 'Project 1', createdAt: 0 }];
+    setActiveProjectId(projects[0].id);
+  }, [activeTab, userProjectsMap]);
+
   useEffect(() => {
     if (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID) return;
 
     const unreadFromOtherSide = items.filter((item) => {
       const inThisSyncTab = item.syncTabId === activeTab;
+      const inThisView = activeProjectId === CHAT_TAB_ID
+        ? item.type === ItemType.CHAT
+        : (item.projectId || 'default') === (activeProjectId || 'default') && item.type !== ItemType.CHAT;
       const fromOtherUser = item.userId !== session.email;
       const notReadYet = !(item.readBy || []).includes(session.email);
-      return inThisSyncTab && fromOtherUser && notReadYet;
+      return inThisSyncTab && inThisView && fromOtherUser && notReadYet;
     });
 
     if (unreadFromOtherSide.length === 0) return;
 
     unreadFromOtherSide.forEach((item) => db.markAsRead(item.id, session.email));
     setItems(db.getItems());
-  }, [activeTab, items.length, session.email]);
+  }, [activeTab, activeProjectId, items.length, session.email]);
+
+  // ─── Chat polling: refresh items every 5s when chat is active ───
+  useEffect(() => {
+    if (activeProjectId !== CHAT_TAB_ID) return;
+    const poll = async () => {
+      const cloudItems = await db.hydrateFromCloud();
+      if (cloudItems && cloudItems.length > 0) {
+        setItems(cloudItems);
+      }
+    };
+    const interval = setInterval(poll, 5000);
+    return () => clearInterval(interval);
+  }, [activeProjectId]);
 
   // ─── Presence heartbeat: ping every 30s so owner can see who's active ───
   useEffect(() => {
@@ -255,6 +307,43 @@ const AppInner: React.FC = () => {
 
   const getActiveSyncTabId = () => (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID ? undefined : activeTab);
 
+  const getActiveProjectId = (): string | undefined => {
+    if (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID) return undefined;
+    if (activeProjectId === CHAT_TAB_ID) return undefined;
+    return activeProjectId || 'default';
+  };
+
+  const handleCreateNewProject = async (userId: string) => {
+    const projects = userProjectsMap[userId] || [{ id: 'default', name: 'Project 1', createdAt: 0 }];
+    if (projects.length >= 7) {
+      showToast('Maximum 7 projects per user', 'error');
+      return;
+    }
+    const newProject: UserProject = {
+      id: crypto.randomUUID(),
+      name: `Project ${projects.length + 1}`,
+      createdAt: Date.now(),
+    };
+    const updated = [newProject, ...projects];
+    setUserProjectsMap(prev => ({ ...prev, [userId]: updated }));
+    await saveUserProjects(userId, updated);
+    setActiveProjectId(newProject.id);
+    showToast('New project created', 'success');
+  };
+
+  const handleSendChat = (content: string) => {
+    const syncTabId = getActiveSyncTabId();
+    if (!syncTabId) return;
+    db.addItem({
+      userId: session.email,
+      syncTabId,
+      type: ItemType.CHAT,
+      title: 'Chat',
+      content,
+    });
+    setItems(db.getItems());
+  };
+
   const usersList = useMemo(() => TABS.map(t => t.id), [TABS]);
 
   const cycleUser = (direction: 'next' | 'prev') => {
@@ -263,11 +352,12 @@ const AppInner: React.FC = () => {
     if (nextIndex >= usersList.length) nextIndex = 0;
     if (nextIndex < 0) nextIndex = usersList.length - 1;
     setActiveTab(usersList[nextIndex]);
+    setActiveProjectId(null);
     setIsAdding(false);
     setSearchTerm('');
   };
 
-  const canPost = activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (isOwnerSession || activeTab === currentUserTab?.id);
+  const canPost = activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && activeProjectId !== CHAT_TAB_ID && (isOwnerSession || activeTab === currentUserTab?.id);
   const isOwnerMainTab = isOwnerSession && activeTab === 'JONO';
   const showOwnerAdminPanels = isOwnerMainTab;
 
@@ -319,10 +409,12 @@ const AppInner: React.FC = () => {
 
     const finalType = explicitType || (url.includes('youtube.com') || url.includes('youtu.be') ? ItemType.YOUTUBE : ItemType.WEBPAGE);
     const syncTabId = getActiveSyncTabId();
+    const projectId = getActiveProjectId();
 
     const item = db.addItem({
       userId: session.email,
       syncTabId,
+      projectId,
       type: finalType,
       title: hostname,
       content: url,
@@ -334,6 +426,7 @@ const AppInner: React.FC = () => {
     const ownerCopy = (isOwnerSession && syncTabId) ? db.addItem({
       userId: session.email,
       syncTabId: undefined,
+      projectId: undefined,
       type: finalType,
       title: hostname,
       content: url,
@@ -367,8 +460,15 @@ const AppInner: React.FC = () => {
 
     if (activeTab === 'JONO') {
       baseItems = items.filter((item) => item.userId === OWNER_EMAIL && !item.syncTabId);
+    } else if (activeProjectId === CHAT_TAB_ID) {
+      baseItems = items.filter((item) => item.syncTabId === activeTab && item.type === ItemType.CHAT);
     } else {
-      baseItems = items.filter((item) => item.syncTabId === activeTab);
+      const pid = activeProjectId || 'default';
+      baseItems = items.filter((item) => {
+        if (item.syncTabId !== activeTab) return false;
+        if (item.type === ItemType.CHAT) return false;
+        return (item.projectId || 'default') === pid;
+      });
     }
 
     return baseItems.filter((item) => {
@@ -381,7 +481,7 @@ const AppInner: React.FC = () => {
 
       return !item.isArchived && matchesSearch;
     });
-  }, [items, activeTab, searchTerm]);
+  }, [items, activeTab, activeProjectId, searchTerm]);
 
   const getIconForType = (type: ItemType) => {
     switch (type) {
@@ -505,6 +605,7 @@ const AppInner: React.FC = () => {
           enrichmentStatus: EnrichmentStatus.PENDING,
           metadata: newItemContent ? { description: newItemContent } : {},
           isDemo: newItemIsDemo,
+          projectId: 'default',
         }, selectedTargetUsers);
 
         setItems(db.getItems());
@@ -541,6 +642,7 @@ const AppInner: React.FC = () => {
             fileName: newItemFile.name,
             fileSize: newItemFile.size,
             isDemo: newItemIsDemo,
+            projectId: 'default',
           }, selectedTargetUsers);
         } catch (err: any) {
           showToast(err.message || 'Upload failed', 'error');
@@ -564,6 +666,7 @@ const AppInner: React.FC = () => {
             fileName: newItemFile.name,
             fileSize: newItemFile.size,
             isDemo: newItemIsDemo,
+            projectId: 'default',
           }, selectedTargetUsers);
         } catch (err: any) {
           showToast(err.message || 'Upload failed', 'error');
@@ -582,6 +685,7 @@ const AppInner: React.FC = () => {
           dueDate: newItemType === ItemType.TASK || newItemType === ItemType.EVENT ? newItemDueDate : undefined,
           eventLocation: newItemType === ItemType.EVENT ? newItemLocation : undefined,
           isDemo: newItemIsDemo,
+          projectId: 'default',
         }, selectedTargetUsers);
       }
 
@@ -603,9 +707,11 @@ const AppInner: React.FC = () => {
             return;
           }
           const activeSyncTabDoc = getActiveSyncTabId();
+          const activeProjectDoc = getActiveProjectId();
           db.addItem({
             userId: session.email,
             syncTabId: activeSyncTabDoc,
+            projectId: activeProjectDoc,
             type: ItemType.DOCUMENT,
             title: newItemTitle || newItemFile.name,
             content: newItemContent,
@@ -617,6 +723,7 @@ const AppInner: React.FC = () => {
           if (isOwnerSession && activeSyncTabDoc) db.addItem({
             userId: session.email,
             syncTabId: undefined,
+            projectId: undefined,
             type: ItemType.DOCUMENT,
             title: newItemTitle || newItemFile.name,
             content: newItemContent,
@@ -645,9 +752,11 @@ const AppInner: React.FC = () => {
             return;
           }
           const activeSyncTabMedia = getActiveSyncTabId();
+          const activeProjectMedia = getActiveProjectId();
           db.addItem({
             userId: session.email,
             syncTabId: activeSyncTabMedia,
+            projectId: activeProjectMedia,
             type: newItemType,
             title: newItemTitle || newItemFile.name,
             content: newItemContent,
@@ -659,6 +768,7 @@ const AppInner: React.FC = () => {
           if (isOwnerSession && activeSyncTabMedia) db.addItem({
             userId: session.email,
             syncTabId: undefined,
+            projectId: undefined,
             type: newItemType,
             title: newItemTitle || newItemFile.name,
             content: newItemContent,
@@ -675,9 +785,11 @@ const AppInner: React.FC = () => {
         setIsUploading(false);
       } else {
         const activeSyncTabPlain = getActiveSyncTabId();
+        const activeProjectPlain = getActiveProjectId();
         db.addItem({
           userId: session.email,
           syncTabId: activeSyncTabPlain,
+          projectId: activeProjectPlain,
           type: newItemType,
           title: newItemTitle || 'Untitled Log',
           content: newItemContent,
@@ -689,6 +801,7 @@ const AppInner: React.FC = () => {
         if (isOwnerSession && activeSyncTabPlain) db.addItem({
           userId: session.email,
           syncTabId: undefined,
+          projectId: undefined,
           type: newItemType,
           title: newItemTitle || 'Untitled Log',
           content: newItemContent,
@@ -731,6 +844,7 @@ const AppInner: React.FC = () => {
       fileUrl: shareItem.fileUrl,
       fileName: shareItem.fileName,
       fileSize: shareItem.fileSize,
+      projectId: 'default',
     }, shareTargetUsers);
     setItems(db.getItems());
     showToast(`Shared to ${shareTargetUsers.length} user${shareTargetUsers.length > 1 ? 's' : ''}`, 'success');
@@ -744,7 +858,9 @@ const AppInner: React.FC = () => {
       ? 'DEMO PROJECT SHOWCASE'
       : activeTab === SETTINGS_TAB_ID
         ? 'INTERFACE SETTINGS'
-      : `1:1 SYNC CHANNEL: JONO ↔ ${activeTab}`;
+      : activeProjectId === CHAT_TAB_ID
+        ? `1:1 SECURE CHAT: JONO ↔ ${activeTab}`
+        : `SYNC CHANNEL: JONO ↔ ${activeTab}`;
 
   const signedInName = (currentUserTab?.label || session.email.split('@')[0] || 'USER').toUpperCase();
   const signedInRole = isOwnerSession ? 'OWNER ACCESS' : 'USER ACCESS';
@@ -917,29 +1033,23 @@ const AppInner: React.FC = () => {
             <button onClick={() => setShowInfo(true)} title="Info & Help" className="flex-shrink-0 text-muted/40 hover:text-cyan-400 transition-colors">
               <Info size={18} strokeWidth={1.5} />
             </button>
-            {/* Tab scroll with arrow nav — hidden on mobile via CSS; hidden for owner (uses admin console instead) */}
+            {/* Project tabs + Chat for non-owner users */}
             {!isOwnerSession && (
-            <div className="nav-scroll-container flex-1 min-w-0 flex items-center gap-0">
-              <button onClick={() => scrollTabs('left')} className="flex-shrink-0 text-muted/30 hover:text-accent transition-colors" title="Scroll left">
-                <ChevronLeft size={14} strokeWidth={2} />
-              </button>
-              <div ref={tabsScrollRef} className="flex-1 min-w-0 overflow-x-auto" style={{ scrollbarWidth: 'none', scrollbarColor: 'transparent transparent' }}>
-                <div className="flex gap-6 sm:gap-10 items-center w-max pr-4">
-                  {visibleTabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => { setActiveTab(tab.id); setIsAdding(false); setSearchTerm(''); }}
-                      className={`text-[10px] sm:text-[11px] tracking-[0.3em] uppercase transition-all pb-6 -mb-6 border-b-2 font-bold whitespace-nowrap ${
-                        activeTab === tab.id ? 'text-accent border-accent' : 'text-muted border-transparent hover:text-primary'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <button onClick={() => scrollTabs('right')} className="flex-shrink-0 text-muted/30 hover:text-accent transition-colors" title="Scroll right">
-                <ChevronRight size={14} strokeWidth={2} />
+            <div className="nav-center-tabs">
+              {myProjects.map((project, index) => (
+                <button
+                  key={project.id}
+                  className={`tab-btn ${activeProjectId === project.id ? 'active' : ''}`}
+                  onClick={() => { setActiveProjectId(project.id); setIsAdding(false); setSearchTerm(''); }}
+                >
+                  PROJECT {myProjects.length - index}
+                </button>
+              ))}
+              <button
+                className={`tab-btn chat-tab ${activeProjectId === CHAT_TAB_ID ? 'active' : ''}`}
+                onClick={() => { setActiveProjectId(CHAT_TAB_ID); setIsAdding(false); setSearchTerm(''); }}
+              >
+                1:1 SECURE CHAT
               </button>
             </div>
             )}
@@ -1012,6 +1122,32 @@ const AppInner: React.FC = () => {
                   <span>1:1 SYNC: SECURE AES-256</span>
                 </div>
               </div>
+              {activeTab !== 'JONO' && (
+                <div className="admin-project-tabs">
+                  {viewedUserProjects.map((project, index) => (
+                    <button
+                      key={project.id}
+                      className={`tab-btn ${activeProjectId === project.id ? 'active' : ''}`}
+                      onClick={() => setActiveProjectId(project.id)}
+                    >
+                      TAB {index + 1}
+                    </button>
+                  ))}
+                  <button
+                    className={`tab-btn chat-tab ${activeProjectId === CHAT_TAB_ID ? 'active' : ''}`}
+                    onClick={() => setActiveProjectId(CHAT_TAB_ID)}
+                  >
+                    CHAT
+                  </button>
+                  <button
+                    className="tab-btn new-project-btn"
+                    onClick={() => handleCreateNewProject(activeTab)}
+                    title="Create new project for this user"
+                  >
+                    <FolderPlus size={12} /> NEW
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -1026,17 +1162,41 @@ const AppInner: React.FC = () => {
                     <X size={18} strokeWidth={1.5} />
                   </button>
                 </div>
-                {visibleTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => { setActiveTab(tab.id); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
-                    className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
-                      activeTab === tab.id ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+                {isOwnerSession ? (
+                  visibleTabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => { setActiveTab(tab.id); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
+                      className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
+                        activeTab === tab.id ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))
+                ) : (
+                  <>
+                    {myProjects.map((project, index) => (
+                      <button
+                        key={project.id}
+                        onClick={() => { setActiveProjectId(project.id); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
+                        className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
+                          activeProjectId === project.id ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
+                        }`}
+                      >
+                        PROJECT {myProjects.length - index}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => { setActiveProjectId(CHAT_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
+                      className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
+                        activeProjectId === CHAT_TAB_ID ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
+                      }`}
+                    >
+                      1:1 SECURE CHAT
+                    </button>
+                  </>
+                )}
                 <div className="h-px bg-edge my-2" />
                 <button
                   onClick={() => { setActiveTab(DEMO_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
@@ -1506,6 +1666,12 @@ const AppInner: React.FC = () => {
               <DemoTab items={items} />
             ) : activeTab === SETTINGS_TAB_ID ? (
               <SettingsTab session={session} onResetPin={handleResetPin} />
+            ) : activeProjectId === CHAT_TAB_ID ? (
+              <ChatWindow
+                messages={filteredItems}
+                currentUser={session.email}
+                onSend={handleSendChat}
+              />
             ) : (
               <>
                 {activeTab !== 'JONO' && defaultNote.trim() && (

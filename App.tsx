@@ -36,6 +36,9 @@ const SETTINGS_TAB_ID = '__SETTINGS__';
 const getChatAnchorId = (userId: string) => `${userId}_CHAT`;
 const isChatAnchor = (id: string | null) => typeof id === 'string' && id.endsWith('_CHAT');
 
+/** Returns true when projectId is null, undefined, or the V1 placeholder 'default' */
+const isLegacyProjectId = (pid: string | undefined) => !pid || pid === 'default';
+
 const AppInner: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('JONO');
   const [items, setItems] = useState<ClipboardItem[]>([]);
@@ -177,11 +180,22 @@ const AppInner: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID) return;
 
+    // Determine if active project is the TAB 1 "Memory" slot (index 1)
+    const activeIsTab1 = (() => {
+      const projects = userProjectsMap[activeTab];
+      if (!projects) return true; // default single-project state = TAB 1
+      const match = projects.find(p => p.id === activeProjectId);
+      return match ? match.index === 1 : false;
+    })();
+
     const unreadFromOtherSide = items.filter((item) => {
       const inThisSyncTab = item.syncTabId === activeTab;
       const inThisView = isChatAnchor(activeProjectId)
         ? item.type === ItemType.CHAT
-        : (item.projectId || 'default') === (activeProjectId || 'default') && item.type !== ItemType.CHAT;
+        : item.type !== ItemType.CHAT && (
+            (item.projectId || 'default') === (activeProjectId || 'default')
+            || (activeIsTab1 && isLegacyProjectId(item.projectId))
+          );
       const fromOtherUser = item.userId !== session.email;
       const notReadYet = !(item.readBy || []).includes(session.email);
       return inThisSyncTab && inThisView && fromOtherUser && notReadYet;
@@ -323,22 +337,19 @@ const AppInner: React.FC = () => {
       showToast('Maximum 7 project tabs per user', 'error');
       return;
     }
-    // Push-stack: shift all existing indices up by 1
-    const shifted = projects.map(p => ({ ...p, index: p.index + 1 }));
-    // Archive anything beyond position 7
-    const kept = shifted.filter(p => p.index <= 7);
-    // Insert new project at index 1
+    // TAB 1 is pinned as the legacy "Memory" slot — new projects append after it
+    const maxIndex = Math.max(...projects.map(p => p.index), 0);
     const newProject: UserProject = {
       id: `${userId}_P${Date.now()}`,
-      name: `Project ${kept.length + 1}`,
-      index: 1,
+      name: `Project ${maxIndex + 1}`,
+      index: maxIndex + 1,
       createdAt: Date.now(),
     };
-    const updated = [newProject, ...kept].sort((a, b) => a.index - b.index);
+    const updated = [...projects, newProject].sort((a, b) => a.index - b.index);
     setUserProjectsMap(prev => ({ ...prev, [userId]: updated }));
     await saveUserProjects(userId, updated);
     setActiveProjectId(newProject.id);
-    showToast('New project created — existing tabs shifted right', 'success');
+    showToast('New project tab created', 'success');
   };
 
   const handleSendChat = (content: string) => {
@@ -461,9 +472,20 @@ const AppInner: React.FC = () => {
       baseItems = items.filter((item) => item.syncTabId === activeTab && item.type === ItemType.CHAT);
     } else {
       const pid = activeProjectId || 'default';
+      // Determine if we're viewing the TAB 1 "Memory" slot (index 1)
+      const viewingTab1 = (() => {
+        const projects = isOwnerSession
+          ? (userProjectsMap[activeTab] || [])
+          : myProjects;
+        const match = projects.find(p => p.id === activeProjectId);
+        return match ? match.index === 1 : !activeProjectId;
+      })();
+
       baseItems = items.filter((item) => {
         if (item.syncTabId !== activeTab) return false;
         if (item.type === ItemType.CHAT) return false;
+        // TAB 1 captures legacy items (null / 'default' projectId) + exact match
+        if (viewingTab1 && isLegacyProjectId(item.projectId)) return true;
         return (item.projectId || 'default') === pid;
       });
     }

@@ -1786,6 +1786,7 @@ const AppInner: React.FC = () => {
                 messages={filteredItems}
                 currentUser={session.email}
                 onSend={handleSendChat}
+                peerLabel={TABS.find(t => t.id === activeTab)?.label}
               />
             ) : (
               <>

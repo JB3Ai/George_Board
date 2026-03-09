@@ -6,9 +6,10 @@ interface ChatWindowProps {
   messages: ClipboardItem[];
   currentUser: string;
   onSend: (content: string) => void;
+  peerLabel?: string;
 }
 
-export const ChatWindow: React.FC<ChatWindowProps> = ({ messages, currentUser, onSend }) => {
+export const ChatWindow: React.FC<ChatWindowProps> = ({ messages, currentUser, onSend, peerLabel }) => {
   const [draft, setDraft] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -27,6 +28,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ messages, currentUser, o
 
   return (
     <div className="chat-interface">
+      <div className="chat-header">
+        SECURE 1:1 CHANNEL: JONO ↔ {peerLabel || 'USER'}
+      </div>
       <div className="chat-messages">
         {sorted.length === 0 && (
           <div className="chat-empty">

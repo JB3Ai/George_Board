@@ -18,6 +18,7 @@ import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 import { ThemeDock } from './components/ThemeDock';
 import { ChatWindow } from './components/ChatWindow';
+import AdminSearchOverlay from './components/AdminSearchOverlay';
 
 const THEME_BACKGROUNDS: Record<Theme, string> = {
   [Theme.NEON]:     'Media/NEON.jpg',
@@ -1123,7 +1124,7 @@ const AppInner: React.FC = () => {
             <div className="header-utility-icons flex items-center gap-3 sm:gap-4 flex-shrink-0 border-l border-edge pl-4">
               <button
                 onClick={() => { setActiveTab(DEMO_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
-                className={`desktop-only-action inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] sm:text-[11px] tracking-[0.24em] uppercase transition-all font-bold whitespace-nowrap demo-pulse-glow ${
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] sm:text-[11px] tracking-[0.24em] uppercase transition-all font-bold whitespace-nowrap demo-pulse-glow ${
                   activeTab === DEMO_TAB_ID
                     ? 'text-accent border-accent/70 bg-accent/15'
                     : 'text-accent/90 border-accent/30 bg-accent/10 hover:bg-accent/15 hover:border-accent/60'
@@ -1223,45 +1224,17 @@ const AppInner: React.FC = () => {
 
           {/* Admin User Search Overlay */}
           {showAdminSearch && (
-            <div className="admin-search-overlay" onClick={() => setShowAdminSearch(false)}>
-              <div className="admin-search-panel" onClick={(e) => e.stopPropagation()}>
-                <div className="admin-search-header">
-                  <Search size={16} className="text-accent" />
-                  <input
-                    autoFocus
-                    type="text"
-                    value={adminSearchQuery}
-                    onChange={(e) => setAdminSearchQuery(e.target.value)}
-                    placeholder="Search users..."
-                    className="admin-search-input"
-                  />
-                  <button onClick={() => setShowAdminSearch(false)} className="text-muted/40 hover:text-primary transition-colors"><X size={16} /></button>
-                </div>
-                <div className="admin-search-results">
-                  {TABS.filter(t => {
-                    if (!adminSearchQuery.trim()) return true;
-                    const q = adminSearchQuery.toLowerCase();
-                    return t.id.toLowerCase().includes(q) || t.label.toLowerCase().includes(q) || t.email.toLowerCase().includes(q);
-                  }).map(t => (
-                    <button
-                      key={t.id}
-                      className={`admin-search-item ${activeTab === t.id ? 'active' : ''}`}
-                      onClick={() => {
-                        setActiveTab(t.id);
-                        setActiveProjectId(null);
-                        setIsAdding(false);
-                        setSearchTerm('');
-                        setShowAdminSearch(false);
-                      }}
-                    >
-                      <span className="admin-search-label">{t.label}</span>
-                      <span className="admin-search-email">{t.email}</span>
-                      {t.isOwner && <span className="admin-search-badge">OWNER</span>}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <AdminSearchOverlay
+              users={TABS}
+              activeTabId={activeTab}
+              onSelect={(user) => {
+                setActiveTab(user.id);
+                setActiveProjectId(null);
+                setIsAdding(false);
+                setSearchTerm('');
+              }}
+              onClose={() => setShowAdminSearch(false)}
+            />
           )}
 
           {/* Mobile slide-out drawer */}
@@ -1313,14 +1286,6 @@ const AppInner: React.FC = () => {
                   </>
                 )}
                 <div className="h-px bg-edge my-2" />
-                <button
-                  onClick={() => { setActiveTab(DEMO_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
-                  className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold flex items-center gap-3 ${
-                    activeTab === DEMO_TAB_ID ? 'text-accent bg-accent/10 border border-accent/20' : 'text-accent/70 hover:bg-accent/10 border border-transparent'
-                  }`}
-                >
-                  <span className="drawer-demo-pill"><span className="pulse-dot" /> DEMO</span>
-                </button>
                 <button
                   onClick={() => { setActiveTab(SETTINGS_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
                   className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${

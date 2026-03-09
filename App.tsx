@@ -365,6 +365,22 @@ const AppInner: React.FC = () => {
     // Archive any project that overflows to index 8+
     const kept = shifted.filter(p => p.index <= MAX_PROJECT_TABS);
     const archived = shifted.filter(p => p.index > MAX_PROJECT_TABS);
+
+    // Shift item-level projectIds to match new project positions
+    const oldToNew = new Map<string, string>();
+    projects.forEach(oldP => {
+      const newP = shifted.find(s => s.id === oldP.id);
+      if (newP) oldToNew.set(oldP.id, newP.id);
+    });
+    // Archive items belonging to projects that overflowed
+    const archivedIds = new Set(archived.map(p => p.id));
+    items.forEach(item => {
+      if (item.syncTabId !== userId || item.type === ItemType.CHAT) return;
+      if (archivedIds.has(item.projectId || '')) {
+        db.updateItem(item.id, session.email, { isArchived: true });
+      }
+    });
+
     if (archived.length > 0) {
       showToast(`${archived.length} project(s) archived (exceeded 7-tab limit)`, 'info');
     }

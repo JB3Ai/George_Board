@@ -7,7 +7,7 @@ import { SearchInput } from './components/SearchInput';
 import { ToastProvider, useToast } from './components/Toast';
 import { useUI } from './src/context/UIContext';
 import { db } from './services/db';
-import { loadDefaultNote, saveDefaultNoteToCloud, sendPresenceHeartbeat, getUserPresence, loadUserProjects, saveUserProjects } from './services/db';
+import { loadDefaultNote, saveDefaultNoteToCloud, sendPresenceHeartbeat, getUserPresence, loadUserProjects, saveUserProjects, getTab1Data } from './services/db';
 import { userRegistry, hydrateRegistryFromCloud } from './services/userRegistry';
 import { supabaseAuth } from './services/auth';
 import { fetchLinkMetadata } from './services/metadata';
@@ -177,6 +177,27 @@ const AppInner: React.FC = () => {
     setActiveProjectId(projects[0].id);
   }, [activeTab, userProjectsMap]);
 
+  // ─── TAB 1 "Memory" bridge: hydrate legacy items from Supabase when P1 is active ───
+  useEffect(() => {
+    if (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID) return;
+    const projects = isOwnerSession
+      ? (userProjectsMap[activeTab] || [])
+      : myProjects;
+    const match = projects.find(p => p.id === activeProjectId);
+    const isTab1 = match ? match.index === 1 : !activeProjectId;
+    if (!isTab1) return;
+
+    getTab1Data(activeTab).then((legacyItems) => {
+      if (legacyItems.length === 0) return;
+      // Merge legacy cloud items into local state (deduplicate by id)
+      setItems(prev => {
+        const existingIds = new Set(prev.map(i => i.id));
+        const newOnes = legacyItems.filter(i => !existingIds.has(i.id));
+        return newOnes.length > 0 ? [...newOnes, ...prev] : prev;
+      });
+    }).catch(() => undefined);
+  }, [activeTab, activeProjectId]);
+
   useEffect(() => {
     if (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID) return;
 
@@ -331,25 +352,34 @@ const AppInner: React.FC = () => {
     return activeProjectId || 'default';
   };
 
+  const MAX_PROJECT_TABS = 7; // 8th slot reserved for Chat
+
   const handleCreateNewProject = async (userId: string) => {
     const projects = userProjectsMap[userId] || [{ id: `${userId}_P1`, name: 'Project 1', index: 1, createdAt: 0 }];
-    if (projects.length >= 7) {
+    if (projects.length >= MAX_PROJECT_TABS) {
       showToast('Maximum 7 project tabs per user', 'error');
       return;
     }
-    // TAB 1 is pinned as the legacy "Memory" slot — new projects append after it
-    const maxIndex = Math.max(...projects.map(p => p.index), 0);
+    // Push-stack: shift every existing project index up by 1
+    const shifted = projects.map(p => ({ ...p, index: p.index + 1 }));
+    // Archive any project that overflows to index 8+
+    const kept = shifted.filter(p => p.index <= MAX_PROJECT_TABS);
+    const archived = shifted.filter(p => p.index > MAX_PROJECT_TABS);
+    if (archived.length > 0) {
+      showToast(`${archived.length} project(s) archived (exceeded 7-tab limit)`, 'info');
+    }
+    // Insert new project as TAB 1 (index 1)
     const newProject: UserProject = {
       id: `${userId}_P${Date.now()}`,
-      name: `Project ${maxIndex + 1}`,
-      index: maxIndex + 1,
+      name: `Project ${kept.length + 1}`,
+      index: 1,
       createdAt: Date.now(),
     };
-    const updated = [...projects, newProject].sort((a, b) => a.index - b.index);
+    const updated = [newProject, ...kept].sort((a, b) => a.index - b.index);
     setUserProjectsMap(prev => ({ ...prev, [userId]: updated }));
     await saveUserProjects(userId, updated);
     setActiveProjectId(newProject.id);
-    showToast('New project tab created', 'success');
+    showToast('New project tab created — existing tabs shifted right', 'success');
   };
 
   const handleSendChat = (content: string) => {

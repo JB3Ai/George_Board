@@ -292,6 +292,19 @@ export async function getUserPresence(email: string): Promise<{ timestamp: numbe
   }
 }
 
+// ─── TAB 1 Recovery: fetch legacy + P1-aliased items from Supabase ─────
+export async function getTab1Data(userId: string): Promise<ClipboardItem[]> {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await (supabase as any)
+    .from(ITEMS_TABLE)
+    .select('*')
+    .or('project_id.is.null,project_id.eq.default,project_id.eq.P1')
+    .eq('sync_tab_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) { console.warn('getTab1Data failed:', error.message); return []; }
+  return (data || []).map(fromRow);
+}
+
 // ─── User Projects (multi-tab per user) ──────────────────────────────
 const PROJECTS_PREFIX = 'projects_';
 

@@ -72,6 +72,8 @@ const AppInner: React.FC = () => {
   const [userProjectsMap, setUserProjectsMap] = useState<Record<string, UserProject[]>>({});
   const [showAdminSearch, setShowAdminSearch] = useState(false);
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
+  const [newItemTargetProjectId, setNewItemTargetProjectId] = useState<string | null>(null);
+  const [editCopyToUsers, setEditCopyToUsers] = useState<string[]>([]);
 
   const { theme } = useUI();
   const bgImage = `${import.meta.env.BASE_URL}${THEME_BACKGROUNDS[theme] ?? 'Media/NEON.jpg'}`;
@@ -353,6 +355,12 @@ const AppInner: React.FC = () => {
     return activeProjectId || 'default';
   };
 
+  /** Returns the project id chosen in the form's Target Tab picker, falling back to current active project */
+  const getFormTargetProjectId = (): string | undefined => {
+    if (newItemTargetProjectId) return newItemTargetProjectId;
+    return getActiveProjectId();
+  };
+
   const MAX_PROJECT_TABS = 7; // 8th slot reserved for Chat
 
   const handleCreateNewProject = async (userId: string) => {
@@ -454,7 +462,7 @@ const AppInner: React.FC = () => {
     setIsAdding(true);
   };
 
-  const handleAddLink = async (url: string, explicitType?: ItemType, manualNote?: string) => {
+  const handleAddLink = async (url: string, explicitType?: ItemType, manualNote?: string, overrideProjectId?: string) => {
     let hostname = 'LINK';
     try {
       hostname = new URL(url).hostname;
@@ -464,7 +472,7 @@ const AppInner: React.FC = () => {
 
     const finalType = explicitType || (url.includes('youtube.com') || url.includes('youtu.be') ? ItemType.YOUTUBE : ItemType.WEBPAGE);
     const syncTabId = getActiveSyncTabId();
-    const projectId = getActiveProjectId();
+    const projectId = overrideProjectId || getActiveProjectId();
 
     const item = db.addItem({
       userId: session.email,
@@ -653,6 +661,29 @@ const AppInner: React.FC = () => {
       }
 
       db.updateItem(editingItem.id, session.email, updates);
+
+      // Copy card to selected users (owner only, edit mode)
+      if (isOwnerSession && editCopyToUsers.length > 0) {
+        const copyBase: any = {
+          userId: session.email,
+          type: updates.type || editingItem.type,
+          title: updates.title || editingItem.title,
+          content: updates.content || editingItem.content,
+          taskStatus: updates.taskStatus,
+          dueDate: updates.dueDate,
+          eventLocation: updates.eventLocation,
+          isDemo: updates.isDemo,
+          fileUrl: updates.fileUrl || editingItem.fileUrl,
+          fileName: updates.fileName || editingItem.fileName,
+          fileSize: updates.fileSize || editingItem.fileSize,
+          metadata: updates.metadata || editingItem.metadata,
+          enrichmentStatus: editingItem.enrichmentStatus,
+          projectId: newItemTargetProjectId || 'default',
+        };
+        db.addItemBatch(copyBase, editCopyToUsers);
+        showToast(`Card copied to ${editCopyToUsers.length} user${editCopyToUsers.length > 1 ? 's' : ''}`, 'success');
+      }
+
       setEditingItem(null);
     } else if (isOwnerSession && selectedTargetUsers.length > 0) {
       // ─── Multi-user batch path ───
@@ -758,7 +789,7 @@ const AppInner: React.FC = () => {
       showToast(`Entry shared to ${selectedTargetUsers.length} user${selectedTargetUsers.length > 1 ? 's' : ''}`, 'success');
     } else {
       if (newItemType === ItemType.WEBPAGE || newItemType === ItemType.YOUTUBE) {
-        await handleAddLink(newItemTitle, newItemType, newItemContent);
+        await handleAddLink(newItemTitle, newItemType, newItemContent, getFormTargetProjectId());
       } else if (newItemType === ItemType.DOCUMENT) {
         if (!newItemFile) {
           showToast('Please select a file to upload', 'error');
@@ -773,7 +804,7 @@ const AppInner: React.FC = () => {
             return;
           }
           const activeSyncTabDoc = getActiveSyncTabId();
-          const activeProjectDoc = getActiveProjectId();
+          const activeProjectDoc = getFormTargetProjectId();
           db.addItem({
             userId: session.email,
             syncTabId: activeSyncTabDoc,
@@ -818,7 +849,7 @@ const AppInner: React.FC = () => {
             return;
           }
           const activeSyncTabMedia = getActiveSyncTabId();
-          const activeProjectMedia = getActiveProjectId();
+          const activeProjectMedia = getFormTargetProjectId();
           db.addItem({
             userId: session.email,
             syncTabId: activeSyncTabMedia,
@@ -851,7 +882,7 @@ const AppInner: React.FC = () => {
         setIsUploading(false);
       } else {
         const activeSyncTabPlain = getActiveSyncTabId();
-        const activeProjectPlain = getActiveProjectId();
+        const activeProjectPlain = getFormTargetProjectId();
         db.addItem({
           userId: session.email,
           syncTabId: activeSyncTabPlain,
@@ -887,6 +918,8 @@ const AppInner: React.FC = () => {
     setNewItemLocation('');
     setNewItemFile(null);
     setSelectedTargetUsers([]);
+    setNewItemTargetProjectId(null);
+    setEditCopyToUsers([]);
   };
 
   const handleOpenShare = (item: ClipboardItem) => {
@@ -1434,6 +1467,8 @@ const AppInner: React.FC = () => {
                 onClick={() => {
                   setEditingItem(null);
                   setNewItemContent('');
+                  setNewItemTargetProjectId(null);
+                  setEditCopyToUsers([]);
                   setIsAdding(true);
                 }}
                 className="inline-flex items-center gap-3 text-[11px] tracking-[0.3em] text-accent/60 hover:text-accent transition-all uppercase font-bold group"
@@ -1468,6 +1503,79 @@ const AppInner: React.FC = () => {
                     <span className="text-[10px] tracking-widest text-accent uppercase font-bold">Editing Mode</span>
                   )}
                 </div>
+
+                {/* Target Tab picker — choose which project tab the entry goes to */}
+                {!isChatAnchor(activeProjectId) && (() => {
+                  const tabProjects = isOwnerSession
+                    ? (userProjectsMap[activeTab] || [])
+                    : myProjects;
+                  if (tabProjects.length <= 1) return null;
+                  return (
+                    <div className="space-y-4 border border-accent/10 rounded-2xl p-6 bg-accent/[0.02]">
+                      <p className="text-[9px] tracking-widest text-muted/40 uppercase font-bold flex items-center gap-3">
+                        <LayoutGrid size={14} className="text-accent/40" />
+                        Target Tab
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        {tabProjects
+                          .sort((a, b) => a.index - b.index)
+                          .map(project => {
+                            const isSelected = (newItemTargetProjectId || activeProjectId) === project.id;
+                            return (
+                              <button
+                                key={project.id}
+                                type="button"
+                                onClick={() => setNewItemTargetProjectId(project.id)}
+                                className={`text-[10px] tracking-widest px-5 py-2.5 rounded-full border transition-all uppercase font-bold ${
+                                  isSelected
+                                    ? 'bg-accent/10 border-accent/30 text-accent'
+                                    : 'border-edge text-muted/40 hover:border-edge hover:text-muted'
+                                }`}
+                              >
+                                {project.name || `TAB ${project.index}`}
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Copy to Users — owner only, edit mode */}
+                {isOwnerSession && editingItem && nonOwnerTabs.length > 0 && (
+                  <div className="space-y-4 border border-accent/10 rounded-2xl p-6 bg-accent/[0.02]">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[9px] tracking-widest text-muted/40 uppercase font-bold flex items-center gap-3">
+                        <Users size={14} className="text-accent/40" />
+                        Copy to Users
+                      </p>
+                      <div className="flex gap-6">
+                        <button type="button" onClick={() => setEditCopyToUsers(nonOwnerTabs.map(t => t.id))} className="text-[9px] tracking-widest uppercase text-accent/40 hover:text-accent font-bold transition-colors">All</button>
+                        <button type="button" onClick={() => setEditCopyToUsers([])} className="text-[9px] tracking-widest uppercase text-muted/30 hover:text-muted font-bold transition-colors">Clear</button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {nonOwnerTabs.map(tab => {
+                        const selected = editCopyToUsers.includes(tab.id);
+                        return (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => setEditCopyToUsers(prev => selected ? prev.filter(id => id !== tab.id) : [...prev, tab.id])}
+                            className={`text-[10px] tracking-widest px-5 py-2.5 rounded-full border transition-all uppercase font-bold ${
+                              selected ? 'bg-accent/10 border-accent/30 text-accent' : 'border-edge text-muted/40 hover:border-edge hover:text-muted'
+                            }`}
+                          >
+                            {tab.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {editCopyToUsers.length === 0 && (
+                      <p className="text-[9px] tracking-widest text-muted/20 uppercase">No users selected — card updates in place only</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Multi-user picker — owner only, new items only */}
                 {isOwnerSession && !editingItem && nonOwnerTabs.length > 0 && (

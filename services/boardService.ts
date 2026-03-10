@@ -68,14 +68,14 @@ export async function loadWorkspacesForOwner(ownerEmail: string): Promise<Worksp
   return data.map(workspaceFromRow);
 }
 
-/** Load boards for a workspace. */
+/** Load boards for a workspace (sorted by most recent activity). */
 export async function loadBoardsForWorkspace(workspaceId: string): Promise<Board[]> {
   if (!isSupabaseConfigured || !supabase) return [];
   const { data, error } = await (supabase as any)
     .from('boards')
     .select('*')
     .eq('workspace_id', workspaceId)
-    .order('created_at', { ascending: true });
+    .order('last_activity', { ascending: false, nullsFirst: false });
   if (error || !Array.isArray(data)) return [];
   return data.map(boardFromRow);
 }

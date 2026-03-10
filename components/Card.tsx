@@ -255,13 +255,13 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
             <div className="flex items-center gap-4">
               <span className={`text-[11px] tracking-[0.3em] text-muted uppercase font-bold flex items-center gap-2 ${isEnriching ? 'animate-skeleton' : ''}`}>
                 {getTypeIcon()}
-                {item.metadata?.siteName || (isEnriching ? 'Analyzing...' : isDelayed ? 'Retrying later...' : item.type)}
+                {item.metadata?.siteName || (isEnriching ? 'Analysing...' : isDelayed ? 'Preview delayed' : item.type)}
               </span>
               {item.isPinned && <Pin size={12} className="text-accent fill-accent group-hover:animate-pin-glow" />}
             </div>
             
             <h3 className={`text-xl font-medium text-primary leading-snug tracking-tight break-words whitespace-normal [overflow-wrap:anywhere] ${isEnriching ? 'animate-skeleton text-primary/10' : ''}`}>
-              {item.metadata?.title || item.title || "Observation Unit"}
+              {item.metadata?.title || item.title || "Untitled"}
             </h3>
             {(item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE) && (
               <p className="text-sm text-muted leading-relaxed font-normal line-clamp-2">
@@ -278,7 +278,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
                 <button 
                   onClick={handleRefreshClick} 
                   className={`p-2.5 sm:p-3 bg-card/10 hover:bg-accent/10 rounded-2xl text-muted hover:text-accent border border-edge transition-all ${isEnriching ? 'animate-spin' : ''}`} 
-                  title="Refresh Metadata"
+                  title="Refresh preview"
                 >
                   <RefreshCw size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
                 </button>
@@ -291,7 +291,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
             )}
             {(item.type === ItemType.WEBPAGE || item.type === ItemType.YOUTUBE) && (
               <>
-                <button onClick={() => window.open(item.content, '_blank')} className="p-2.5 sm:p-3 bg-card/10 hover:bg-accent/10 rounded-2xl text-muted hover:text-accent border border-edge transition-all" title="Open Asset">
+                <button onClick={() => window.open(item.content, '_blank')} className="p-2.5 sm:p-3 bg-card/10 hover:bg-accent/10 rounded-2xl text-muted hover:text-accent border border-edge transition-all" title="Open link">
                   <ExternalLink size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
                 </button>
                 <button onClick={handleCopyLink} className="p-2.5 sm:p-3 bg-card/10 hover:bg-accent/10 rounded-2xl text-muted hover:text-accent border border-edge transition-all" title="Copy Link">
@@ -306,20 +306,20 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
             {isOwner && (
               <>
                 {onShare && (
-                  <button onClick={() => onShare(item)} className="p-2.5 sm:p-3 bg-card/10 hover:bg-accent/10 rounded-2xl text-muted hover:text-accent border border-edge transition-all" title="Share to Users">
+                  <button onClick={() => onShare(item)} className="p-2.5 sm:p-3 bg-card/10 hover:bg-accent/10 rounded-2xl text-muted hover:text-accent border border-edge transition-all" title="Share">
                     <Share2 size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
                   </button>
                 )}
-                <button onClick={() => onEdit(item)} className="p-2.5 sm:p-3 bg-card/10 hover:bg-accent/10 rounded-2xl text-muted hover:text-accent border border-edge transition-all" title="Edit Record">
+                <button onClick={() => onEdit(item)} className="p-2.5 sm:p-3 bg-card/10 hover:bg-accent/10 rounded-2xl text-muted hover:text-accent border border-edge transition-all" title="Edit">
                   <Edit3 size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
                 </button>
-                <button onClick={() => onUpdate(item.id, { isPinned: !item.isPinned })} className={`p-2.5 sm:p-3 bg-card/10 rounded-2xl border transition-all ${item.isPinned ? 'text-accent border-accent/20' : 'text-muted border-edge hover:text-primary hover:bg-card/20'}`} title="Pin Priority">
+                <button onClick={() => onUpdate(item.id, { isPinned: !item.isPinned })} className={`p-2.5 sm:p-3 bg-card/10 rounded-2xl border transition-all ${item.isPinned ? 'text-accent border-accent/20' : 'text-muted border-edge hover:text-primary hover:bg-card/20'}`} title="Pin to top">
                   <Pin size={14} className={`sm:w-4 sm:h-4 ${item.isPinned ? "animate-pin-glow" : ""}`} strokeWidth={1.5} />
                 </button>
-                <button onClick={() => onUpdate(item.id, { isArchived: !item.isArchived })} className={`p-2.5 sm:p-3 bg-card/10 rounded-2xl border transition-all ${item.isArchived ? 'text-accent border-accent/20' : 'text-muted border-edge hover:text-primary hover:bg-card/20'}`} title="Archive Unit">
+                <button onClick={() => onUpdate(item.id, { isArchived: !item.isArchived })} className={`p-2.5 sm:p-3 bg-card/10 rounded-2xl border transition-all ${item.isArchived ? 'text-accent border-accent/20' : 'text-muted border-edge hover:text-primary hover:bg-card/20'}`} title="Archive">
                   <Archive size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
                 </button>
-                <button onClick={() => onDelete(item.id)} className="p-2.5 sm:p-3 bg-card/10 hover:bg-red-500/10 rounded-2xl text-muted hover:text-red-400 border border-edge transition-all" title="Purge Record">
+                <button onClick={() => onDelete(item.id)} className="p-2.5 sm:p-3 bg-card/10 hover:bg-red-500/10 rounded-2xl text-muted hover:text-red-400 border border-edge transition-all" title="Delete">
                   <Trash2 size={14} className="sm:w-4 sm:h-4" strokeWidth={1.5} />
                 </button>
               </>
@@ -534,7 +534,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
               </div>
               
               {hasFailed && (
-                <span className="text-[9px] tracking-[0.3em] text-red-400/40 uppercase font-bold shrink-0">Preview unavailable</span>
+                <span className="text-[9px] tracking-[0.3em] text-red-400/40 uppercase font-bold shrink-0">No preview available</span>
               )}
             </div>
           </div>

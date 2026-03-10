@@ -29,7 +29,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ session, onResetPin })
             </div>
             <div className="space-y-1">
               <p className="text-[9px] tracking-premium text-primary/20 uppercase font-bold">Trusted Status</p>
-              <p className="text-sm text-primary font-light">{isTrusted ? 'Active Device' : 'Volatile Session'}</p>
+              <p className="text-sm text-primary font-light">{isTrusted ? 'Trusted device' : 'Session only'}</p>
             </div>
           </div>
           {isTrusted && (
@@ -44,7 +44,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ session, onResetPin })
             </div>
             <div className="space-y-1">
               <p className="text-[9px] tracking-premium text-primary/20 uppercase font-bold">PIN Credentials</p>
-              <p className="text-sm text-primary font-light">Securely Hash-Linked</p>
+              <p className="text-sm text-primary font-light">Protected</p>
             </div>
           </div>
           <button 
@@ -169,9 +169,9 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ session, onResetPin })
           <div className="space-y-2">
             <p className="text-[10px] tracking-widest text-primary/40 uppercase font-bold">Security Advisory</p>
             <p className="text-[11px] text-primary/20 leading-relaxed font-light">
-              Resetting your PIN will terminate all active sessions across all devices. 
-              You will be required to verify your identity via a fresh magic link. 
-              Always ensure you are using a private connection when managing gate credentials.
+              Resetting your PIN will sign you out on all devices. 
+              You will need to verify your identity again before you can sign back in. 
+              Only reset your PIN on a device you trust.
             </p>
           </div>
         </div>

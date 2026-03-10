@@ -69,6 +69,7 @@ export interface ClipboardItem {
   sharedGroupId?: string;
   projectId?: string;
   boardId?: string;
+  boardPosition?: number;
   preview_fail_count?: number;
   preview_last_fetched_at?: number;
   preview_next_allowed_at?: number;

@@ -74,6 +74,7 @@ export const BoardSwitcher: React.FC<BoardSwitcherProps> = ({
           <button
             onClick={() => setWsDropdown(!wsDropdown)}
             className="flex items-center gap-2 px-3 py-1.5 border border-edge rounded-lg text-muted hover:text-primary transition-all font-bold"
+            title="Workspace: a client or project space that groups your boards"
           >
             {activeWs?.name || 'WORKSPACE'}
             {workspaces.length > 1 && <ChevronDown size={12} />}
@@ -109,6 +110,7 @@ export const BoardSwitcher: React.FC<BoardSwitcherProps> = ({
                 ? 'text-accent border-accent/40 bg-accent/10'
                 : 'text-muted/50 border-edge hover:text-primary hover:border-edge'
             }`}
+            title="Show all items across this workspace"
           >
             ALL
           </button>
@@ -121,6 +123,7 @@ export const BoardSwitcher: React.FC<BoardSwitcherProps> = ({
                   ? 'text-accent border-accent/40 bg-accent/10'
                   : 'text-muted/50 border-edge hover:text-primary hover:border-edge'
               }`}
+              title={`Board: ${board.name}`}
             >
               {board.name}
             </button>
@@ -154,7 +157,7 @@ export const BoardSwitcher: React.FC<BoardSwitcherProps> = ({
               <button
                 onClick={() => setShowBoardCreate(true)}
                 className="flex items-center gap-1 px-2 py-1.5 text-muted/30 hover:text-accent transition-colors"
-                title="Create new board"
+                title="Add a new board to this workspace"
               >
                 <Plus size={12} />
               </button>

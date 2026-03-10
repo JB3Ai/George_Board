@@ -633,11 +633,46 @@ DROP POLICY IF EXISTS "items_insert_v2"  ON public.clipboard_items;
 DROP POLICY IF EXISTS "items_update_v2"  ON public.clipboard_items;
 DROP POLICY IF EXISTS "items_delete_v2"  ON public.clipboard_items;
 
+-- Phase 4.2 v2 policies (safe re-run: drop before re-create)
+DROP POLICY IF EXISTS "ws_select_v2"  ON public.workspaces;
+DROP POLICY IF EXISTS "ws_insert_v2"  ON public.workspaces;
+DROP POLICY IF EXISTS "ws_update_v2"  ON public.workspaces;
+DROP POLICY IF EXISTS "ws_delete_v2"  ON public.workspaces;
+
+DROP POLICY IF EXISTS "boards_select_v2"  ON public.boards;
+DROP POLICY IF EXISTS "boards_insert_v2"  ON public.boards;
+DROP POLICY IF EXISTS "boards_update_v2"  ON public.boards;
+DROP POLICY IF EXISTS "boards_delete_v2"  ON public.boards;
+
+DROP POLICY IF EXISTS "bm_select_v2"  ON public.board_members;
+DROP POLICY IF EXISTS "bm_insert_v2"  ON public.board_members;
+DROP POLICY IF EXISTS "bm_update_v2"  ON public.board_members;
+DROP POLICY IF EXISTS "bm_delete_v2"  ON public.board_members;
+
+DROP POLICY IF EXISTS "items_select_legacy"  ON public.clipboard_items;
+DROP POLICY IF EXISTS "items_select_board"   ON public.clipboard_items;
+DROP POLICY IF EXISTS "items_insert_legacy"  ON public.clipboard_items;
+DROP POLICY IF EXISTS "items_insert_board"   ON public.clipboard_items;
+DROP POLICY IF EXISTS "items_update_legacy"  ON public.clipboard_items;
+DROP POLICY IF EXISTS "items_update_board"   ON public.clipboard_items;
+DROP POLICY IF EXISTS "items_delete_legacy"  ON public.clipboard_items;
+DROP POLICY IF EXISTS "items_delete_board"   ON public.clipboard_items;
+
 -- Original Block 10 clipboard_items policies
 DROP POLICY IF EXISTS "Items select"     ON public.clipboard_items;
 DROP POLICY IF EXISTS "Items insert own" ON public.clipboard_items;
 DROP POLICY IF EXISTS "Items update own" ON public.clipboard_items;
 DROP POLICY IF EXISTS "Items delete own" ON public.clipboard_items;
+
+-- Bootstrap temporary policies on clipboard_items
+DROP POLICY IF EXISTS "clipboard_items_select_bootstrap" ON public.clipboard_items;
+DROP POLICY IF EXISTS "clipboard_items_insert_bootstrap" ON public.clipboard_items;
+DROP POLICY IF EXISTS "clipboard_items_update_bootstrap" ON public.clipboard_items;
+DROP POLICY IF EXISTS "clipboard_items_delete_bootstrap" ON public.clipboard_items;
+
+-- Phase 5 activity policies (safe re-run)
+DROP POLICY IF EXISTS "activity_select_v1" ON public.board_activity;
+DROP POLICY IF EXISTS "activity_insert_v1" ON public.board_activity;
 
 
 -- ============================================================================
@@ -782,6 +817,7 @@ CREATE POLICY "items_insert_board" ON public.clipboard_items
   FOR INSERT TO authenticated
   WITH CHECK (
     board_id IS NOT NULL
+    AND user_id = public.app_user_email()
     AND (
       board_id IN (SELECT public.user_board_ids())
       OR board_id IN (SELECT public.user_workspace_board_ids())
@@ -852,9 +888,11 @@ COMMENT ON POLICY "bm_select_v2" ON public.board_members IS
 
 
 -- BLOCK 9i: Performance index for board-scoped queries (partial — skips legacy NULL rows)
+-- Drop both possible old index names (Block 1 name + any prior Block 9 name)
+DROP INDEX IF EXISTS idx_clipboard_items_board;
 DROP INDEX IF EXISTS idx_clipboard_items_board_id;
 CREATE INDEX IF NOT EXISTS idx_clipboard_items_board_id_nonnull
-  ON clipboard_items(board_id)
+  ON public.clipboard_items(board_id)
   WHERE board_id IS NOT NULL;
 
 -- ╔════════════════════════════════════════════════════════════════════════════╗
@@ -911,6 +949,56 @@ ALTER TABLE public.boards
 ALTER TABLE public.clipboard_items
   ADD COLUMN IF NOT EXISTS board_position NUMERIC;
 
+
 -- ╔════════════════════════════════════════════════════════════════════════════╗
--- ║  END PHASE 5 HARDENING                                                    ║
+-- ║  PHASE 4.5: OPERATIONAL BOARD LAYER                                       ║
+-- ║  Activity logging trigger, board recency updates, position ordering       ║
+-- ║  Date: 2026-03-10                                                         ║
+-- ╚════════════════════════════════════════════════════════════════════════════╝
+
+
+-- ============================================================================
+-- BLOCK 11a: Auto-update boards.last_activity on new activity rows
+-- Type: ADDITIVE (CREATE OR REPLACE + CREATE TRIGGER)
+-- When a row is inserted into board_activity, bump the parent board's
+-- last_activity timestamp so the board switcher can sort by recency.
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.update_board_activity()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE public.boards
+  SET last_activity = now()
+  WHERE id = NEW.board_id;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS board_activity_update ON public.board_activity;
+
+CREATE TRIGGER board_activity_update
+  AFTER INSERT ON public.board_activity
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_board_activity();
+
+COMMENT ON FUNCTION public.update_board_activity() IS
+  'Phase 4.5: Trigger function — bumps boards.last_activity on each board_activity insert.';
+
+
+-- ============================================================================
+-- BLOCK 11b: Activity feed index (board + recency)
+-- Type: ADDITIVE (index already created in 10a but restated for clarity)
+-- Supports: SELECT * FROM board_activity WHERE board_id=$1
+--           ORDER BY created_at DESC LIMIT 50
+-- ============================================================================
+
+-- Already created in Block 10a: idx_board_activity_board (board_id, created_at DESC)
+-- No additional index needed. This block is a documentation marker.
+
+
+-- ╔════════════════════════════════════════════════════════════════════════════╗
+-- ║  END PHASE 4.5 OPERATIONAL BOARD LAYER                                    ║
 -- ╚════════════════════════════════════════════════════════════════════════════╝

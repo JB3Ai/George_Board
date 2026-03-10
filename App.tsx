@@ -14,6 +14,7 @@ import { supabase } from './services/supabaseClient';
 import { resolveMetadata } from './services/metadata';
 import { loadWorkspacesForOwner, loadBoardsForWorkspace, loadBoardsForUser, createWorkspace, createBoard, addBoardMember } from './services/boardService';
 import type { Workspace, Board } from './services/boardService';
+import { logBoardActivity } from './services/activityService';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme, UserProject } from './types';
 import { OWNER_EMAIL } from './constants';
 import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, RotateCcw, Palette, Menu, FolderPlus, Search } from 'lucide-react';
@@ -463,6 +464,8 @@ const AppInner: React.FC = () => {
     await addBoardMember(board.id, session.email, 'owner');
     setBoards(prev => [...prev, board]);
     setActiveBoardId(board.id);
+    logBoardActivity(board.id, session.email, 'board_created');
+    logBoardActivity(board.id, session.email, 'member_added');
     showToast(`Board "${name}" created`, 'success');
   };
 
@@ -476,7 +479,7 @@ const AppInner: React.FC = () => {
   const handleSendChat = (content: string) => {
     const syncTabId = getActiveSyncTabId();
     if (!syncTabId) return;
-    db.addItem({
+    const chatItem = db.addItem({
       userId: session.email,
       syncTabId,
       boardId: getActiveBoardId(),
@@ -484,6 +487,7 @@ const AppInner: React.FC = () => {
       title: 'Chat',
       content,
     });
+    logBoardActivity(getActiveBoardId(), session.email, 'item_created', chatItem.id);
     setItems(db.getItems());
   };
 
@@ -552,6 +556,8 @@ const AppInner: React.FC = () => {
       enrichmentStatus: EnrichmentStatus.PENDING,
       metadata: manualNote ? { description: manualNote } : {}
     });
+
+    logBoardActivity(getActiveBoardId(), session.email, 'item_created', item.id);
 
     // Owner always gets a copy on their own board when posting to a user tab
     const ownerCopy = (isOwnerSession && syncTabId) ? db.addItem({
@@ -628,6 +634,12 @@ const AppInner: React.FC = () => {
         (item.metadata?.description || '').toLowerCase().includes(term);
 
       return !item.isArchived && matchesSearch;
+    }).sort((a, b) => {
+      // Sort by board_position (NULLS LAST), then by created_at DESC
+      if (a.boardPosition != null && b.boardPosition != null) return a.boardPosition - b.boardPosition;
+      if (a.boardPosition != null) return -1;
+      if (b.boardPosition != null) return 1;
+      return b.createdAt - a.createdAt;
     });
   }, [items, activeTab, activeProjectId, searchTerm, activeBoardId]);
 
@@ -1001,6 +1013,11 @@ const AppInner: React.FC = () => {
       }
     }
 
+    // Fire-and-forget activity log for item creation (not edits — edits are handled by onUpdate)
+    if (!editingItem) {
+      logBoardActivity(getActiveBoardId(), session.email, 'item_created');
+    }
+
     setItems(db.getItems());
     setIsAdding(false);
     setNewItemTitle('');
@@ -1111,17 +1128,26 @@ const AppInner: React.FC = () => {
                 <section className="space-y-3">
                   <h3 className="text-[10px] tracking-[0.25em] uppercase text-primary/50 font-bold">What is this?</h3>
                   <p className="text-[13px] text-primary/40 leading-relaxed font-light">
-                    OS³ Clipboard is a shared clipboard for the JB3 team. Each team member has their own tab where they can post notes, links, tasks, events, documents, images, and videos — all synced in real time via Supabase.
+                    A shared clipboard for the JB3 team. Save notes, links, tasks, events, documents, images, and videos, all synced in real time.
                   </p>
                 </section>
 
                 <section className="space-y-3">
-                  <h3 className="text-[10px] tracking-[0.25em] uppercase text-primary/50 font-bold">How to add items</h3>
+                  <h3 className="text-[10px] tracking-[0.25em] uppercase text-primary/50 font-bold">Workspaces and boards</h3>
+                  <ul className="text-[13px] text-primary/40 leading-relaxed font-light space-y-2 list-none">
+                    <li className="flex gap-3"><span className="text-primary/60">Workspace</span> — A client or project space that groups your boards</li>
+                    <li className="flex gap-3"><span className="text-primary/60">Board</span> — A focused working area inside a workspace</li>
+                    <li className="flex gap-3"><span className="text-accent/60">ALL</span> — Shows every item in the workspace, including unassigned items</li>
+                  </ul>
+                </section>
+
+                <section className="space-y-3">
+                  <h3 className="text-[10px] tracking-[0.25em] uppercase text-primary/50 font-bold">Adding items</h3>
                   <ul className="text-[13px] text-primary/40 leading-relaxed font-light space-y-2 list-none">
                     <li className="flex gap-3"><span className="text-accent/60">1.</span> Paste a URL into the link bar to auto-detect YouTube or webpage links</li>
-                    <li className="flex gap-3"><span className="text-accent/60">2.</span> Click the <span className="text-primary/60">+</span> button to create a Note, Task, Event, Document, Image, or Video</li>
+                    <li className="flex gap-3"><span className="text-accent/60">2.</span> Click <span className="text-primary/60">+</span> to create a Note, Task, Event, Document, Image, or Video</li>
                     <li className="flex gap-3"><span className="text-accent/60">3.</span> Documents (PDF, DOC, XLS, etc.) up to 20 MB</li>
-                    <li className="flex gap-3"><span className="text-accent/60">4.</span> Images (JPG, PNG, GIF, WEBP) and Videos (MP4, MOV, WEBM) up to 50 MB</li>
+                    <li className="flex gap-3"><span className="text-accent/60">4.</span> Images and videos up to 50 MB</li>
                   </ul>
                 </section>
 
@@ -1129,30 +1155,38 @@ const AppInner: React.FC = () => {
                   <h3 className="text-[10px] tracking-[0.25em] uppercase text-primary/50 font-bold">Card actions</h3>
                   <ul className="text-[13px] text-primary/40 leading-relaxed font-light space-y-2 list-none">
                     <li className="flex gap-3"><span className="text-yellow-400/60">Pin</span> — Keep a card at the top of the board</li>
-                    <li className="flex gap-3"><span className="text-blue-400/60">Edit</span> — Modify title, notes, or replace files</li>
-                    <li className="flex gap-3"><span className="text-red-400/60">Delete</span> — Remove a card (owner only for other users' tabs)</li>
+                    <li className="flex gap-3"><span className="text-blue-400/60">Edit</span> — Change the title, notes, or attached files</li>
+                    <li className="flex gap-3"><span className="text-red-400/60">Delete</span> — Remove a card permanently</li>
                     <li className="flex gap-3"><span className="text-purple-400/60">Archive</span> — Hide a card without deleting it</li>
+                    <li className="flex gap-3"><span className="text-primary/60">Share</span> — Send a card to another team member</li>
                   </ul>
+                </section>
+
+                <section className="space-y-3">
+                  <h3 className="text-[10px] tracking-[0.25em] uppercase text-primary/50 font-bold">Link previews</h3>
+                  <p className="text-[13px] text-primary/40 leading-relaxed font-light">
+                    When you paste a link, a preview is fetched automatically. If the preview is delayed, you can retry later using the refresh button on the card.
+                  </p>
                 </section>
 
                 <section className="space-y-3">
                   <h3 className="text-[10px] tracking-[0.25em] uppercase text-primary/50 font-bold">Tabs</h3>
                   <ul className="text-[13px] text-primary/40 leading-relaxed font-light space-y-2 list-none">
-                    <li className="flex gap-3"><span className="text-primary/60">User tabs</span> — Each team member's personal board (scroll left/right)</li>
-                    <li className="flex gap-3"><span className="text-accent/60">DEMO</span> — Shared showcase tab viewable by everyone</li>
-                    <li className="flex gap-3"><span className="text-primary/60">SETTINGS</span> — Change PIN, theme, and font size</li>
+                    <li className="flex gap-3"><span className="text-primary/60">User tabs</span> — Each team member's personal clipboard</li>
+                    <li className="flex gap-3"><span className="text-accent/60">DEMO</span> — A shared showcase tab visible to everyone</li>
+                    <li className="flex gap-3"><span className="text-primary/60">SETTINGS</span> — Change your PIN, theme, and font size</li>
                   </ul>
                 </section>
 
                 <section className="space-y-3">
                   <h3 className="text-[10px] tracking-[0.25em] uppercase text-primary/50 font-bold">Owner features</h3>
                   <p className="text-[13px] text-primary/40 leading-relaxed font-light">
-                    The owner can view and post to all tabs, invite or remove team members, and manage the full board. Regular users only see their own tab, DEMO, and Settings.
+                    The owner can view and post to all tabs, invite or remove team members, and manage every board. Regular users see their own tab, DEMO, and Settings.
                   </p>
                 </section>
 
                 <div className="h-[1px] bg-card/20" />
-                <p className="text-[10px] tracking-[0.2em] text-primary/20 text-center uppercase">JB3 AI &middot; OS³ Clipboard v1</p>
+                <p className="text-[10px] tracking-[0.2em] text-primary/20 text-center uppercase">JB3 AI &middot; OS³ Clipboard v2</p>
               </div>
             </div>
           )}
@@ -1988,8 +2022,25 @@ const AppInner: React.FC = () => {
                   currentUser={session.email}
                   canManageAll={isOwnerSession}
                   viewMode={viewMode}
-                  onUpdate={(id, updates) => { db.updateItem(id, session.email, updates); setItems(db.getItems()); }}
-                  onDelete={(id) => { db.deleteItem(id, session.email); setItems(db.getItems()); }}
+                  onUpdate={(id, updates) => {
+                    db.updateItem(id, session.email, updates);
+                    setItems(db.getItems());
+                    const item = items.find(i => i.id === id);
+                    const boardId = item?.boardId || activeBoardId;
+                    if (updates.isArchived) {
+                      logBoardActivity(boardId, session.email, 'item_archived', id);
+                    } else if (updates.boardPosition !== undefined) {
+                      logBoardActivity(boardId, session.email, 'item_moved', id);
+                    } else {
+                      logBoardActivity(boardId, session.email, 'item_updated', id);
+                    }
+                  }}
+                  onDelete={(id) => {
+                    const item = items.find(i => i.id === id);
+                    db.deleteItem(id, session.email);
+                    setItems(db.getItems());
+                    logBoardActivity(item?.boardId || activeBoardId, session.email, 'item_deleted', id);
+                  }}
                   onEdit={handleEdit}
                   onRefresh={handleRefresh}
                   onShare={isOwnerSession ? handleOpenShare : undefined}

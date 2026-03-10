@@ -4,10 +4,10 @@ import { Shield, Activity, Lock, Database, HardDrive } from 'lucide-react';
 
 export const InfoTab: React.FC = () => {
   const stats = [
-    { label: 'System Status', value: 'Operational', icon: Activity },
-    { label: 'Security Tier', value: 'Level 4 (PIN+Verified)', icon: Shield },
-    { label: 'Vault Storage', value: 'Encrypted JSONB', icon: HardDrive },
-    { label: 'Node Region', value: 'Global Edge', icon: Database },
+    { label: 'Status', value: 'All systems running', icon: Activity },
+    { label: 'Security', value: 'PIN-verified access', icon: Shield },
+    { label: 'Storage', value: 'Encrypted and synced', icon: HardDrive },
+    { label: 'Availability', value: 'Global, always on', icon: Database },
   ];
 
   return (
@@ -26,22 +26,22 @@ export const InfoTab: React.FC = () => {
 
       <div className="max-w-2xl space-y-10">
         <section className="space-y-4">
-          <h4 className="text-[10px] tracking-ultra text-primary/40 uppercase font-bold">Operational Protocols</h4>
+          <h4 className="text-[10px] tracking-ultra text-primary/40 uppercase font-bold">How it works</h4>
           <div className="h-[1px] w-12 bg-card/10" />
           <p className="text-sm text-primary/30 leading-relaxed font-light">
-            Clipboard is a specialized environment for stakeholder asset management. 
-            All links are parsed via private proxy to prevent origin tracking. 
-            The STORAGE tab acts as a global index for all rich media and web assets.
+            This clipboard lets you save and organise links, notes, files, and tasks in one place. 
+            When you paste a link, the system fetches a preview automatically. 
+            Everything is synced across devices in real time.
           </p>
         </section>
 
         <section className="space-y-4">
-          <h4 className="text-[10px] tracking-ultra text-primary/40 uppercase font-bold">Data Management</h4>
+          <h4 className="text-[10px] tracking-ultra text-primary/40 uppercase font-bold">Your content</h4>
           <div className="h-[1px] w-12 bg-card/10" />
           <p className="text-sm text-primary/30 leading-relaxed font-light">
-            Every log entry is immutable except by the originating stakeholder. 
-            Rich media (YouTube, Webpages) can be augmented with additional 
-            observation context using the Edit function.
+            Only you can edit or delete your own items. 
+            You can add context to any card using the Edit function, 
+            and pin important items to keep them at the top.
           </p>
         </section>
       </div>

@@ -21,8 +21,8 @@ if (isSupabaseConfigured) {
   try {
     client = createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
-        persistSession: false,
-        autoRefreshToken: false,
+        persistSession: true,
+        autoRefreshToken: true,
       },
     });
   } catch (error) {

@@ -6,7 +6,8 @@ import { PinPad } from './PinPad';
 import { Splash } from './Splash';
 import { InstallInstructionsModal } from './InstallInstructionsModal';
 import { UserSession, UserEmail } from '../types';
-import { supabaseAuth, isFirstTimeUser } from '../services/auth';
+import { supabaseAuth, checkPinStatus } from '../services/auth';
+import { supabase } from '../services/supabaseClient';
 import { userRegistry } from '../services/userRegistry';
 import { Mail } from 'lucide-react';
 import { useToast } from './Toast';
@@ -23,6 +24,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
   const [showSplash, setShowSplash] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [splashUsername, setSplashUsername] = useState('');
+  const [isSetting, setIsSetting] = useState(false);
   const { showToast } = useToast();
   const { welcomeVideoEnabled, installGuideEnabled } = useUI();
 
@@ -59,15 +61,41 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
     if (!session) return;
     setIsProcessing(true);
 
-    const firstTime = isFirstTimeUser(session.email);
+    // Check server-side if user has a PIN set
+    const status = await checkPinStatus(session.email);
 
-    if (firstTime) {
-      await supabaseAuth.setPin(session.email, pin);
+    if (status.locked) {
+      showToast(status.error || 'Account locked. Try again later.', 'error');
+      setIsProcessing(false);
+      return;
     }
 
+    const firstTime = !status.has_pin;
+
+    if (firstTime) {
+      // No PIN exists — set one
+      const setResult = await supabaseAuth.setPin(session.email, pin);
+      if (!setResult.success) {
+        showToast(setResult.error || 'Failed to set PIN', 'error');
+        setIsProcessing(false);
+        return;
+      }
+    }
+
+    // Verify the PIN (even after setting — confirms hash round-trip)
     const result = await supabaseAuth.verifyPin(session.email, pin);
 
     if (result.success) {
+      // Phase 4.3: Exchange token for real Supabase Auth session (activates JWT-based RLS)
+      if (result.token_hash && supabase) {
+        try {
+          await supabase.auth.verifyOtp({ token_hash: result.token_hash, type: 'magiclink' });
+        } catch {
+          // Non-fatal: app works without JWT session, board RLS stays dormant
+          console.warn('Supabase session exchange failed — board RLS inactive');
+        }
+      }
+
       const verifiedSession: UserSession = {
         ...session,
         pinVerified: true,
@@ -85,9 +113,11 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
       } else if (installGuideEnabled) {
         setShowInstallModal(true);
       }
-      // Install guide fires after splash completes (see handleSplashComplete)
     } else {
-      showToast(result.error || 'Verification failed', 'error');
+      const msg = result.attempts_remaining !== undefined && result.attempts_remaining <= 2
+        ? `Verification failed. ${result.attempts_remaining} attempt${result.attempts_remaining === 1 ? '' : 's'} remaining.`
+        : result.error || 'Verification failed';
+      showToast(msg, 'error');
     }
     setIsProcessing(false);
   };
@@ -95,6 +125,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
   const handlePinResetFromGate = async () => {
     if (!session) return;
     setIsProcessing(true);
+    if (supabase) await supabase.auth.signOut();
     await supabaseAuth.resetPin(session.email);
     localStorage.removeItem('jb3_session');
     setSession(null);
@@ -102,7 +133,14 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
     showToast('PIN reset. Sign in again to define a new PIN.', 'success');
   };
 
-  const firstTime = session ? isFirstTimeUser(session.email) : false;
+  // Determine first-time status when session exists but PIN not yet verified
+  useEffect(() => {
+    if (session && !session.pinVerified) {
+      checkPinStatus(session.email).then((status) => {
+        setIsSetting(!status.has_pin);
+      });
+    }
+  }, [session?.email, session?.pinVerified]);
 
   const handleSplashComplete = () => {
     setShowSplash(false);
@@ -136,9 +174,12 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
       ) : !session.pinVerified ? (
         <Layout showBackground={false}>
           <div className="flex flex-col items-center justify-center min-h-[60vh]">
-            <PinPad onComplete={handlePinComplete} isSetting={firstTime} onResetPin={handlePinResetFromGate} />
+            <PinPad onComplete={handlePinComplete} isSetting={isSetting} onResetPin={handlePinResetFromGate} />
             <button
-              onClick={() => setSession(null)}
+              onClick={async () => {
+                if (supabase) await supabase.auth.signOut();
+                setSession(null);
+              }}
               className="mt-12 text-[9px] tracking-[0.3em] text-primary/10 hover:text-primary/40 transition-colors uppercase font-bold"
             >
               Cancel Session

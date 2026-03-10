@@ -21,7 +21,8 @@ interface CardProps {
 export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = false, onUpdate, onDelete, onEdit, onRefresh, onShare, viewMode = 'grid-big', onResetVisibility }) => {
   const isOwner = canManageAll || item.userId === currentUser;
   const isEnriching = item.enrichmentStatus === EnrichmentStatus.PENDING;
-  const hasFailed = item.enrichmentStatus === EnrichmentStatus.FAILED || item.enrichmentStatus === EnrichmentStatus.DELAYED;
+  const isDelayed = item.enrichmentStatus === EnrichmentStatus.DELAYED;
+  const hasFailed = item.enrichmentStatus === EnrichmentStatus.FAILED || isDelayed;
   const cardRef = useRef<HTMLDivElement>(null);
   const [showCooldown, setShowCooldown] = useState(false);
   const { showToast } = useToast();
@@ -233,7 +234,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
               className="w-full h-full object-cover grayscale opacity-30 transition-all duration-1000 ease-out group-hover:opacity-60 group-hover:grayscale-0"
             />
           ) : (
-            <div className={`w-full h-full flex items-center justify-center ${isEnriching ? 'animate-skeleton' : ''}`}>
+            <div className={`w-full h-full flex items-center justify-center ${isEnriching ? 'animate-skeleton' : isDelayed ? 'animate-pulse opacity-40' : ''}`}>
                {item.type === ItemType.YOUTUBE ? <Youtube size={32} className="text-primary/5" /> : <Globe size={32} className="text-primary/5" />}
             </div>
           )}
@@ -254,7 +255,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
             <div className="flex items-center gap-4">
               <span className={`text-[11px] tracking-[0.3em] text-muted uppercase font-bold flex items-center gap-2 ${isEnriching ? 'animate-skeleton' : ''}`}>
                 {getTypeIcon()}
-                {item.metadata?.siteName || (isEnriching ? 'Analyzing...' : item.type)}
+                {item.metadata?.siteName || (isEnriching ? 'Analyzing...' : isDelayed ? 'Retrying later...' : item.type)}
               </span>
               {item.isPinned && <Pin size={12} className="text-accent fill-accent group-hover:animate-pin-glow" />}
             </div>

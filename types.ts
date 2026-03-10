@@ -68,6 +68,7 @@ export interface ClipboardItem {
   isDemo?: boolean;
   sharedGroupId?: string;
   projectId?: string;
+  boardId?: string;
   preview_fail_count?: number;
   preview_last_fetched_at?: number;
   preview_next_allowed_at?: number;
@@ -88,4 +89,29 @@ export interface UserProject {
   name: string;
   index: number;
   createdAt: number;
+}
+
+export interface Workspace {
+  id: string;
+  name: string;
+  ownerEmail: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Board {
+  id: string;
+  workspaceId: string;
+  name: string;
+  description?: string;
+  lastActivity?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BoardMember {
+  boardId: string;
+  userEmail: string;
+  role: 'owner' | 'admin' | 'member' | 'viewer';
+  joinedAt: string;
 }

@@ -52,6 +52,10 @@ const toRow = (item: ClipboardItem) => ({
   file_size: item.fileSize ?? null,
   shared_group_id: item.sharedGroupId ?? null,
   project_id: item.projectId ?? null,
+  board_id: item.boardId ?? null,
+  preview_fail_count: item.preview_fail_count ?? 0,
+  preview_last_fetched_at: item.preview_last_fetched_at ?? null,
+  preview_next_allowed_at: item.preview_next_allowed_at ?? null,
   updated_at: new Date().toISOString(),
 });
 
@@ -77,6 +81,10 @@ const fromRow = (row: any): ClipboardItem => ({
   fileSize: row.file_size ?? undefined,
   sharedGroupId: row.shared_group_id ?? undefined,
   projectId: row.project_id ?? undefined,
+  boardId: row.board_id ?? undefined,
+  preview_fail_count: row.preview_fail_count ?? undefined,
+  preview_last_fetched_at: row.preview_last_fetched_at ?? undefined,
+  preview_next_allowed_at: row.preview_next_allowed_at ?? undefined,
 });
 
 const writeToSupabase = (item: ClipboardItem) => {

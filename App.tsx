@@ -10,7 +10,10 @@ import { db } from './services/db';
 import { loadDefaultNote, saveDefaultNoteToCloud, sendPresenceHeartbeat, getUserPresence, loadUserProjects, saveUserProjects, getTab1Data } from './services/db';
 import { userRegistry, hydrateRegistryFromCloud } from './services/userRegistry';
 import { supabaseAuth } from './services/auth';
-import { fetchLinkMetadata } from './services/metadata';
+import { supabase } from './services/supabaseClient';
+import { resolveMetadata } from './services/metadata';
+import { loadWorkspacesForOwner, loadBoardsForWorkspace, loadBoardsForUser, createWorkspace, createBoard, addBoardMember } from './services/boardService';
+import type { Workspace, Board } from './services/boardService';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme, UserProject } from './types';
 import { OWNER_EMAIL } from './constants';
 import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, RotateCcw, Palette, Menu, FolderPlus, Search } from 'lucide-react';
@@ -18,6 +21,7 @@ import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 import { ThemeDock } from './components/ThemeDock';
 import { ChatWindow } from './components/ChatWindow';
+import { BoardSwitcher } from './components/BoardSwitcher';
 import AdminSearchOverlay from './components/AdminSearchOverlay';
 
 const THEME_BACKGROUNDS: Record<Theme, string> = {
@@ -74,6 +78,12 @@ const AppInner: React.FC = () => {
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
   const [newItemTargetProjectId, setNewItemTargetProjectId] = useState<string | null>(null);
   const [editCopyToUsers, setEditCopyToUsers] = useState<string[]>([]);
+
+  // ─── Board/Workspace state ───
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [boards, setBoards] = useState<Board[]>([]);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
+  const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
 
   const { theme } = useUI();
   const bgImage = `${import.meta.env.BASE_URL}${THEME_BACKGROUNDS[theme] ?? 'Media/NEON.jpg'}`;
@@ -138,6 +148,29 @@ const AppInner: React.FC = () => {
         }
       })
       .catch(() => undefined);
+  }, []);
+
+  // ─── Load workspaces and boards ───
+  useEffect(() => {
+    const loadBoardContext = async () => {
+      if (isOwnerSession) {
+        const ws = await loadWorkspacesForOwner(session.email);
+        setWorkspaces(ws);
+        if (ws.length > 0) {
+          setActiveWorkspaceId(ws[0].id);
+          const bds = await loadBoardsForWorkspace(ws[0].id);
+          setBoards(bds);
+        }
+      } else {
+        const userBoards = await loadBoardsForUser(session.email);
+        setBoards(userBoards);
+        if (userBoards.length > 0) {
+          // Derive workspace from the first board
+          setActiveWorkspaceId(userBoards[0].workspaceId);
+        }
+      }
+    };
+    loadBoardContext().catch(() => undefined);
   }, []);
 
   // ─── Load user projects for all non-owner tabs ───
@@ -275,12 +308,14 @@ const AppInner: React.FC = () => {
     return () => clearInterval(interval);
   }, [isOwnerSession, activeTab, TABS]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (supabase) await supabase.auth.signOut();
     localStorage.removeItem('jb3_session');
     window.location.reload();
   };
 
   const handleResetPin = async () => {
+    if (supabase) await supabase.auth.signOut();
     await supabaseAuth.resetPin(session.email);
     localStorage.removeItem('jb3_session');
     window.location.reload();
@@ -361,6 +396,9 @@ const AppInner: React.FC = () => {
     return getActiveProjectId();
   };
 
+  /** Active board for new items. null = no board context (legacy). */
+  const getActiveBoardId = (): string | undefined => activeBoardId || undefined;
+
   const MAX_PROJECT_TABS = 7; // 8th slot reserved for Chat
 
   const handleCreateNewProject = async (userId: string) => {
@@ -407,12 +445,41 @@ const AppInner: React.FC = () => {
     showToast('New project tab created — existing tabs shifted right', 'success');
   };
 
+  const handleCreateWorkspace = async (name: string) => {
+    const ws = await createWorkspace(name, session.email);
+    if (!ws) { showToast('Failed to create workspace', 'error'); return; }
+    setWorkspaces(prev => [...prev, ws]);
+    setActiveWorkspaceId(ws.id);
+    setBoards([]);
+    setActiveBoardId(null);
+    showToast(`Workspace "${name}" created`, 'success');
+  };
+
+  const handleCreateBoard = async (name: string) => {
+    if (!activeWorkspaceId) { showToast('Select a workspace first', 'error'); return; }
+    const board = await createBoard(activeWorkspaceId, name);
+    if (!board) { showToast('Failed to create board', 'error'); return; }
+    // Auto-add owner as board owner
+    await addBoardMember(board.id, session.email, 'owner');
+    setBoards(prev => [...prev, board]);
+    setActiveBoardId(board.id);
+    showToast(`Board "${name}" created`, 'success');
+  };
+
+  const handleSelectWorkspace = async (wsId: string) => {
+    setActiveWorkspaceId(wsId);
+    setActiveBoardId(null);
+    const bds = await loadBoardsForWorkspace(wsId);
+    setBoards(bds);
+  };
+
   const handleSendChat = (content: string) => {
     const syncTabId = getActiveSyncTabId();
     if (!syncTabId) return;
     db.addItem({
       userId: session.email,
       syncTabId,
+      boardId: getActiveBoardId(),
       type: ItemType.CHAT,
       title: 'Chat',
       content,
@@ -478,6 +545,7 @@ const AppInner: React.FC = () => {
       userId: session.email,
       syncTabId,
       projectId,
+      boardId: getActiveBoardId(),
       type: finalType,
       title: hostname,
       content: url,
@@ -490,6 +558,7 @@ const AppInner: React.FC = () => {
       userId: session.email,
       syncTabId: undefined,
       projectId: undefined,
+      boardId: getActiveBoardId(),
       type: finalType,
       title: hostname,
       content: url,
@@ -500,13 +569,13 @@ const AppInner: React.FC = () => {
     setItems(db.getItems());
 
     try {
-      const metadata = await fetchLinkMetadata(url);
-      const hasMetadata = metadata && Object.keys(metadata).length > 0 && (metadata.title || metadata.siteName || metadata.og_image_url);
+      const metadata = await resolveMetadata(url);
+      const valid = !!(metadata.title || metadata.siteName || metadata.og_image_url);
 
-      const finalMetadata = hasMetadata
+      const finalMetadata = valid
         ? { ...metadata, description: manualNote || metadata.description }
-        : (manualNote ? { description: manualNote } : {});
-      const enrichStatus = hasMetadata ? EnrichmentStatus.SUCCESS : EnrichmentStatus.FAILED;
+        : manualNote ? { ...metadata, description: manualNote } : metadata;
+      const enrichStatus = valid ? EnrichmentStatus.SUCCESS : EnrichmentStatus.FAILED;
 
       db.updateItem(item.id, session.email, { metadata: finalMetadata, enrichmentStatus: enrichStatus });
       if (ownerCopy) db.updateItem(ownerCopy.id, session.email, { metadata: finalMetadata, enrichmentStatus: enrichStatus });
@@ -545,6 +614,11 @@ const AppInner: React.FC = () => {
       });
     }
 
+    // Board filter — when a board is selected, show only items on that board (plus legacy unassigned items)
+    if (activeBoardId) {
+      baseItems = baseItems.filter((item) => item.boardId === activeBoardId || !item.boardId);
+    }
+
     return baseItems.filter((item) => {
       const term = searchTerm.toLowerCase();
       const matchesSearch =
@@ -555,7 +629,7 @@ const AppInner: React.FC = () => {
 
       return !item.isArchived && matchesSearch;
     });
-  }, [items, activeTab, activeProjectId, searchTerm]);
+  }, [items, activeTab, activeProjectId, searchTerm, activeBoardId]);
 
   const getIconForType = (type: ItemType) => {
     switch (type) {
@@ -577,26 +651,32 @@ const AppInner: React.FC = () => {
 
     db.updateItem(id, session.email, {
       enrichmentStatus: EnrichmentStatus.PENDING,
-      preview_fail_count: (item.preview_fail_count || 0) + 1
     });
 
     setItems(db.getItems());
 
     try {
-      const metadata = await fetchLinkMetadata(item.content);
-      const hasMetadata = metadata && Object.keys(metadata).length > 0 && (metadata.title || metadata.siteName || metadata.og_image_url);
+      const metadata = await resolveMetadata(item.content);
+      const valid = !!(metadata.title || metadata.siteName || metadata.og_image_url);
+      const failCount = (item.preview_fail_count || 0) + 1;
+      const isDelayed = !valid && failCount >= 3;
+      const cooldown = isDelayed ? 300000 : 60000; // 5 min if delayed, 1 min otherwise
 
       db.updateItem(id, session.email, {
-        metadata: hasMetadata ? { ...item.metadata, ...metadata } : item.metadata,
-        enrichmentStatus: hasMetadata ? EnrichmentStatus.SUCCESS : EnrichmentStatus.FAILED,
+        metadata: { ...item.metadata, ...metadata },
+        enrichmentStatus: valid ? EnrichmentStatus.SUCCESS : (isDelayed ? EnrichmentStatus.DELAYED : EnrichmentStatus.FAILED),
+        preview_fail_count: valid ? 0 : failCount,
         preview_last_fetched_at: Date.now(),
-        preview_next_allowed_at: Date.now() + 60000
+        preview_next_allowed_at: Date.now() + cooldown
       });
     } catch {
+      const failCount = (item.preview_fail_count || 0) + 1;
+      const isDelayed = failCount >= 3;
       db.updateItem(id, session.email, {
-        enrichmentStatus: EnrichmentStatus.FAILED,
+        enrichmentStatus: isDelayed ? EnrichmentStatus.DELAYED : EnrichmentStatus.FAILED,
+        preview_fail_count: failCount,
         preview_last_fetched_at: Date.now(),
-        preview_next_allowed_at: Date.now() + 60000
+        preview_next_allowed_at: Date.now() + (isDelayed ? 300000 : 60000)
       });
     } finally {
       setItems(db.getItems());
@@ -679,6 +759,7 @@ const AppInner: React.FC = () => {
           metadata: updates.metadata || editingItem.metadata,
           enrichmentStatus: editingItem.enrichmentStatus,
           projectId: newItemTargetProjectId || 'default',
+          boardId: editingItem.boardId || getActiveBoardId(),
         };
         db.addItemBatch(copyBase, editCopyToUsers);
         showToast(`Card copied to ${editCopyToUsers.length} user${editCopyToUsers.length > 1 ? 's' : ''}`, 'success');
@@ -703,17 +784,18 @@ const AppInner: React.FC = () => {
           metadata: newItemContent ? { description: newItemContent } : {},
           isDemo: newItemIsDemo,
           projectId: 'default',
+          boardId: getActiveBoardId(),
         }, selectedTargetUsers);
 
         setItems(db.getItems());
 
         try {
-          const metadata = await fetchLinkMetadata(url);
-          const hasMetadata = metadata && Object.keys(metadata).length > 0 && (metadata.title || metadata.siteName || metadata.og_image_url);
-          const finalMetadata = hasMetadata
+          const metadata = await resolveMetadata(url);
+          const valid = !!(metadata.title || metadata.siteName || metadata.og_image_url);
+          const finalMetadata = valid
             ? { ...metadata, description: newItemContent || metadata.description }
-            : (newItemContent ? { description: newItemContent } : {});
-          const status = hasMetadata ? EnrichmentStatus.SUCCESS : EnrichmentStatus.FAILED;
+            : newItemContent ? { ...metadata, description: newItemContent } : metadata;
+          const status = valid ? EnrichmentStatus.SUCCESS : EnrichmentStatus.FAILED;
           for (const bi of batchItems) {
             db.updateItem(bi.id, session.email, { metadata: finalMetadata, enrichmentStatus: status });
           }
@@ -740,6 +822,7 @@ const AppInner: React.FC = () => {
             fileSize: newItemFile.size,
             isDemo: newItemIsDemo,
             projectId: 'default',
+            boardId: getActiveBoardId(),
           }, selectedTargetUsers);
         } catch (err: any) {
           showToast(err.message || 'Upload failed', 'error');
@@ -764,6 +847,7 @@ const AppInner: React.FC = () => {
             fileSize: newItemFile.size,
             isDemo: newItemIsDemo,
             projectId: 'default',
+            boardId: getActiveBoardId(),
           }, selectedTargetUsers);
         } catch (err: any) {
           showToast(err.message || 'Upload failed', 'error');
@@ -783,6 +867,7 @@ const AppInner: React.FC = () => {
           eventLocation: newItemType === ItemType.EVENT ? newItemLocation : undefined,
           isDemo: newItemIsDemo,
           projectId: 'default',
+          boardId: getActiveBoardId(),
         }, selectedTargetUsers);
       }
 
@@ -809,6 +894,7 @@ const AppInner: React.FC = () => {
             userId: session.email,
             syncTabId: activeSyncTabDoc,
             projectId: activeProjectDoc,
+            boardId: getActiveBoardId(),
             type: ItemType.DOCUMENT,
             title: newItemTitle || newItemFile.name,
             content: newItemContent,
@@ -821,6 +907,7 @@ const AppInner: React.FC = () => {
             userId: session.email,
             syncTabId: undefined,
             projectId: undefined,
+            boardId: getActiveBoardId(),
             type: ItemType.DOCUMENT,
             title: newItemTitle || newItemFile.name,
             content: newItemContent,
@@ -854,6 +941,7 @@ const AppInner: React.FC = () => {
             userId: session.email,
             syncTabId: activeSyncTabMedia,
             projectId: activeProjectMedia,
+            boardId: getActiveBoardId(),
             type: newItemType,
             title: newItemTitle || newItemFile.name,
             content: newItemContent,
@@ -866,6 +954,7 @@ const AppInner: React.FC = () => {
             userId: session.email,
             syncTabId: undefined,
             projectId: undefined,
+            boardId: getActiveBoardId(),
             type: newItemType,
             title: newItemTitle || newItemFile.name,
             content: newItemContent,
@@ -887,6 +976,7 @@ const AppInner: React.FC = () => {
           userId: session.email,
           syncTabId: activeSyncTabPlain,
           projectId: activeProjectPlain,
+          boardId: getActiveBoardId(),
           type: newItemType,
           title: newItemTitle || 'Untitled Log',
           content: newItemContent,
@@ -899,6 +989,7 @@ const AppInner: React.FC = () => {
           userId: session.email,
           syncTabId: undefined,
           projectId: undefined,
+          boardId: getActiveBoardId(),
           type: newItemType,
           title: newItemTitle || 'Untitled Log',
           content: newItemContent,
@@ -944,6 +1035,7 @@ const AppInner: React.FC = () => {
       fileName: shareItem.fileName,
       fileSize: shareItem.fileSize,
       projectId: 'default',
+      boardId: shareItem.boardId || getActiveBoardId(),
     }, shareTargetUsers);
     setItems(db.getItems());
     showToast(`Shared to ${shareTargetUsers.length} user${shareTargetUsers.length > 1 ? 's' : ''}`, 'success');
@@ -1253,6 +1345,21 @@ const AppInner: React.FC = () => {
                 </div>
               )}
             </div>
+          )}
+
+          {/* Board Switcher — visible on non-special tabs */}
+          {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
+            <BoardSwitcher
+              workspaces={workspaces}
+              boards={boards}
+              activeWorkspaceId={activeWorkspaceId}
+              activeBoardId={activeBoardId}
+              onSelectWorkspace={handleSelectWorkspace}
+              onSelectBoard={setActiveBoardId}
+              onCreateWorkspace={handleCreateWorkspace}
+              onCreateBoard={handleCreateBoard}
+              isOwner={isOwnerSession}
+            />
           )}
 
           {/* Admin User Search Overlay */}

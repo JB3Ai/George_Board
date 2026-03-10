@@ -78,10 +78,10 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ session, onResetPin })
               <button
                 key={t}
                 onClick={() => setTheme(t)}
-                className={`py-3 rounded-xl border text-[9px] tracking-widest uppercase font-bold transition-all ${
+                className={`py-3 rounded-xl border text-[9px] tracking-widest uppercase transition-all ${
                   theme === t
-                  ? 'bg-card/20 border-edge text-primary'
-                  : 'border-edge text-primary/20 hover:text-primary/40 hover:border-edge'
+                  ? 'settings-option-active font-extrabold text-primary'
+                  : 'border-edge text-primary/20 hover:text-primary/40 hover:border-edge font-bold'
                 }`}
               >
                 {t}
@@ -105,10 +105,10 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ session, onResetPin })
               <button
                 key={s}
                 onClick={() => setFontSize(s)}
-                className={`py-3 rounded-xl border text-[9px] tracking-widest uppercase font-bold transition-all ${
+                className={`py-3 rounded-xl border text-[9px] tracking-widest uppercase transition-all ${
                   fontSize === s 
-                  ? 'bg-card/20 border-edge text-primary' 
-                  : 'border-edge text-primary/20 hover:text-primary/40 hover:border-edge'
+                  ? 'settings-option-active font-extrabold text-primary' 
+                  : 'border-edge text-primary/20 hover:text-primary/40 hover:border-edge font-bold'
                 }`}
               >
                 {s}

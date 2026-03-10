@@ -19,10 +19,26 @@ async function callVerifyPin(body: { action: string; email: string; pin?: string
   try {
     const resp = await fetch(EDGE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+      headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` },
       body: JSON.stringify(body),
     });
-    return await resp.json();
+
+    // Parse body safely — edge function gateway may return non-JSON on 4xx/5xx
+    let data: any;
+    const text = await resp.text();
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error('verify-pin non-JSON response:', resp.status, text.slice(0, 200));
+      return { success: false, error: `Server error (${resp.status}). Please try again.` };
+    }
+
+    // Surface the real error from the edge function body
+    if (!resp.ok && !data.success) {
+      return { success: false, error: data.error || `Request failed (${resp.status})`, locked: data.locked, attempts_remaining: data.attempts_remaining };
+    }
+
+    return data;
   } catch {
     return { success: false, error: 'Network error. Please try again.' };
   }

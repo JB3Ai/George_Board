@@ -25,6 +25,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [splashUsername, setSplashUsername] = useState('');
   const [isSetting, setIsSetting] = useState(false);
+  const [pinResetKey, setPinResetKey] = useState(0);
   const { showToast } = useToast();
   const { welcomeVideoEnabled, installGuideEnabled } = useUI();
 
@@ -66,6 +67,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
 
     if (status.locked) {
       showToast(status.error || 'Account locked. Try again later.', 'error');
+      setPinResetKey(k => k + 1);
       setIsProcessing(false);
       return;
     }
@@ -77,6 +79,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
       const setResult = await supabaseAuth.setPin(session.email, pin);
       if (!setResult.success) {
         showToast(setResult.error || 'Failed to set PIN', 'error');
+        setPinResetKey(k => k + 1);
         setIsProcessing(false);
         return;
       }
@@ -118,6 +121,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
         ? `Verification failed. ${result.attempts_remaining} attempt${result.attempts_remaining === 1 ? '' : 's'} remaining.`
         : result.error || 'Verification failed';
       showToast(msg, 'error');
+      setPinResetKey(k => k + 1);
     }
     setIsProcessing(false);
   };
@@ -174,7 +178,7 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
       ) : !session.pinVerified ? (
         <Layout showBackground={false}>
           <div className="flex flex-col items-center justify-center min-h-[60vh]">
-            <PinPad onComplete={handlePinComplete} isSetting={isSetting} onResetPin={handlePinResetFromGate} />
+            <PinPad onComplete={handlePinComplete} isSetting={isSetting} onResetPin={handlePinResetFromGate} resetKey={pinResetKey} />
             <button
               onClick={async () => {
                 if (supabase) await supabase.auth.signOut();

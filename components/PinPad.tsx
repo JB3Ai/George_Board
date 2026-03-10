@@ -6,9 +6,10 @@ interface PinPadProps {
   onComplete: (pin: string, trust: boolean) => void;
   isSetting?: boolean;
   onResetPin?: () => void;
+  resetKey?: number;
 }
 
-export const PinPad: React.FC<PinPadProps> = ({ onComplete, isSetting, onResetPin }) => {
+export const PinPad: React.FC<PinPadProps> = ({ onComplete, isSetting, onResetPin, resetKey }) => {
   const [pin, setPin] = useState('');
   const [trust, setTrust] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,6 +23,15 @@ export const PinPad: React.FC<PinPadProps> = ({ onComplete, isSetting, onResetPi
     window.addEventListener('click', handleGlobalClick);
     return () => window.removeEventListener('click', handleGlobalClick);
   }, []);
+
+  // External reset trigger — clear PIN when parent signals failure
+  useEffect(() => {
+    if (resetKey !== undefined && resetKey > 0) {
+      setPin('');
+      setIsSubmitting(false);
+      inputRef.current?.focus();
+    }
+  }, [resetKey]);
 
   useEffect(() => {
     if (pin.length !== 4 || isSubmitting) return;

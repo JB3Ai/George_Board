@@ -41,10 +41,10 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
     ? 'flex flex-col gap-2'
     : viewMode === 'grid-small'
     ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'
-    : 'grid grid-cols-1 md:grid-cols-2 gap-10';
+    : 'grid grid-cols-1 md:grid-cols-2 gap-6';
 
   return (
-    <div className="flex flex-col gap-24">
+    <div className="flex flex-col gap-8">
       <AnimatePresence mode="popLayout">
         {pinned.length > 0 && (
           <motion.section 
@@ -52,7 +52,7 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
             initial="hidden"
             animate="show"
             variants={containerVariants}
-            className="space-y-10"
+            className="space-y-4"
           >
             <div className="flex items-center gap-6">
               <h4 className="text-[11px] tracking-[0.4em] text-accent/60 uppercase font-bold">Priority Assets</h4>
@@ -73,7 +73,7 @@ export const PinboardLane: React.FC<PinboardLaneProps> = ({ items, currentUser, 
           initial="hidden"
           animate="show"
           variants={containerVariants}
-          className="space-y-10"
+          className="space-y-4"
         >
           <div className="flex items-center gap-6">
             <h4 className="text-[11px] tracking-[0.4em] text-accent/60 uppercase font-bold">Active Records</h4>

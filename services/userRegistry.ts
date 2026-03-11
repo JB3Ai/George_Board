@@ -5,6 +5,7 @@ import { isSupabaseConfigured, supabase } from './supabaseClient';
 export interface RegisteredUser {
   id: string;
   label: string;
+  customName?: string;
   email: UserEmail;
   isOwner?: boolean;
   addedAt: number;
@@ -43,6 +44,7 @@ const SEED_USERS: RegisteredUser[] = [
 const fromRow = (row: any): RegisteredUser => ({
   id: row.id,
   label: row.label,
+  customName: row.custom_name || undefined,
   email: row.email,
   isOwner: row.is_owner ?? false,
   addedAt: row.added_at ?? 0,
@@ -53,6 +55,7 @@ const fromRow = (row: any): RegisteredUser => ({
 const toRow = (u: RegisteredUser) => ({
   id: u.id,
   label: u.label,
+  custom_name: u.customName || null,
   email: u.email,
   is_owner: u.isOwner ?? false,
   added_at: u.addedAt,
@@ -120,6 +123,7 @@ export async function hydrateRegistryFromCloud(): Promise<void> {
 export interface UserTab {
   id: string;
   label: string;
+  customName?: string;
   email: UserEmail;
   isOwner?: boolean;
 }
@@ -130,7 +134,8 @@ export const userRegistry = {
   getTabs: (): UserTab[] => {
     return loadRegistry().map((u) => ({
       id: u.id,
-      label: u.label,
+      label: u.customName || u.label,
+      customName: u.customName,
       email: u.email,
       isOwner: u.isOwner,
     }));
@@ -194,6 +199,15 @@ export const userRegistry = {
 
   getUserByEmail: (email: string): RegisteredUser | undefined => {
     return loadRegistry().find((u) => u.email === email.toLowerCase().trim());
+  },
+
+  renameUser: (userId: string, customName: string): void => {
+    const users = loadRegistry();
+    const target = users.find(u => u.id === userId);
+    if (!target) return;
+    if (target.isOwner) return;
+    target.customName = customName.trim() || undefined;
+    saveRegistry(users);
   },
 
   isRegistered: (email: string): boolean => {

@@ -93,6 +93,8 @@ const AppInner: React.FC = () => {
   const [renameProjectId, setRenameProjectId] = useState<string>('');
   const [renameProjectUserId, setRenameProjectUserId] = useState<string>('');
   const [renameLabel, setRenameLabel] = useState('');
+  const [renameMode, setRenameMode] = useState<'project' | 'channel'>('project');
+  const [renameChannelUserId, setRenameChannelUserId] = useState<string>('');
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   // ─── Board/Workspace state ───
@@ -494,6 +496,7 @@ const AppInner: React.FC = () => {
       showToast('HOME tab cannot be renamed', 'info');
       return;
     }
+    setRenameMode('project');
     setRenameProjectUserId(userId);
     setRenameProjectId(projectId);
     setRenameLabel(currentName.startsWith('Project ') ? '' : currentName);
@@ -510,6 +513,25 @@ const AppInner: React.FC = () => {
     await saveUserProjects(userId, updated);
     setShowRenameModal(false);
     showToast('Tab label updated', 'success');
+  };
+
+  const openChannelRenameModal = (userId: string, currentCustomName?: string) => {
+    setRenameMode('channel');
+    setRenameChannelUserId(userId);
+    setRenameLabel(currentCustomName || '');
+    setShowRenameModal(true);
+  };
+
+  const handleRenameChannel = () => {
+    userRegistry.renameUser(renameChannelUserId, renameLabel);
+    refreshTabs();
+    setShowRenameModal(false);
+    showToast('Channel name updated', 'success');
+  };
+
+  const handleRenameDispatch = () => {
+    if (renameMode === 'channel') handleRenameChannel();
+    else handleRenameProject();
   };
 
   const handleCreateNewProject = async (userId: string, tabName?: string) => {
@@ -1149,6 +1171,7 @@ const AppInner: React.FC = () => {
     setShareTargetUsers([]);
   };
 
+  const activeTabLabel = TABS.find(t => t.id === activeTab)?.label || activeTab;
   const sectionTitle = activeTab === 'JONO'
     ? 'OWNER MAIN CLIPBOARD: JONO'
     : activeTab === DEMO_TAB_ID
@@ -1156,8 +1179,8 @@ const AppInner: React.FC = () => {
       : activeTab === SETTINGS_TAB_ID
         ? 'INTERFACE SETTINGS'
       : isChatAnchor(activeProjectId)
-        ? `1:1 SECURE CHAT: JONO ↔ ${activeTab}`
-        : `SYNC CHANNEL: JONO ↔ ${activeTab}`;
+        ? `1:1 SECURE CHAT: JONO ↔ ${activeTabLabel}`
+        : `SYNC CHANNEL: JONO ↔ ${activeTabLabel}`;
 
   const signedInName = (currentUserTab?.label || session.email.split('@')[0] || 'USER').toUpperCase();
   const signedInRole = isOwnerSession ? 'OWNER ACCESS' : 'USER ACCESS';
@@ -1328,7 +1351,7 @@ const AppInner: React.FC = () => {
             </div>
           )}
 
-          {/* Rename Tab Modal (z-[150]) */}
+          {/* Rename Tab / Channel Modal (z-[150]) */}
           {showRenameModal && (
             <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => setShowRenameModal(false)}>
               <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -1336,7 +1359,7 @@ const AppInner: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <h2 className="text-[11px] tracking-[0.3em] uppercase text-accent font-bold flex items-center gap-3">
                     <Pencil size={16} />
-                    Rename Tab
+                    {renameMode === 'channel' ? 'Rename Channel' : 'Rename Tab'}
                   </h2>
                   <button onClick={() => setShowRenameModal(false)} className="text-primary/30 hover:text-primary transition-colors"><X size={18} /></button>
                 </div>
@@ -1348,19 +1371,21 @@ const AppInner: React.FC = () => {
                     maxLength={MAX_TAB_NAME_LENGTH}
                     value={renameLabel}
                     onChange={(e) => setRenameLabel(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleRenameProject(); }}
-                    placeholder="e.g. Research, Invoices..."
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleRenameDispatch(); }}
+                    placeholder={renameMode === 'channel' ? 'e.g. Design Team, Finance...' : 'e.g. Research, Invoices...'}
                     className="w-full bg-transparent text-sm text-primary border border-edge rounded-xl px-4 py-3 focus:outline-none focus:border-accent/30"
                   />
                   <p className="text-[9px] tracking-widest text-muted/20 text-right">{renameLabel.length}/{MAX_TAB_NAME_LENGTH}</p>
                 </div>
                 <p className="text-[9px] tracking-widest text-muted/30 leading-relaxed">
-                  Optional label for this tab. Leave empty to reset to default. System identity and sort order are unchanged.
+                  {renameMode === 'channel'
+                    ? 'Custom display name for this channel. Leave empty to reset to default. System identity is unchanged.'
+                    : 'Optional label for this tab. Leave empty to reset to default. System identity and sort order are unchanged.'}
                 </p>
                 <div className="flex justify-end gap-6 pt-4 border-t border-edge">
                   <button onClick={() => setShowRenameModal(false)} className="text-[11px] tracking-[0.3em] text-muted/40 hover:text-primary transition-colors uppercase font-bold">Cancel</button>
                   <button
-                    onClick={handleRenameProject}
+                    onClick={handleRenameDispatch}
                     className="px-8 py-3 bg-accent text-contrast text-[11px] font-bold tracking-[0.3em] rounded-xl uppercase"
                   >
                     Save
@@ -1455,13 +1480,28 @@ const AppInner: React.FC = () => {
               <div className="user-switcher">
                 <button className="admin-search-trigger" onClick={() => { setShowAdminSearch(true); setAdminSearchQuery(''); }}>
                   <Search size={14} />
-                  <span>{activeTab}</span>
+                  <span>{TABS.find(t => t.id === activeTab)?.label || activeTab}</span>
                 </button>
+                {activeTab !== 'JONO' && (
+                  <button
+                    className="tab-rename-btn"
+                    onClick={() => {
+                      const tab = TABS.find(t => t.id === activeTab);
+                      openChannelRenameModal(activeTab, tab?.customName);
+                    }}
+                    title="Rename channel"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', opacity: 0.4, transition: 'opacity 0.2s' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.4')}
+                  >
+                    <Pencil size={12} className="text-accent" />
+                  </button>
+                )}
               </div>
               <div className="admin-info-pane">
                 <div className="status-row">
                   <span className={`status-dot ${viewedUserStatus.toLowerCase().replace(' ', '-')}`}>&#9679;</span>
-                  <span>{activeTab}: {viewedUserStatus}</span>
+                  <span>{activeTabLabel}: {viewedUserStatus}</span>
                 </div>
                 <div className="metadata-row">
                   <span>LAST SEEN: {viewedUserLastSeen || 'NEVER'}</span>
@@ -1991,7 +2031,7 @@ const AppInner: React.FC = () => {
                   />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-10">
+                <div className="flex flex-wrap items-center gap-6">
                   {(newItemType === ItemType.TASK || newItemType === ItemType.EVENT) && (
                     <div className="flex items-center gap-4 text-muted/40">
                       <Calendar size={18} />
@@ -2030,14 +2070,14 @@ const AppInner: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="flex justify-end gap-10 pt-10 border-t border-edge">
+                <div className="flex justify-end gap-6 pt-6 border-t border-edge">
                   <button onClick={() => { setIsAdding(false); setEditingItem(null); setNewItemFile(null); }} className="text-[11px] tracking-[0.3em] text-muted/40 hover:text-primary transition-colors uppercase font-bold">
                     Discard
                   </button>
                   <button
                     onClick={handleCommit}
                     disabled={isUploading}
-                    className="inline-flex items-center gap-3 px-14 h-14 bg-accent text-contrast text-[11px] font-bold tracking-[0.3em] rounded-[1.25rem] uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="ct-action-btn ct-action-primary inline-flex items-center gap-3 text-[11px] font-bold tracking-[0.3em] uppercase disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isUploading && <Loader2 size={16} className="animate-spin" />}
                     {isUploading ? 'Uploading...' : editingItem ? 'Apply Updates' : 'Commit Entry'}
@@ -2069,7 +2109,7 @@ const AppInner: React.FC = () => {
             ) : (
               <>
                 {activeTab !== 'JONO' && defaultNote.trim() && (
-                  <div className="announcement-fixed rounded-[2rem] p-8 space-y-4">
+                  <div className="announcement-fixed rounded-2xl p-6 space-y-3">
                     <div className="flex items-center gap-6">
                       <h4 className="text-[11px] tracking-[0.4em] text-accent/60 uppercase font-bold">JONO Pinned Announcement</h4>
                       <div className="h-[1px] flex-1 bg-gradient-to-r from-accent/10 to-transparent" />

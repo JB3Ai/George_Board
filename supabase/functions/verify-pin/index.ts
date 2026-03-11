@@ -70,7 +70,8 @@ serve(async (req) => {
       .maybeSingle();
 
     if (fetchError) {
-      return jsonResponse({ success: false, error: 'Credential validation failed' }, 400);
+      console.error('verify-pin fetch error:', fetchError.message, fetchError.code);
+      return jsonResponse({ success: false, error: 'Profile lookup failed' }, 400);
     }
 
     // Auto-create profile row if user doesn't have one yet
@@ -79,7 +80,8 @@ serve(async (req) => {
         .from('profiles')
         .insert({ email: normalizedEmail });
       if (insertError) {
-        return jsonResponse({ success: false, error: 'Credential validation failed' }, 400);
+        console.error('verify-pin insert error:', insertError.message, insertError.code);
+        return jsonResponse({ success: false, error: 'Profile creation failed' }, 400);
       }
       profile = { pin_hash: null, pin_salt: null, failed_pin_count: 0, pin_lock_until: null };
     }
@@ -123,7 +125,8 @@ serve(async (req) => {
         .eq('email', normalizedEmail);
 
       if (updateError) {
-        return jsonResponse({ success: false, error: 'Credential validation failed' }, 500);
+        console.error('verify-pin set error:', updateError.message, updateError.code);
+        return jsonResponse({ success: false, error: 'PIN update failed' }, 500);
       }
 
       return jsonResponse({ success: true }, 200);
@@ -132,12 +135,11 @@ serve(async (req) => {
     // ── ACTION: verify ──
     if (action === 'verify') {
       if (!pin) {
-        return jsonResponse({ success: false, error: 'Credential validation failed' }, 400);
+        return jsonResponse({ success: false, error: 'PIN is required' }, 400);
       }
 
       if (!profile.pin_hash || !profile.pin_salt) {
-        // No PIN set — generic error (don't reveal that PIN isn't set)
-        return jsonResponse({ success: false, error: 'Credential validation failed' }, 401);
+        return jsonResponse({ success: false, error: 'No PIN configured for this account' }, 401);
       }
 
       const hash = await hashPin(pin, profile.pin_salt);
@@ -197,7 +199,7 @@ serve(async (req) => {
           success: false,
           error: lockNow
             ? 'Too many attempts. Account locked for 15 minutes.'
-            : 'Credential validation failed',
+            : 'Incorrect PIN',
           locked: lockNow || undefined,
           attempts_remaining: Math.max(0, MAX_ATTEMPTS - newCount)
         }, lockNow ? 403 : 401);
@@ -235,6 +237,6 @@ serve(async (req) => {
 
   } catch (err) {
     console.error('verify-pin error:', err);
-    return jsonResponse({ success: false, error: 'Credential validation failed' }, 500);
+    return jsonResponse({ success: false, error: 'Internal server error' }, 500);
   }
 })

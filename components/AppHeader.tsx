@@ -9,6 +9,14 @@ const SETTINGS_TAB_ID = '__SETTINGS__';
 const getChatAnchorId = (userId: string) => `${userId}_CHAT`;
 const isChatAnchor = (id: string | null) => typeof id === 'string' && id.endsWith('_CHAT');
 
+/** Display label: "TAB2 · Research" if custom name, else "TAB2" */
+const getTabLabel = (project: UserProject): string => {
+  const base = `TAB${project.index}`;
+  const custom = project.name;
+  if (!custom || custom.startsWith('Project ')) return base;
+  return `${base} · ${custom}`;
+};
+
 export interface AppHeaderProps {
   /* identity */
   isOwnerSession: boolean;
@@ -88,7 +96,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                   className={`tab-item ${activeProjectId === project.id ? 'active' : ''}`}
                   onClick={() => { setActiveProjectId(project.id); resetFormState(); }}
                 >
-                  TAB {project.index}
+                  {getTabLabel(project)}
                 </button>
               ))}
             {Array.from({ length: Math.max(0, 7 - myProjects.length) }).map((_, i) => (
@@ -201,7 +209,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                         activeProjectId === project.id ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
                       }`}
                     >
-                      TAB {project.index}
+                      {getTabLabel(project)}
                     </button>
                   ))}
                 <button

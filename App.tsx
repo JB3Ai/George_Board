@@ -17,7 +17,7 @@ import type { Workspace, Board } from './services/boardService';
 import { logBoardActivity } from './services/activityService';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme, UserProject } from './types';
 import { OWNER_EMAIL } from './constants';
-import { Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, X, Users, LayoutGrid, LayoutList, Grid3X3, RotateCcw, FolderPlus, Search, ArrowUp } from 'lucide-react';
+import { Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, X, Users, LayoutGrid, LayoutList, Grid3X3, RotateCcw, FolderPlus, Search, ArrowUp, Pencil } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 import { ThemeDock } from './components/ThemeDock';
@@ -82,6 +82,10 @@ const AppInner: React.FC = () => {
   const [showNewTabModal, setShowNewTabModal] = useState(false);
   const [newTabName, setNewTabName] = useState('');
   const [newTabTargetUserId, setNewTabTargetUserId] = useState<string>('');
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [renameProjectId, setRenameProjectId] = useState<string>('');
+  const [renameProjectUserId, setRenameProjectUserId] = useState<string>('');
+  const [renameLabel, setRenameLabel] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   // ─── Board/Workspace state ───
@@ -456,6 +460,14 @@ const AppInner: React.FC = () => {
   const MAX_PROJECT_TABS = 7; // 8th slot reserved for Chat
   const MAX_TAB_NAME_LENGTH = 20;
 
+  /** Display label: "TAB2 · Research" if custom name, else "TAB2" */
+  const getTabLabel = (project: UserProject): string => {
+    const base = `TAB${project.index}`;
+    const custom = project.name;
+    if (!custom || custom.startsWith('Project ')) return base;
+    return `${base} · ${custom}`;
+  };
+
   const openNewTabModal = (userId: string) => {
     const projects = userProjectsMap[userId] || [{ id: `${userId}_P1`, name: 'Project 1', index: 1, createdAt: 0 }];
     if (projects.length >= MAX_PROJECT_TABS) {
@@ -465,6 +477,25 @@ const AppInner: React.FC = () => {
     setNewTabTargetUserId(userId);
     setNewTabName('');
     setShowNewTabModal(true);
+  };
+
+  const openRenameModal = (userId: string, projectId: string, currentName: string) => {
+    setRenameProjectUserId(userId);
+    setRenameProjectId(projectId);
+    setRenameLabel(currentName.startsWith('Project ') ? '' : currentName);
+    setShowRenameModal(true);
+  };
+
+  const handleRenameProject = async () => {
+    const userId = renameProjectUserId;
+    const projects = userProjectsMap[userId] || [];
+    const updated = projects.map(p =>
+      p.id === renameProjectId ? { ...p, name: renameLabel.trim() || `Project ${p.index}` } : p
+    );
+    setUserProjectsMap(prev => ({ ...prev, [userId]: updated }));
+    await saveUserProjects(userId, updated);
+    setShowRenameModal(false);
+    showToast('Tab label updated', 'success');
   };
 
   const handleCreateNewProject = async (userId: string, tabName?: string) => {
@@ -1288,6 +1319,48 @@ const AppInner: React.FC = () => {
             </div>
           )}
 
+          {/* Rename Tab Modal (z-[150]) */}
+          {showRenameModal && (
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => setShowRenameModal(false)}>
+              <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+              <div className="relative bg-card border border-edge rounded-3xl max-w-sm w-full p-8 space-y-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[11px] tracking-[0.3em] uppercase text-accent font-bold flex items-center gap-3">
+                    <Pencil size={16} />
+                    Rename Tab
+                  </h2>
+                  <button onClick={() => setShowRenameModal(false)} className="text-primary/30 hover:text-primary transition-colors"><X size={18} /></button>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[9px] tracking-widest text-muted/40 uppercase font-bold">Custom Label (max {MAX_TAB_NAME_LENGTH} characters)</p>
+                  <input
+                    autoFocus
+                    type="text"
+                    maxLength={MAX_TAB_NAME_LENGTH}
+                    value={renameLabel}
+                    onChange={(e) => setRenameLabel(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleRenameProject(); }}
+                    placeholder="e.g. Research, Invoices..."
+                    className="w-full bg-transparent text-sm text-primary border border-edge rounded-xl px-4 py-3 focus:outline-none focus:border-accent/30"
+                  />
+                  <p className="text-[9px] tracking-widest text-muted/20 text-right">{renameLabel.length}/{MAX_TAB_NAME_LENGTH}</p>
+                </div>
+                <p className="text-[9px] tracking-widest text-muted/30 leading-relaxed">
+                  Optional label for this tab. Leave empty to reset to default. System identity and sort order are unchanged.
+                </p>
+                <div className="flex justify-end gap-6 pt-4 border-t border-edge">
+                  <button onClick={() => setShowRenameModal(false)} className="text-[11px] tracking-[0.3em] text-muted/40 hover:text-primary transition-colors uppercase font-bold">Cancel</button>
+                  <button
+                    onClick={handleRenameProject}
+                    className="px-8 py-3 bg-accent text-contrast text-[11px] font-bold tracking-[0.3em] rounded-xl uppercase"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Share Modal (z-[150]) */}
           {shareItem && (
             <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => setShareItem(null)}>
@@ -1388,13 +1461,24 @@ const AppInner: React.FC = () => {
                   {viewedUserProjects
                     .sort((a, b) => a.index - b.index)
                     .map((project) => (
-                    <button
-                      key={project.id}
-                      className={`tab-item ${activeProjectId === project.id ? 'active' : ''}`}
-                      onClick={() => setActiveProjectId(project.id)}
-                    >
-                      TAB {project.index}
-                    </button>
+                    <div key={project.id} className="tab-item-wrapper" style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                      <button
+                        className={`tab-item ${activeProjectId === project.id ? 'active' : ''}`}
+                        onClick={() => setActiveProjectId(project.id)}
+                      >
+                        {getTabLabel(project)}
+                      </button>
+                      <button
+                        className="tab-rename-btn"
+                        onClick={(e) => { e.stopPropagation(); openRenameModal(activeTab, project.id, project.name); }}
+                        title="Rename tab"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', opacity: 0.4, transition: 'opacity 0.2s' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                        onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.4')}
+                      >
+                        <Pencil size={10} className="text-muted" />
+                      </button>
+                    </div>
                   ))}
                   {/* Fill empty slots up to 7 */}
                   {Array.from({ length: Math.max(0, 7 - viewedUserProjects.length) }).map((_, i) => (

@@ -1552,6 +1552,7 @@ const AppInner: React.FC = () => {
               <ContextBar
                 tag="DATA INBOX"
                 source={isChatAnchor(activeProjectId) ? 'SOURCE: SECURE_COMMS' : `SOURCE: HUB_${activeTab}`}
+                right={!isChatAnchor(activeProjectId) ? <SearchInput value={searchTerm} onChange={setSearchTerm} /> : undefined}
               />
             </>
           )}
@@ -1570,83 +1571,87 @@ const AppInner: React.FC = () => {
               />
             ) : undefined
           }>
-          <div className="space-y-4 px-4 sm:px-0">
+          <div className="data-inbox">
 
             {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && !isChatAnchor(activeProjectId) && (
               <ActivityTicker items={filteredItems} />
             )}
 
-            {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
-              <div className="flex justify-end">
-                <SearchInput value={searchTerm} onChange={setSearchTerm} />
-              </div>
-            )}
-
             {showOwnerAdminPanels && (
-              <div className="glass rounded-2xl p-6 space-y-4">
-                <p className="text-[10px] tracking-[0.2em] uppercase text-muted/50 font-bold">JONO Pinned Announcement (fixed to top of every user tab)</p>
-                <textarea
-                  value={defaultNote}
-                  onChange={(event) => setDefaultNote(event.target.value)}
-                  placeholder="This announcement will appear as a fixed card on every user tab..."
-                  className="w-full bg-transparent text-sm text-primary border border-edge rounded-xl p-4 min-h-[90px] resize-none focus:outline-none"
-                />
-                <p className="text-[9px] tracking-[0.15em] uppercase text-accent/70 font-bold">Appears as a read-only pinned announcement at the top of every user tab.</p>
-                <div className="flex justify-end">
-                  <button onClick={saveDefaultNote} className="px-6 py-2 rounded-xl bg-accent text-contrast text-[10px] tracking-[0.2em] uppercase font-bold">
-                    Save Announcement
-                  </button>
+              <div className="console-module">
+                <div className="console-module-header">
+                  <span className="console-module-title">Pinned Announcement</span>
+                  <span className="console-module-badge">ALL USERS</span>
                 </div>
-              </div>
-            )}
-
-            {showOwnerAdminPanels && (
-              <div className="glass rounded-2xl p-6 space-y-6">
-                <p className="text-[10px] tracking-[0.2em] uppercase text-muted/50 font-bold">Invite Team Member</p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <input
-                    type="text"
-                    placeholder="Display Name"
-                    value={inviteName}
-                    onChange={(e) => setInviteName(e.target.value)}
-                    className="flex-1 bg-transparent text-sm text-primary border border-edge rounded-xl px-4 py-3 focus:outline-none focus:border-accent/30"
+                <div className="console-module-body">
+                  <textarea
+                    value={defaultNote}
+                    onChange={(event) => setDefaultNote(event.target.value)}
+                    placeholder="This announcement will appear as a fixed card on every user tab..."
+                    className="w-full bg-transparent text-sm text-primary border border-edge rounded-xl p-4 min-h-[90px] resize-none focus:outline-none"
                   />
-                  <input
-                    type="email"
-                    placeholder="user@theiremail.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    className="flex-1 bg-transparent text-sm text-primary border border-edge rounded-xl px-4 py-3 focus:outline-none focus:border-accent/30"
-                  />
-                  <button
-                    onClick={handleInvite}
-                    className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-accent text-contrast text-[10px] tracking-[0.2em] uppercase font-bold whitespace-nowrap"
-                  >
-                    <UserPlus size={14} />
-                    Send Invite
-                  </button>
-                </div>
-                <p className="text-[9px] tracking-[0.15em] uppercase text-muted/30 font-bold">User will appear as a new tab. First login creates their PIN.</p>
-
-                {TABS.filter((t) => !t.isOwner).length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    <p className="text-[9px] tracking-[0.2em] uppercase text-muted/30 font-bold">Registered Users</p>
-                    <div className="flex flex-wrap gap-3">
-                      {TABS.filter((t) => !t.isOwner).map((t) => (
-                        <div key={t.id} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-edge bg-card/10 text-[10px] tracking-[0.15em] text-muted uppercase font-bold">
-                          {t.label}
-                          <button
-                            onClick={() => handleRemoveUser(t.email)}
-                            className="text-muted/20 hover:text-red-400 transition-colors ml-1"
-                            title={`Remove ${t.label}`}
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                  <p className="text-[9px] tracking-[0.15em] uppercase text-accent/70 font-bold">Appears as a read-only pinned announcement at the top of every user tab.</p>
+                  <div className="flex justify-end">
+                    <button onClick={saveDefaultNote} className="ct-action-btn ct-action-primary text-[10px] tracking-[0.2em] uppercase font-bold">
+                      Save Announcement
+                    </button>
                   </div>
-                )}
+                </div>
+              </div>
+            )}
+
+            {showOwnerAdminPanels && (
+              <div className="console-module">
+                <div className="console-module-header">
+                  <span className="console-module-title">Invite Team Member</span>
+                  <span className="console-module-badge">OWNER</span>
+                </div>
+                <div className="console-module-body">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <input
+                      type="text"
+                      placeholder="Display Name"
+                      value={inviteName}
+                      onChange={(e) => setInviteName(e.target.value)}
+                      className="flex-1 bg-transparent text-sm text-primary border border-edge rounded-xl px-4 py-3 focus:outline-none focus:border-accent/30"
+                    />
+                    <input
+                      type="email"
+                      placeholder="user@theiremail.com"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      className="flex-1 bg-transparent text-sm text-primary border border-edge rounded-xl px-4 py-3 focus:outline-none focus:border-accent/30"
+                    />
+                    <button
+                      onClick={handleInvite}
+                      className="ct-action-btn ct-action-primary inline-flex items-center gap-3 text-[10px] tracking-[0.2em] uppercase font-bold whitespace-nowrap"
+                    >
+                      <UserPlus size={14} />
+                      Send Invite
+                    </button>
+                  </div>
+                  <p className="text-[9px] tracking-[0.15em] uppercase text-muted/30 font-bold">User will appear as a new tab. First login creates their PIN.</p>
+
+                  {TABS.filter((t) => !t.isOwner).length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-[9px] tracking-[0.2em] uppercase text-muted/30 font-bold">Registered Users</p>
+                      <div className="flex flex-wrap gap-3">
+                        {TABS.filter((t) => !t.isOwner).map((t) => (
+                          <div key={t.id} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-edge bg-card/10 text-[10px] tracking-[0.15em] text-muted uppercase font-bold">
+                            {t.label}
+                            <button
+                              onClick={() => handleRemoveUser(t.email)}
+                              className="text-muted/20 hover:text-red-400 transition-colors ml-1"
+                              title={`Remove ${t.label}`}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1659,17 +1664,20 @@ const AppInner: React.FC = () => {
                   setEditCopyToUsers([]);
                   setIsAdding(true);
                 }}
-                className="inline-flex items-center gap-3 text-[11px] tracking-[0.3em] text-accent/60 hover:text-accent transition-all uppercase font-bold group"
+                className="ct-action-btn ct-action-primary inline-flex items-center gap-3 text-[11px] tracking-[0.3em] uppercase font-bold"
               >
-                <div className="w-8 h-8 rounded-full bg-accent/5 flex items-center justify-center border border-accent/10 group-hover:bg-accent/10 transition-colors">
-                  <Plus size={16} />
-                </div>
+                <Plus size={16} />
                 New Entry
               </button>
             )}
 
             {isAdding && (
-              <div className="border border-edge p-12 rounded-[2.5rem] space-y-10">
+              <div className="console-module console-module-form">
+                <div className="console-module-header">
+                  <span className="console-module-title">{editingItem ? 'Edit Entry' : 'New Entry'}</span>
+                  {editingItem && <span className="console-module-badge">EDITING</span>}
+                </div>
+                <div className="console-module-body">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap gap-4">
                     {Object.values(ItemType).map((type) => (
@@ -2034,6 +2042,7 @@ const AppInner: React.FC = () => {
                     {isUploading && <Loader2 size={16} className="animate-spin" />}
                     {isUploading ? 'Uploading...' : editingItem ? 'Apply Updates' : 'Commit Entry'}
                   </button>
+                </div>
                 </div>
               </div>
             )}

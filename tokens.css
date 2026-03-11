@@ -2259,6 +2259,61 @@ input::placeholder, textarea::placeholder {
   --space-xl: 32px;
 }
 
+/* ── Data Inbox wrapper ── */
+.data-inbox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: 0 var(--space-md);
+}
+@media (min-width: 640px) {
+  .data-inbox { padding: 0; }
+}
+
+/* ── Console Module (reusable admin panels) ── */
+.console-module {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.console-module-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.15);
+}
+.console-module-title {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.console-module-badge {
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(var(--accent-rgb, 99, 102, 241), 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(var(--accent-rgb, 99, 102, 241), 0.15);
+}
+.console-module-body {
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.console-module-form .console-module-body {
+  padding: var(--space-lg);
+  gap: var(--space-lg);
+}
+
 /* ── Telemetry Strip (32-36px passive status) ── */
 .telemetry-strip {
   display: flex;

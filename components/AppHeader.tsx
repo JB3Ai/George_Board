@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogOut, Info, Home, Settings, Palette, Menu, Search, X, LayoutList, Grid3X3, LayoutGrid, Shield } from 'lucide-react';
+import { LogOut, Info, Home, Settings, Palette, Menu, X, LayoutList, Grid3X3, LayoutGrid, Shield, Rocket } from 'lucide-react';
 import type { UserProject } from '../types';
 import type { UserTab } from '../services/userRegistry';
 
@@ -88,31 +88,44 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
   return (
     <>
-      {/* ━━━ TIER 1 — System Header (solid, compact, same for everyone) ━━━ */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+         TIER 1 — System Header
+         Desktop: full controls · Mobile: identity + mode only
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <nav className="header-system">
         {/* Left: OS³ Security Badge */}
         <div className="header-system-left">
           <button onClick={onOpenAES} className="header-badge-btn" title="AES-256 Encryption">
             <Shield size={14} />
-            <span className="header-badge-label">OS³ AES-256</span>
+            <span className="header-badge-label">OS³</span>
           </button>
-          <button onClick={onOpenInfo} title="Info & Help" className="header-icon-btn">
+          {/* Desktop-only: Info button */}
+          <button onClick={onOpenInfo} title="Info & Help" className="header-icon-btn header-desktop-only">
             <Info size={16} strokeWidth={1.5} />
           </button>
         </div>
 
+        {/* Center: Mobile-only identity chip */}
+        <div className="header-mobile-identity">
+          <span className="header-mobile-name">{signedInName}</span>
+          <span className="header-mobile-role">{signedInRole}</span>
+        </div>
+
         {/* Right: System controls */}
         <div className="header-system-right">
+          {/* Desktop-only controls */}
           <button
             onClick={() => { setActiveTab(DEMO_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
-            className={`header-demo-chip ${activeTab === DEMO_TAB_ID ? 'active' : ''}`}
+            className={`header-demo-chip header-desktop-only ${activeTab === DEMO_TAB_ID ? 'active' : ''}`}
           >
             <span className="header-demo-dot" />
             DEMO
           </button>
-          <span className="header-session-badge hidden sm:inline-flex">
+          <span className="header-session-badge header-desktop-only">
             {signedInName} · {signedInRole}
           </span>
+
+          {/* Home — always visible */}
           <button
             onClick={() => {
               const homeTab = isOwnerSession ? 'JONO' : currentUserTab?.id;
@@ -126,37 +139,45 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           >
             <Home size={16} strokeWidth={1.5} />
           </button>
+
+          {/* Desktop-only: Settings, Palette, Logout */}
           <button
             onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
             title="Settings"
-            className={`header-icon-btn ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
+            className={`header-icon-btn header-desktop-only ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
           >
             <Settings size={16} strokeWidth={1.5} />
           </button>
           <button
             onClick={() => setShowThemeDock(prev => !prev)}
             title={showThemeDock ? 'Hide Theme Selector' : 'Show Theme Selector'}
-            className={`header-icon-btn ${showThemeDock ? 'active' : ''}`}
+            className={`header-icon-btn header-desktop-only ${showThemeDock ? 'active' : ''}`}
           >
             <Palette size={16} strokeWidth={1.5} />
           </button>
-          <button onClick={onLogout} title="Terminate Session" className="header-icon-btn header-logout hidden sm:flex">
+          <button onClick={onLogout} title="Terminate Session" className="header-icon-btn header-logout header-desktop-only">
             <LogOut size={16} strokeWidth={1.5} />
           </button>
-          <button onClick={() => setShowMobileMenu(true)} title="Menu" className="header-icon-btn sm:hidden">
+
+          {/* Mobile-only: Hamburger */}
+          <button onClick={() => setShowMobileMenu(true)} title="Menu" className="header-icon-btn header-mobile-only">
             <Menu size={18} strokeWidth={1.5} />
           </button>
         </div>
       </nav>
 
-      {/* ━━━ TIER 2 — Context Header (floating console, role-dependent) ━━━ */}
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+         TIER 2 — Context Header
+         Desktop: floating console with label + tabs + view controls
+         Mobile: full-width context bar with section title + swipeable tabs
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {isContentView && (
         <div className="header-context">
-          {/* Context label */}
+          {/* Section title */}
           <div className="header-context-label">{sectionTitle}</div>
 
           <div className="header-context-controls">
-            {/* Owner: channel switchboard tabs */}
+            {/* Owner: channel switchboard tabs (swipeable on mobile) */}
             {isOwnerSession && (
               <div className="header-channel-bar">
                 {visibleTabs.filter(t => !t.isOwner).map(tab => (
@@ -171,7 +192,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               </div>
             )}
 
-            {/* Non-owner: project tabs + chat */}
+            {/* Non-owner: project tabs + chat (swipeable on mobile) */}
             {!isOwnerSession && (
               <div className="header-project-bar">
                 {myProjects
@@ -194,9 +215,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               </div>
             )}
 
-            {/* View mode controls */}
+            {/* View mode controls — desktop only */}
             {showViewControls && (
-              <div className="header-view-toggle">
+              <div className="header-view-toggle header-desktop-only">
                 {([
                   { mode: 'list' as const, icon: <LayoutList size={13} />, label: 'List' },
                   { mode: 'grid-small' as const, icon: <Grid3X3 size={13} />, label: 'Grid' },
@@ -217,7 +238,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </div>
       )}
 
-      {/* ─── Mobile slide-out drawer ─── */}
+      {/* ━━━ Mobile Command Drawer ━━━ */}
       {showMobileMenu && (
         <>
           <div className="mobile-drawer-overlay" onClick={() => setShowMobileMenu(false)} />
@@ -228,9 +249,39 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 <X size={16} strokeWidth={1.5} />
               </button>
             </div>
+
             <div className="mobile-drawer-identity">
               {signedInName} · {signedInRole}
             </div>
+
+            {/* ── Quick Actions (displaced from Tier 1) ── */}
+            <div className="mobile-drawer-section-label">QUICK ACTIONS</div>
+            <div className="mobile-drawer-actions">
+              <button
+                onClick={() => { setActiveTab(DEMO_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
+                className={`mobile-drawer-action-btn ${activeTab === DEMO_TAB_ID ? 'active' : ''}`}
+              >
+                <Rocket size={14} />
+                DEMO
+              </button>
+              <button onClick={() => { onOpenInfo(); setShowMobileMenu(false); }} className="mobile-drawer-action-btn">
+                <Info size={14} />
+                INFO
+              </button>
+              <button
+                onClick={() => { setShowThemeDock(prev => !prev); setShowMobileMenu(false); }}
+                className={`mobile-drawer-action-btn ${showThemeDock ? 'active' : ''}`}
+              >
+                <Palette size={14} />
+                THEME
+              </button>
+              <button onClick={() => { onOpenAES(); setShowMobileMenu(false); }} className="mobile-drawer-action-btn">
+                <Shield size={14} />
+                AES
+              </button>
+            </div>
+
+            {/* ── Channels / Tabs ── */}
             <div className="mobile-drawer-section-label">CHANNELS</div>
             {isOwnerSession ? (
               visibleTabs.map((tab) => (
@@ -263,7 +314,33 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 </button>
               </>
             )}
+
+            {/* ── View Mode (mobile-only segmented control) ── */}
+            {showViewControls && (
+              <>
+                <div className="mobile-drawer-section-label">VIEW MODE</div>
+                <div className="mobile-drawer-view-seg">
+                  {([
+                    { mode: 'list' as const, icon: <LayoutList size={14} />, label: 'LIST' },
+                    { mode: 'grid-small' as const, icon: <Grid3X3 size={14} />, label: 'GRID' },
+                    { mode: 'grid-big' as const, icon: <LayoutGrid size={14} />, label: 'CARDS' },
+                  ]).map(v => (
+                    <button
+                      key={v.mode}
+                      onClick={() => { setViewMode(v.mode); setShowMobileMenu(false); }}
+                      className={`mobile-drawer-seg-btn ${viewMode === v.mode ? 'active' : ''}`}
+                    >
+                      {v.icon}
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
             <div className="mobile-drawer-divider" />
+
+            {/* ── System ── */}
             <div className="mobile-drawer-section-label">SYSTEM</div>
             <button
               onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); setShowMobileMenu(false); }}

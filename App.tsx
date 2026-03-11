@@ -853,6 +853,7 @@ const AppInner: React.FC = () => {
           boardId: editingItem.boardId || getActiveBoardId(),
         };
         db.addItemBatch(copyBase, editCopyToUsers);
+        setItems(db.getItems());
         showToast(`Card copied to ${editCopyToUsers.length} user${editCopyToUsers.length > 1 ? 's' : ''}`, 'success');
       }
 
@@ -916,6 +917,7 @@ const AppInner: React.FC = () => {
             projectId: getFormTargetProjectId() || 'default',
             boardId: getActiveBoardId(),
           }, selectedTargetUsers);
+          setItems(db.getItems());
         } catch (err: any) {
           showToast(err.message || 'Upload failed', 'error');
           setIsUploading(false);
@@ -941,6 +943,7 @@ const AppInner: React.FC = () => {
             projectId: getFormTargetProjectId() || 'default',
             boardId: getActiveBoardId(),
           }, selectedTargetUsers);
+          setItems(db.getItems());
         } catch (err: any) {
           showToast(err.message || 'Upload failed', 'error');
           setIsUploading(false);
@@ -963,6 +966,7 @@ const AppInner: React.FC = () => {
         }, selectedTargetUsers);
       }
 
+      setItems(db.getItems());
       showToast(`Entry shared to ${selectedTargetUsers.length} user${selectedTargetUsers.length > 1 ? 's' : ''}`, 'success');
     } else {
       if (newItemType === ItemType.WEBPAGE || newItemType === ItemType.YOUTUBE) {

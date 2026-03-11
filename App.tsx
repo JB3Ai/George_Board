@@ -22,6 +22,7 @@ import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 import { ThemeDock } from './components/ThemeDock';
 import { ChatWindow } from './components/ChatWindow';
+import { OwnerCommsHub } from './components/OwnerCommsHub';
 import { AppHeader } from './components/AppHeader';
 import AdminSearchOverlay from './components/AdminSearchOverlay';
 
@@ -544,6 +545,20 @@ const AppInner: React.FC = () => {
     const chatItem = db.addItem({
       userId: session.email,
       syncTabId,
+      boardId: getActiveBoardId(),
+      type: ItemType.CHAT,
+      title: 'Chat',
+      content,
+    });
+    logBoardActivity(getActiveBoardId(), session.email, 'item_created', chatItem.id);
+    setItems(db.getItems());
+  };
+
+  /** Owner Comms Hub: send a chat message to a specific user channel */
+  const handleCommsSend = (targetUserId: string, content: string) => {
+    const chatItem = db.addItem({
+      userId: session.email,
+      syncTabId: targetUserId,
       boardId: getActiveBoardId(),
       type: ItemType.CHAT,
       title: 'Chat',
@@ -2019,6 +2034,14 @@ const AppInner: React.FC = () => {
               <DemoTab items={items} />
             ) : activeTab === SETTINGS_TAB_ID ? (
               <SettingsTab session={session} onResetPin={handleResetPin} />
+            ) : isChatAnchor(activeProjectId) && isOwnerSession ? (
+              <OwnerCommsHub
+                items={items}
+                currentUser={session.email}
+                tabs={TABS}
+                onSend={handleCommsSend}
+                onSwitchToUser={(userId) => { setActiveTab(userId); setActiveProjectId(null); }}
+              />
             ) : isChatAnchor(activeProjectId) ? (
               <ChatWindow
                 messages={filteredItems}

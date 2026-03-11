@@ -771,8 +771,10 @@ input::placeholder, textarea::placeholder {
 /* ─── Master Admin Console - Yellow Box Logic ─────────────────────────── */
 .owner-admin-console {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 0.75rem;
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid #FFD700;
   border-radius: 12px;
@@ -781,6 +783,7 @@ input::placeholder, textarea::placeholder {
   width: 95%;
   backdrop-filter: blur(12px);
   z-index: 100;
+  overflow: hidden;
 }
 .user-switcher {
   display: flex;
@@ -846,6 +849,7 @@ input::placeholder, textarea::placeholder {
   flex-direction: column;
   gap: 4px;
   min-width: 200px;
+  flex-shrink: 0;
 }
 @media (max-width: 640px) {
   .admin-info-pane {
@@ -864,6 +868,7 @@ input::placeholder, textarea::placeholder {
   flex: 1;
   min-width: 0;
   padding: 0 12px;
+  overflow: hidden;
 }
 
 .tab-item {
@@ -920,6 +925,7 @@ input::placeholder, textarea::placeholder {
 
 /* Admin console sub-grid */
 .admin-tab-grid {
+  flex-basis: 100%;
   margin-top: 0.75rem;
   padding-top: 0.75rem;
   border-top: 1px solid rgba(255, 215, 0, 0.15);

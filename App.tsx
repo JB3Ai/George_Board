@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
+﻿import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { SessionGuard } from './components/SessionGuard';
 import { PinboardLane } from './components/PinboardLane';
 import { DemoTab } from './components/DemoTab';
@@ -12,17 +12,17 @@ import { userRegistry, hydrateRegistryFromCloud } from './services/userRegistry'
 import { supabaseAuth } from './services/auth';
 import { supabase } from './services/supabaseClient';
 import { resolveMetadata } from './services/metadata';
-import { loadWorkspacesForOwner, loadBoardsForWorkspace, loadBoardsForUser, createWorkspace, createBoard, addBoardMember } from './services/boardService';
+import { loadWorkspacesForOwner, loadBoardsForWorkspace, loadBoardsForUser } from './services/boardService';
 import type { Workspace, Board } from './services/boardService';
 import { logBoardActivity } from './services/activityService';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme, UserProject } from './types';
 import { OWNER_EMAIL } from './constants';
-import { LogOut, Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, Info, X, Users, LayoutGrid, LayoutList, Grid3X3, Settings, RotateCcw, Palette, Menu, FolderPlus, Search } from 'lucide-react';
+import { Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, X, Users, LayoutGrid, LayoutList, Grid3X3, RotateCcw, FolderPlus, Search, ArrowUp } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 import { ThemeDock } from './components/ThemeDock';
 import { ChatWindow } from './components/ChatWindow';
-import { BoardSwitcher } from './components/BoardSwitcher';
+import { AppHeader } from './components/AppHeader';
 import AdminSearchOverlay from './components/AdminSearchOverlay';
 
 const THEME_BACKGROUNDS: Record<Theme, string> = {
@@ -46,7 +46,7 @@ const isChatAnchor = (id: string | null) => typeof id === 'string' && id.endsWit
 const isLegacyProjectId = (pid: string | undefined) => !pid || pid === 'default';
 
 const AppInner: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('JONO');
+  const [activeTab, setActiveTabRaw] = useState<string>('JONO');
   const [items, setItems] = useState<ClipboardItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -79,6 +79,10 @@ const AppInner: React.FC = () => {
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
   const [newItemTargetProjectId, setNewItemTargetProjectId] = useState<string | null>(null);
   const [editCopyToUsers, setEditCopyToUsers] = useState<string[]>([]);
+  const [showNewTabModal, setShowNewTabModal] = useState(false);
+  const [newTabName, setNewTabName] = useState('');
+  const [newTabTargetUserId, setNewTabTargetUserId] = useState<string>('');
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   // ─── Board/Workspace state ───
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -88,6 +92,43 @@ const AppInner: React.FC = () => {
 
   const { theme } = useUI();
   const bgImage = `${import.meta.env.BASE_URL}${THEME_BACKGROUNDS[theme] ?? 'Media/NEON.jpg'}`;
+
+  // ─── History-aware tab navigation ───
+  // Wrap setActiveTab to push browser history state so Back navigates within the app.
+  const historyInitRef = useRef(false);
+  const setActiveTab = useCallback((tabId: string) => {
+    setActiveTabRaw(prev => {
+      if (prev !== tabId) {
+        history.pushState({ tab: tabId }, '', undefined);
+      }
+      return tabId;
+    });
+  }, []);
+
+  // Seed initial history entry and listen for popstate
+  useEffect(() => {
+    if (!historyInitRef.current) {
+      history.replaceState({ tab: 'JONO' }, '', undefined);
+      historyInitRef.current = true;
+    }
+    const onPopState = (e: PopStateEvent) => {
+      if (e.state?.tab) {
+        setActiveTabRaw(e.state.tab);
+      } else {
+        // No more app history — re-push current state to stay in /clipboard
+        history.pushState({ tab: 'JONO' }, '', undefined);
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  // ─── Scroll-to-top visibility ───
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 400);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const getCurrentSession = (): UserSession => {
     const saved = localStorage.getItem('jb3_session');
@@ -179,7 +220,14 @@ const AppInner: React.FC = () => {
     const loadAllProjects = async () => {
       const map: Record<string, UserProject[]> = {};
       for (const tab of TABS.filter(t => !t.isOwner)) {
-        map[tab.id] = await loadUserProjects(tab.id);
+        let projects = await loadUserProjects(tab.id);
+        // Bootstrap: persist a default Tab 1 when user has no projects yet
+        if (projects.length === 0) {
+          const defaultProject: UserProject = { id: `${tab.id}_P1`, name: 'Project 1', index: 1, createdAt: Date.now() };
+          await saveUserProjects(tab.id, [defaultProject]);
+          projects = [defaultProject];
+        }
+        map[tab.id] = projects;
       }
       setUserProjectsMap(map);
     };
@@ -271,7 +319,12 @@ const AppInner: React.FC = () => {
     const poll = async () => {
       const cloudItems = await db.hydrateFromCloud();
       if (cloudItems && cloudItems.length > 0) {
-        setItems(cloudItems);
+        // Merge: keep local-only items (not yet synced) alongside cloud data
+        setItems(prev => {
+          const cloudIds = new Set(cloudItems.map(i => i.id));
+          const localOnly = prev.filter(i => !cloudIds.has(i.id));
+          return [...localOnly, ...cloudItems];
+        });
       }
     };
     const interval = setInterval(poll, 5000);
@@ -401,8 +454,20 @@ const AppInner: React.FC = () => {
   const getActiveBoardId = (): string | undefined => activeBoardId || undefined;
 
   const MAX_PROJECT_TABS = 7; // 8th slot reserved for Chat
+  const MAX_TAB_NAME_LENGTH = 20;
 
-  const handleCreateNewProject = async (userId: string) => {
+  const openNewTabModal = (userId: string) => {
+    const projects = userProjectsMap[userId] || [{ id: `${userId}_P1`, name: 'Project 1', index: 1, createdAt: 0 }];
+    if (projects.length >= MAX_PROJECT_TABS) {
+      showToast('Maximum 7 project tabs per user', 'error');
+      return;
+    }
+    setNewTabTargetUserId(userId);
+    setNewTabName('');
+    setShowNewTabModal(true);
+  };
+
+  const handleCreateNewProject = async (userId: string, tabName?: string) => {
     const projects = userProjectsMap[userId] || [{ id: `${userId}_P1`, name: 'Project 1', index: 1, createdAt: 0 }];
     if (projects.length >= MAX_PROJECT_TABS) {
       showToast('Maximum 7 project tabs per user', 'error');
@@ -435,7 +500,7 @@ const AppInner: React.FC = () => {
     // Insert new project as TAB 1 (index 1)
     const newProject: UserProject = {
       id: `${userId}_P${Date.now()}`,
-      name: `Project ${kept.length + 1}`,
+      name: tabName?.trim() || `Project ${kept.length + 1}`,
       index: 1,
       createdAt: Date.now(),
     };
@@ -446,34 +511,16 @@ const AppInner: React.FC = () => {
     showToast('New project tab created — existing tabs shifted right', 'success');
   };
 
-  const handleCreateWorkspace = async (name: string) => {
-    const ws = await createWorkspace(name, session.email);
-    if (!ws) { showToast('Failed to create workspace', 'error'); return; }
-    setWorkspaces(prev => [...prev, ws]);
-    setActiveWorkspaceId(ws.id);
-    setBoards([]);
-    setActiveBoardId(null);
-    showToast(`Workspace "${name}" created`, 'success');
-  };
-
-  const handleCreateBoard = async (name: string) => {
-    if (!activeWorkspaceId) { showToast('Select a workspace first', 'error'); return; }
-    const board = await createBoard(activeWorkspaceId, name);
-    if (!board) { showToast('Failed to create board', 'error'); return; }
-    // Auto-add owner as board owner
-    await addBoardMember(board.id, session.email, 'owner');
-    setBoards(prev => [...prev, board]);
-    setActiveBoardId(board.id);
-    logBoardActivity(board.id, session.email, 'board_created');
-    logBoardActivity(board.id, session.email, 'member_added');
-    showToast(`Board "${name}" created`, 'success');
-  };
-
-  const handleSelectWorkspace = async (wsId: string) => {
-    setActiveWorkspaceId(wsId);
-    setActiveBoardId(null);
-    const bds = await loadBoardsForWorkspace(wsId);
-    setBoards(bds);
+  /** Ensure every target user has at least one project tab before distributing items */
+  const ensureUserProjectsExist = async (userIds: string[]) => {
+    for (const userId of userIds) {
+      const existing = userProjectsMap[userId];
+      if (!existing || existing.length === 0) {
+        const defaultProject: UserProject = { id: `${userId}_P1`, name: 'Project 1', index: 1, createdAt: Date.now() };
+        await saveUserProjects(userId, [defaultProject]);
+        setUserProjectsMap(prev => ({ ...prev, [userId]: [defaultProject] }));
+      }
+    }
   };
 
   const handleSendChat = (content: string) => {
@@ -756,6 +803,7 @@ const AppInner: React.FC = () => {
 
       // Copy card to selected users (owner only, edit mode)
       if (isOwnerSession && editCopyToUsers.length > 0) {
+        await ensureUserProjectsExist(editCopyToUsers);
         const copyBase: any = {
           userId: session.email,
           type: updates.type || editingItem.type,
@@ -770,7 +818,7 @@ const AppInner: React.FC = () => {
           fileSize: updates.fileSize || editingItem.fileSize,
           metadata: updates.metadata || editingItem.metadata,
           enrichmentStatus: editingItem.enrichmentStatus,
-          projectId: newItemTargetProjectId || 'default',
+          projectId: getFormTargetProjectId() || 'default',
           boardId: editingItem.boardId || getActiveBoardId(),
         };
         db.addItemBatch(copyBase, editCopyToUsers);
@@ -780,6 +828,7 @@ const AppInner: React.FC = () => {
       setEditingItem(null);
     } else if (isOwnerSession && selectedTargetUsers.length > 0) {
       // ─── Multi-user batch path ───
+      await ensureUserProjectsExist(selectedTargetUsers);
       if (newItemType === ItemType.WEBPAGE || newItemType === ItemType.YOUTUBE) {
         const url = newItemTitle;
         let hostname = 'LINK';
@@ -795,7 +844,7 @@ const AppInner: React.FC = () => {
           enrichmentStatus: EnrichmentStatus.PENDING,
           metadata: newItemContent ? { description: newItemContent } : {},
           isDemo: newItemIsDemo,
-          projectId: 'default',
+          projectId: getFormTargetProjectId() || 'default',
           boardId: getActiveBoardId(),
         }, selectedTargetUsers);
 
@@ -833,7 +882,7 @@ const AppInner: React.FC = () => {
             fileName: newItemFile.name,
             fileSize: newItemFile.size,
             isDemo: newItemIsDemo,
-            projectId: 'default',
+            projectId: getFormTargetProjectId() || 'default',
             boardId: getActiveBoardId(),
           }, selectedTargetUsers);
         } catch (err: any) {
@@ -858,7 +907,7 @@ const AppInner: React.FC = () => {
             fileName: newItemFile.name,
             fileSize: newItemFile.size,
             isDemo: newItemIsDemo,
-            projectId: 'default',
+            projectId: getFormTargetProjectId() || 'default',
             boardId: getActiveBoardId(),
           }, selectedTargetUsers);
         } catch (err: any) {
@@ -878,7 +927,7 @@ const AppInner: React.FC = () => {
           dueDate: newItemType === ItemType.TASK || newItemType === ItemType.EVENT ? newItemDueDate : undefined,
           eventLocation: newItemType === ItemType.EVENT ? newItemLocation : undefined,
           isDemo: newItemIsDemo,
-          projectId: 'default',
+          projectId: getFormTargetProjectId() || 'default',
           boardId: getActiveBoardId(),
         }, selectedTargetUsers);
       }
@@ -1191,6 +1240,54 @@ const AppInner: React.FC = () => {
             </div>
           )}
 
+          {/* New Tab Modal (z-[150]) */}
+          {showNewTabModal && (
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => setShowNewTabModal(false)}>
+              <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+              <div className="relative bg-card border border-edge rounded-3xl max-w-sm w-full p-8 space-y-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[11px] tracking-[0.3em] uppercase text-accent font-bold flex items-center gap-3">
+                    <FolderPlus size={16} />
+                    New Tab
+                  </h2>
+                  <button onClick={() => setShowNewTabModal(false)} className="text-primary/30 hover:text-primary transition-colors"><X size={18} /></button>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[9px] tracking-widest text-muted/40 uppercase font-bold">Tab Name (max {MAX_TAB_NAME_LENGTH} characters)</p>
+                  <input
+                    autoFocus
+                    type="text"
+                    maxLength={MAX_TAB_NAME_LENGTH}
+                    value={newTabName}
+                    onChange={(e) => setNewTabName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newTabName.trim()) {
+                        handleCreateNewProject(newTabTargetUserId, newTabName);
+                        setShowNewTabModal(false);
+                      }
+                    }}
+                    placeholder="e.g. Client Docs, Sprint 4..."
+                    className="w-full bg-transparent text-sm text-primary border border-edge rounded-xl px-4 py-3 focus:outline-none focus:border-accent/30"
+                  />
+                  <p className="text-[9px] tracking-widest text-muted/20 text-right">{newTabName.length}/{MAX_TAB_NAME_LENGTH}</p>
+                </div>
+                <p className="text-[9px] tracking-widest text-muted/30 leading-relaxed">
+                  Choose a short label for this workspace tab. New tab appears as TAB 1. Existing tabs shift right. Max {MAX_PROJECT_TABS} tabs per user.
+                </p>
+                <div className="flex justify-end gap-6 pt-4 border-t border-edge">
+                  <button onClick={() => setShowNewTabModal(false)} className="text-[11px] tracking-[0.3em] text-muted/40 hover:text-primary transition-colors uppercase font-bold">Cancel</button>
+                  <button
+                    onClick={() => { handleCreateNewProject(newTabTargetUserId, newTabName); setShowNewTabModal(false); }}
+                    disabled={!newTabName.trim()}
+                    className="px-8 py-3 bg-accent text-contrast text-[11px] font-bold tracking-[0.3em] rounded-xl uppercase disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    Create
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Share Modal (z-[150]) */}
           {shareItem && (
             <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => setShareItem(null)}>
@@ -1244,88 +1341,28 @@ const AppInner: React.FC = () => {
           )}
 
           <div className="relative z-30 flex flex-col gap-16 px-4 sm:px-8 py-8">
-          <nav className="nav-main flex items-center border border-edge rounded-2xl px-4 sm:px-6 py-4 gap-4 bg-card z-[100] relative">
-            {/* OS3 header badge — click to open Info / Clipboard guide */}
-            <button onClick={() => setShowAES(true)} className="aes-shield-btn flex-shrink-0" title="AES-256 Encryption">
-              <img src={`${import.meta.env.BASE_URL}Media/landscape_header_icon.jpg`} alt="OS³ JB3Ai" className="h-10 rounded-lg object-contain" />
-            </button>
-            <button onClick={() => setShowInfo(true)} title="Info & Help" className="flex-shrink-0 text-muted/40 hover:text-cyan-400 transition-colors">
-              <Info size={18} strokeWidth={1.5} />
-            </button>
-            {/* Project tabs + Chat for non-owner users — 8-slot grid */}
-            {!isOwnerSession && (
-            <div className="project-tab-container">
-              {myProjects
-                .sort((a, b) => a.index - b.index)
-                .map((project) => (
-                <button
-                  key={project.id}
-                  className={`tab-item ${activeProjectId === project.id ? 'active' : ''}`}
-                  onClick={() => { setActiveProjectId(project.id); setIsAdding(false); setSearchTerm(''); }}
-                >
-                  TAB {project.index}
-                </button>
-              ))}
-              {/* Fill empty slots up to 7 */}
-              {Array.from({ length: Math.max(0, 7 - myProjects.length) }).map((_, i) => (
-                <span key={`empty-${i}`} className="tab-item tab-empty" />
-              ))}
-              <button
-                className={`tab-item chat-anchor ${isChatAnchor(activeProjectId) ? 'active' : ''}`}
-                onClick={() => { setActiveProjectId(getChatAnchorId(currentUserTab!.id)); setIsAdding(false); setSearchTerm(''); }}
-              >
-                CHAT
-              </button>
-            </div>
-            )}
-
-            {/* Pinned utility buttons — always visible */}
-            <div className="header-utility-icons flex items-center gap-3 sm:gap-4 flex-shrink-0 border-l border-edge pl-4">
-              <button
-                onClick={() => { setActiveTab(DEMO_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] sm:text-[11px] tracking-[0.24em] uppercase transition-all font-bold whitespace-nowrap demo-pulse-glow ${
-                  activeTab === DEMO_TAB_ID
-                    ? 'text-accent border-accent/70 bg-accent/15'
-                    : 'text-accent/90 border-accent/30 bg-accent/10 hover:bg-accent/15 hover:border-accent/60'
-                }`}
-              >
-                <span className="relative inline-flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-70" style={{ backgroundColor: 'var(--accent-status)' }} />
-                  <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: 'var(--accent-status)' }} />
-                </span>
-                DEMO
-              </button>
-              <button
-                onClick={() => { setActiveTab(SETTINGS_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
-                title="Settings"
-                className={`settings-icon transition-colors ${
-                  activeTab === SETTINGS_TAB_ID ? 'text-accent' : 'text-muted/40 hover:text-primary'
-                }`}
-              >
-                <Settings size={18} strokeWidth={1.5} />
-              </button>
-              {/* Mobile hamburger — visible only on small screens */}
-              <button
-                onClick={() => setShowMobileMenu(true)}
-                title="Menu"
-                className="sm:hidden text-muted/40 hover:text-accent transition-colors"
-              >
-                <Menu size={20} strokeWidth={1.5} />
-              </button>
-              {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
-                <button
-                  onClick={() => setShowThemeDock(prev => !prev)}
-                  title={showThemeDock ? 'Hide Theme Selector' : 'Show Theme Selector'}
-                  className={`theme-toggle-icon transition-colors ${showThemeDock ? 'text-accent' : 'text-muted/40 hover:text-primary'}`}
-                >
-                  <Palette size={18} strokeWidth={1.5} />
-                </button>
-              )}
-              <button onClick={handleLogout} title="Terminate Session" className="desktop-only-action text-muted/40 hover:text-red-400 transition-colors">
-                <LogOut size={18} strokeWidth={1.5} />
-              </button>
-            </div>
-          </nav>
+          <AppHeader
+            isOwnerSession={isOwnerSession}
+            signedInName={signedInName}
+            signedInRole={signedInRole}
+            currentUserTab={currentUserTab}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            activeProjectId={activeProjectId}
+            setActiveProjectId={setActiveProjectId}
+            myProjects={myProjects}
+            visibleTabs={visibleTabs}
+            showThemeDock={showThemeDock}
+            setShowThemeDock={setShowThemeDock}
+            showMobileMenu={showMobileMenu}
+            setShowMobileMenu={setShowMobileMenu}
+            onOpenAES={() => setShowAES(true)}
+            onOpenInfo={() => setShowInfo(true)}
+            onOpenAdminSearch={() => { setShowAdminSearch(true); setAdminSearchQuery(''); }}
+            onLogout={handleLogout}
+            setIsAdding={setIsAdding}
+            setSearchTerm={setSearchTerm}
+          />
 
           {/* Master Admin Console — Owner-only with user search selector */}
           {isOwnerSession && activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
@@ -1371,7 +1408,7 @@ const AppInner: React.FC = () => {
                   </button>
                   <button
                     className="tab-item new-project-btn"
-                    onClick={() => handleCreateNewProject(activeTab)}
+                    onClick={() => openNewTabModal(activeTab)}
                     title="Create new project for this user"
                   >
                     <FolderPlus size={12} /> NEW
@@ -1379,21 +1416,6 @@ const AppInner: React.FC = () => {
                 </div>
               )}
             </div>
-          )}
-
-          {/* Board Switcher — visible on non-special tabs */}
-          {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
-            <BoardSwitcher
-              workspaces={workspaces}
-              boards={boards}
-              activeWorkspaceId={activeWorkspaceId}
-              activeBoardId={activeBoardId}
-              onSelectWorkspace={handleSelectWorkspace}
-              onSelectBoard={setActiveBoardId}
-              onCreateWorkspace={handleCreateWorkspace}
-              onCreateBoard={handleCreateBoard}
-              isOwner={isOwnerSession}
-            />
           )}
 
           {/* Admin User Search Overlay */}
@@ -1411,79 +1433,7 @@ const AppInner: React.FC = () => {
             />
           )}
 
-          {/* Mobile slide-out drawer */}
-          {showMobileMenu && (
-            <>
-              <div className="mobile-drawer-overlay" onClick={() => setShowMobileMenu(false)} />
-              <div className="mobile-drawer">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] tracking-[0.3em] uppercase text-muted font-bold">Menu</span>
-                  <button onClick={() => setShowMobileMenu(false)} className="text-muted hover:text-primary transition-colors">
-                    <X size={18} strokeWidth={1.5} />
-                  </button>
-                </div>
-                {isOwnerSession ? (
-                  visibleTabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => { setActiveTab(tab.id); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
-                      className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
-                        activeTab === tab.id ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))
-                ) : (
-                  <>
-                    {myProjects
-                      .sort((a, b) => a.index - b.index)
-                      .map((project) => (
-                      <button
-                        key={project.id}
-                        onClick={() => { setActiveProjectId(project.id); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
-                        className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
-                          activeProjectId === project.id ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
-                        }`}
-                      >
-                        TAB {project.index}
-                      </button>
-                    ))}
-                    <button
-                      onClick={() => { setActiveProjectId(getChatAnchorId(currentUserTab!.id)); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
-                      className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
-                        isChatAnchor(activeProjectId) ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
-                      }`}
-                    >
-                      1:1 SECURE CHAT
-                    </button>
-                  </>
-                )}
-                <div className="h-px bg-edge my-2" />
-                <button
-                  onClick={() => { setActiveTab(SETTINGS_TAB_ID); setIsAdding(false); setSearchTerm(''); setShowMobileMenu(false); }}
-                  className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
-                    activeTab === SETTINGS_TAB_ID ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
-                  }`}
-                >
-                  Settings
-                </button>
-                <div className="h-px bg-edge my-2" />
-                <button
-                  onClick={() => { setShowMobileMenu(false); handleLogout(); }}
-                  className="w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold text-red-400/70 hover:bg-red-500/10 border border-transparent"
-                >
-                  Log Out
-                </button>
-              </div>
-            </>
-          )}
-
           <div className="min-h-[60vh] space-y-12">
-            <div className="glass rounded-2xl px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div className="text-[11px] tracking-[0.2em] uppercase text-primary font-bold">Welcome, {signedInName}</div>
-              <div className="text-[10px] tracking-[0.2em] uppercase text-accent/70 font-bold">{signedInRole}</div>
-            </div>
 
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3 flex-wrap">
@@ -2055,10 +2005,21 @@ const AppInner: React.FC = () => {
             <p className="text-[8px] tracking-[0.2em] text-muted/20 font-mono">v{__APP_VERSION__} &middot; {__COMMIT_HASH__}</p>
           </footer>
         </div>
+
+        {/* Scroll-to-top FAB */}
+        {showScrollTop && (
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="fixed bottom-8 right-8 z-[140] w-12 h-12 rounded-full bg-card border border-edge text-muted/60 hover:text-accent hover:border-accent/40 transition-all shadow-lg flex items-center justify-center backdrop-blur-md"
+            title="Back to top"
+          >
+            <ArrowUp size={20} strokeWidth={1.5} />
+          </button>
+        )}
       </div>
 
       {/* Material Theme Dock — shown on clipboard tabs, not on SETTINGS or DEMO */}
-      {showThemeDock && activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && <ThemeDock />}
+      {showThemeDock && <ThemeDock />}
     </SessionGuard>
   );
 };

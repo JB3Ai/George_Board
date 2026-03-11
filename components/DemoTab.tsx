@@ -16,7 +16,7 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
       title: 'JB³Ai OS3Grid',
       description: 'OS3Grid demo grid.',
       siteName: 'OS3Grid',
-      finalUrl: '/os3grid/',
+      finalUrl: 'https://jb3ai.com/os3grid/',
       sameTab: false,
       icon: <Globe size={24} />,
       shieldGate: false // Ensure shieldGate is false

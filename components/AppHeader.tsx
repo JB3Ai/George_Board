@@ -222,23 +222,22 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <>
           <div className="mobile-drawer-overlay" onClick={() => setShowMobileMenu(false)} />
           <div className="mobile-drawer">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] tracking-[0.3em] uppercase text-muted font-bold">Menu</span>
-              <button onClick={() => setShowMobileMenu(false)} className="text-muted hover:text-primary transition-colors">
-                <X size={18} strokeWidth={1.5} />
+            <div className="mobile-drawer-head">
+              <span className="mobile-drawer-title">COMMAND MENU</span>
+              <button onClick={() => setShowMobileMenu(false)} className="mobile-drawer-close">
+                <X size={16} strokeWidth={1.5} />
               </button>
             </div>
-            <div className="text-[9px] tracking-[0.15em] uppercase text-muted/40 font-bold mb-3 px-4">
+            <div className="mobile-drawer-identity">
               {signedInName} · {signedInRole}
             </div>
+            <div className="mobile-drawer-section-label">CHANNELS</div>
             {isOwnerSession ? (
               visibleTabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => { setActiveTab(tab.id); resetFormState(); setShowMobileMenu(false); }}
-                  className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
-                    activeTab === tab.id ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
-                  }`}
+                  className={`mobile-drawer-item ${activeTab === tab.id ? 'active' : ''}`}
                 >
                   {tab.label}
                 </button>
@@ -251,38 +250,32 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     <button
                       key={project.id}
                       onClick={() => { setActiveProjectId(project.id); resetFormState(); setShowMobileMenu(false); }}
-                      className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
-                        activeProjectId === project.id ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
-                      }`}
+                      className={`mobile-drawer-item ${activeProjectId === project.id ? 'active' : ''}`}
                     >
                       {getTabLabel(project)}
                     </button>
                   ))}
                 <button
                   onClick={() => { setActiveProjectId(getChatAnchorId(currentUserTab!.id)); resetFormState(); setShowMobileMenu(false); }}
-                  className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
-                    isChatAnchor(activeProjectId) ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
-                  }`}
+                  className={`mobile-drawer-item ${isChatAnchor(activeProjectId) ? 'active' : ''}`}
                 >
                   1:1 SECURE CHAT
                 </button>
               </>
             )}
-            <div className="h-px bg-edge my-2" />
+            <div className="mobile-drawer-divider" />
+            <div className="mobile-drawer-section-label">SYSTEM</div>
             <button
               onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
-              className={`w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold ${
-                activeTab === SETTINGS_TAB_ID ? 'text-accent bg-accent/10 border border-accent/20' : 'text-muted hover:text-primary hover:bg-card/10 border border-transparent'
-              }`}
+              className={`mobile-drawer-item ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
             >
               Settings
             </button>
-            <div className="h-px bg-edge my-2" />
             <button
               onClick={() => { setShowMobileMenu(false); onLogout(); }}
-              className="w-full text-left text-[10px] tracking-[0.25em] uppercase py-3 px-4 rounded-xl transition-all font-bold text-red-400/70 hover:bg-red-500/10 border border-transparent"
+              className="mobile-drawer-item mobile-drawer-logout"
             >
-              Log Out
+              Terminate Session
             </button>
           </div>
         </>

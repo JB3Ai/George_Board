@@ -29,6 +29,7 @@ import { ProtocolBanner } from './components/ProtocolBanner';
 import { ContextBar } from './components/ContextBar';
 import { ConsoleGrid } from './components/ConsoleGrid';
 import { ControlTower } from './components/ControlTower';
+import { ActivityTicker } from './components/ActivityTicker';
 import AdminSearchOverlay from './components/AdminSearchOverlay';
 
 const THEME_BACKGROUNDS: Record<Theme, string> = {
@@ -1542,6 +1543,7 @@ const AppInner: React.FC = () => {
               <ProtocolBanner
                 protocolId={isChatAnchor(activeProjectId) ? 'PROTO::COMMS' : isOwnerSession ? 'PROTO::ADMIN' : 'PROTO::USER'}
                 title={sectionTitle}
+                contextLabel={isChatAnchor(activeProjectId) ? 'SECURE LINK' : isOwnerSession ? 'MULTI-CHANNEL' : 'SINGLE-CHANNEL'}
                 stats={!isChatAnchor(activeProjectId) ? [
                   { value: filteredItems.length, label: 'Records' },
                   { value: filteredItems.filter(i => i.type === ItemType.TASK && i.taskStatus !== TaskStatus.DONE).length, label: 'Pending' },
@@ -1563,33 +1565,16 @@ const AppInner: React.FC = () => {
                 canPost={canPost}
                 onNewEntry={() => { setEditingItem(null); setNewItemContent(''); setNewItemTargetProjectId(null); setEditCopyToUsers([]); setIsAdding(true); }}
                 onSearch={() => { setShowAdminSearch(true); setAdminSearchQuery(''); }}
+                onRefresh={() => setItems(db.getItems())}
                 onResetVisibility={isOwnerSession && activeTab !== 'JONO' ? () => handleResetUserVisibility(activeTab) : undefined}
               />
             ) : undefined
           }>
-          <div className="space-y-12 px-4 sm:px-0">
+          <div className="space-y-4 px-4 sm:px-0">
 
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3 flex-wrap">
-                {isOwnerSession && activeTab !== 'JONO' && activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
-                  <button
-                    onClick={() => handleResetUserVisibility(activeTab)}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-[9px] tracking-[0.2em] uppercase font-bold transition-all"
-                    style={{
-                      borderColor: theme === Theme.CARBON ? '#F27D26' : 'var(--border-color)',
-                      color: theme === Theme.CARBON ? '#F27D26' : 'var(--text-primary)',
-                      backgroundColor: theme === Theme.SAND ? 'rgba(255, 255, 255, 0.05)' : 'transparent'
-                    }}
-                    title="Reset confirmed visibility markers for this user channel"
-                  >
-                    <RotateCcw size={12} />
-                    Reset Visibility
-                  </button>
-                )}
-              </div>
-
-
-            </div>
+            {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && !isChatAnchor(activeProjectId) && (
+              <ActivityTicker items={filteredItems} />
+            )}
 
             {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
               <div className="flex justify-end">
@@ -2121,7 +2106,7 @@ const AppInner: React.FC = () => {
           </div>
           </ConsoleGrid>
 
-          <footer className="mt-16 pb-32 text-center space-y-1">
+          <footer className="mt-8 pb-16 text-center space-y-1">
             <p className="text-[9px] tracking-[0.3em] uppercase text-muted/30 font-bold">&copy; 2026 JB³Ai. All Rights Reserved.</p>
             <p className="text-[8px] tracking-[0.2em] text-muted/20 font-mono">v{__APP_VERSION__} &middot; {__COMMIT_HASH__}</p>
           </footer>

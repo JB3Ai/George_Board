@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, RotateCcw, Search } from 'lucide-react';
+import { Plus, RotateCcw, Search, RefreshCw, Zap, Trash2 } from 'lucide-react';
 import type { ClipboardItem } from '../types';
 import { ItemType, TaskStatus } from '../types';
 
@@ -10,6 +10,7 @@ interface ControlTowerProps {
   canPost: boolean;
   onNewEntry: () => void;
   onSearch: () => void;
+  onRefresh: () => void;
   onResetVisibility?: () => void;
 }
 
@@ -20,6 +21,7 @@ export const ControlTower: React.FC<ControlTowerProps> = ({
   canPost,
   onNewEntry,
   onSearch,
+  onRefresh,
   onResetVisibility,
 }) => {
   const tasks = items.filter(i => i.type === ItemType.TASK);
@@ -37,16 +39,28 @@ export const ControlTower: React.FC<ControlTowerProps> = ({
           <span className="ct-module-title">Control Deck</span>
         </div>
         <div className="ct-module-body">
-          <div className="ct-action-row">
-            {canPost && (
+          {canPost && (
+            <div className="ct-action-row">
               <button className="ct-action-btn primary" onClick={onNewEntry}>
                 <Plus size={12} />
                 NEW ENTRY
               </button>
-            )}
+            </div>
+          )}
+          <div className="ct-action-row">
+            <button className="ct-action-btn" onClick={onRefresh}>
+              <RefreshCw size={12} />
+              REFRESH SHEET
+            </button>
             <button className="ct-action-btn" onClick={onSearch}>
               <Search size={12} />
               SEARCH
+            </button>
+          </div>
+          <div className="ct-action-row">
+            <button className="ct-action-btn" onClick={onRefresh}>
+              <Zap size={12} />
+              SYNC TO PIPELINE
             </button>
             {isOwner && onResetVisibility && activeChannel !== 'JONO' && (
               <button className="ct-action-btn" onClick={onResetVisibility}>
@@ -64,9 +78,13 @@ export const ControlTower: React.FC<ControlTowerProps> = ({
           <span className="ct-module-title">Execution Queue</span>
         </div>
         <div className="ct-module-body">
+          <div className="ct-queue-item">
+            <span className="ct-queue-label">READY FOR EXECUTION</span>
+            <span className="ct-queue-badge">{pending + events}</span>
+          </div>
           {pending > 0 && (
             <div className="ct-queue-item">
-              <span className="ct-queue-label">Tasks Pending</span>
+              <span className="ct-queue-label">Tasks Open</span>
               <span className="ct-queue-badge pending">{pending}</span>
             </div>
           )}
@@ -78,13 +96,13 @@ export const ControlTower: React.FC<ControlTowerProps> = ({
           )}
           {events > 0 && (
             <div className="ct-queue-item">
-              <span className="ct-queue-label">Events</span>
+              <span className="ct-queue-label">Scheduled Events</span>
               <span className="ct-queue-badge">{events}</span>
             </div>
           )}
           {pending === 0 && done === 0 && events === 0 && (
             <div className="ct-queue-item">
-              <span className="ct-queue-label" style={{ opacity: 0.3 }}>Queue Empty</span>
+              <span className="ct-queue-label" style={{ opacity: 0.3 }}>Queue Clear</span>
             </div>
           )}
         </div>
@@ -96,6 +114,19 @@ export const ControlTower: React.FC<ControlTowerProps> = ({
           <span className="ct-module-title">System Metrics</span>
         </div>
         <div className="ct-module-body">
+          <div className="ct-metric-row">
+            <span className="ct-metric-label">Queue Depth</span>
+            <span className="ct-metric-value">{pending + events}</span>
+          </div>
+          <div className="ct-metric-row">
+            <span className="ct-metric-label">Node Health</span>
+            <span className="ct-metric-value ct-metric-ok">NOMINAL</span>
+          </div>
+          <div className="ct-metric-row">
+            <span className="ct-metric-label">Uptime</span>
+            <span className="ct-metric-value">99.9%</span>
+          </div>
+          <div className="ct-metric-divider" />
           <div className="ct-metric-row">
             <span className="ct-metric-label">Notes</span>
             <span className="ct-metric-value">{notes}</span>

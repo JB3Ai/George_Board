@@ -24,6 +24,11 @@ import { ThemeDock } from './components/ThemeDock';
 import { ChatWindow } from './components/ChatWindow';
 import { OwnerCommsHub } from './components/OwnerCommsHub';
 import { AppHeader } from './components/AppHeader';
+import { TelemetryStrip } from './components/TelemetryStrip';
+import { ProtocolBanner } from './components/ProtocolBanner';
+import { ContextBar } from './components/ContextBar';
+import { ConsoleGrid } from './components/ConsoleGrid';
+import { ControlTower } from './components/ControlTower';
 import AdminSearchOverlay from './components/AdminSearchOverlay';
 
 const THEME_BACKGROUNDS: Record<Theme, string> = {
@@ -1416,7 +1421,7 @@ const AppInner: React.FC = () => {
             </div>
           )}
 
-          <div className="relative z-30 flex flex-col gap-16 px-4 sm:px-8 py-8">
+          <div className="relative z-30 flex flex-col">
           <AppHeader
             isOwnerSession={isOwnerSession}
             signedInName={signedInName}
@@ -1428,6 +1433,9 @@ const AppInner: React.FC = () => {
             setActiveProjectId={setActiveProjectId}
             myProjects={myProjects}
             visibleTabs={visibleTabs}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            sectionTitle={sectionTitle}
             showThemeDock={showThemeDock}
             setShowThemeDock={setShowThemeDock}
             showMobileMenu={showMobileMenu}
@@ -1522,11 +1530,47 @@ const AppInner: React.FC = () => {
             />
           )}
 
-          <div className="min-h-[60vh] space-y-12">
+          {/* ━━━ OS³ Console Layers — content tabs only ━━━ */}
+          {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
+            <>
+              <TelemetryStrip
+                itemCount={filteredItems.length}
+                userCount={TABS.filter(t => !t.isOwner).length}
+                isOwner={isOwnerSession}
+                activeChannel={activeTab}
+              />
+              <ProtocolBanner
+                protocolId={isChatAnchor(activeProjectId) ? 'PROTO::COMMS' : isOwnerSession ? 'PROTO::ADMIN' : 'PROTO::USER'}
+                title={sectionTitle}
+                stats={!isChatAnchor(activeProjectId) ? [
+                  { value: filteredItems.length, label: 'Records' },
+                  { value: filteredItems.filter(i => i.type === ItemType.TASK && i.taskStatus !== TaskStatus.DONE).length, label: 'Pending' },
+                ] : undefined}
+              />
+              <ContextBar
+                tag="DATA INBOX"
+                source={isChatAnchor(activeProjectId) ? 'SOURCE: SECURE_COMMS' : `SOURCE: HUB_${activeTab}`}
+              />
+            </>
+          )}
+
+          <ConsoleGrid controlTower={
+            activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && !isChatAnchor(activeProjectId) ? (
+              <ControlTower
+                items={filteredItems}
+                isOwner={isOwnerSession}
+                activeChannel={activeTab}
+                canPost={canPost}
+                onNewEntry={() => { setEditingItem(null); setNewItemContent(''); setNewItemTargetProjectId(null); setEditCopyToUsers([]); setIsAdding(true); }}
+                onSearch={() => { setShowAdminSearch(true); setAdminSearchQuery(''); }}
+                onResetVisibility={isOwnerSession && activeTab !== 'JONO' ? () => handleResetUserVisibility(activeTab) : undefined}
+              />
+            ) : undefined
+          }>
+          <div className="space-y-12 px-4 sm:px-0">
 
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3 flex-wrap">
-                <div className="text-[10px] tracking-[0.3em] uppercase text-muted font-bold">{sectionTitle}</div>
                 {isOwnerSession && activeTab !== 'JONO' && activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
                   <button
                     onClick={() => handleResetUserVisibility(activeTab)}
@@ -1544,28 +1588,7 @@ const AppInner: React.FC = () => {
                 )}
               </div>
 
-              {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
-                <div className="flex items-center gap-1 bg-card/10 rounded-xl border border-edge p-1">
-                  {([
-                    { mode: 'list' as const, icon: <LayoutList size={14} />, label: 'List' },
-                    { mode: 'grid-small' as const, icon: <Grid3X3 size={14} />, label: 'Grid S' },
-                    { mode: 'grid-big' as const, icon: <LayoutGrid size={14} />, label: 'Grid L' },
-                  ]).map(v => (
-                    <button
-                      key={v.mode}
-                      onClick={() => setViewMode(v.mode)}
-                      className={`p-2 rounded-lg transition-all ${
-                        viewMode === v.mode
-                          ? 'bg-accent/15 text-accent border border-accent/20'
-                          : 'text-muted/40 hover:text-muted border border-transparent'
-                      }`}
-                      title={v.label}
-                    >
-                      {v.icon}
-                    </button>
-                  ))}
-                </div>
-              )}
+
             </div>
 
             {activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
@@ -2096,6 +2119,7 @@ const AppInner: React.FC = () => {
               </>
             )}
           </div>
+          </ConsoleGrid>
 
           <footer className="mt-16 pb-32 text-center space-y-1">
             <p className="text-[9px] tracking-[0.3em] uppercase text-muted/30 font-bold">&copy; 2026 JB³Ai. All Rights Reserved.</p>

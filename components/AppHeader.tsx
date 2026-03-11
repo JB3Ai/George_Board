@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogOut, Info, Home, Settings, Palette, Menu, Search, X } from 'lucide-react';
+import { LogOut, Info, Home, Settings, Palette, Menu, Search, X, LayoutList, Grid3X3, LayoutGrid, Shield } from 'lucide-react';
 import type { UserProject } from '../types';
 import type { UserTab } from '../services/userRegistry';
 
@@ -32,6 +32,13 @@ export interface AppHeaderProps {
   myProjects: UserProject[];
   visibleTabs: UserTab[];
 
+  /* view mode */
+  viewMode: 'grid-big' | 'grid-small' | 'list';
+  setViewMode: (mode: 'grid-big' | 'grid-small' | 'list') => void;
+
+  /* context line */
+  sectionTitle: string;
+
   /* ui toggles */
   showThemeDock: boolean;
   setShowThemeDock: React.Dispatch<React.SetStateAction<boolean>>;
@@ -60,6 +67,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   setActiveProjectId,
   myProjects,
   visibleTabs,
+  viewMode,
+  setViewMode,
+  sectionTitle,
   showThemeDock,
   setShowThemeDock,
   showMobileMenu,
@@ -73,46 +83,36 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 }) => {
   const resetFormState = () => { setIsAdding(false); setSearchTerm(''); };
 
+  const isContentView = activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID;
+  const showViewControls = isContentView && !isChatAnchor(activeProjectId);
+
   return (
     <>
-      {/* ─── Primary navigation bar ─── */}
-      <nav className="nav-main flex items-center border border-edge rounded-2xl px-4 sm:px-6 py-4 gap-4 bg-card z-[100] relative">
-        {/* OS3 header badge */}
-        <button onClick={onOpenAES} className="aes-shield-btn flex-shrink-0" title="AES-256 Encryption">
-          <img src={`${import.meta.env.BASE_URL}Media/landscape_header_icon.jpg`} alt="OS³ JB3Ai" className="h-10 rounded-lg object-contain" />
-        </button>
-        <button onClick={onOpenInfo} title="Info & Help" className="flex-shrink-0 text-muted/40 hover:text-cyan-400 transition-colors">
-          <Info size={18} strokeWidth={1.5} />
-        </button>
+      {/* ━━━ TIER 1 — System Header (solid, compact, same for everyone) ━━━ */}
+      <nav className="header-system">
+        {/* Left: OS³ Security Badge */}
+        <div className="header-system-left">
+          <button onClick={onOpenAES} className="header-badge-btn" title="AES-256 Encryption">
+            <Shield size={14} />
+            <span className="header-badge-label">OS³ AES-256</span>
+          </button>
+          <button onClick={onOpenInfo} title="Info & Help" className="header-icon-btn">
+            <Info size={16} strokeWidth={1.5} />
+          </button>
+        </div>
 
-        {/* Project tabs + Chat for non-owner users — 8-slot grid */}
-        {!isOwnerSession && (
-          <div className="project-tab-container">
-            {myProjects
-              .sort((a, b) => a.index - b.index)
-              .map((project) => (
-                <button
-                  key={project.id}
-                  className={`tab-item ${activeProjectId === project.id ? 'active' : ''}`}
-                  onClick={() => { setActiveProjectId(project.id); resetFormState(); }}
-                >
-                  {getTabLabel(project)}
-                </button>
-              ))}
-            {Array.from({ length: Math.max(0, 7 - myProjects.length) }).map((_, i) => (
-              <span key={`empty-${i}`} className="tab-item tab-empty" />
-            ))}
-            <button
-              className={`tab-item chat-anchor ${isChatAnchor(activeProjectId) ? 'active' : ''}`}
-              onClick={() => { setActiveProjectId(getChatAnchorId(currentUserTab!.id)); resetFormState(); }}
-            >
-              CHAT
-            </button>
-          </div>
-        )}
-
-        {/* Pinned utility buttons — always visible */}
-        <div className="header-utility-icons flex items-center gap-3 sm:gap-4 flex-shrink-0 border-l border-edge pl-4">
+        {/* Right: System controls */}
+        <div className="header-system-right">
+          <button
+            onClick={() => { setActiveTab(DEMO_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
+            className={`header-demo-chip ${activeTab === DEMO_TAB_ID ? 'active' : ''}`}
+          >
+            <span className="header-demo-dot" />
+            DEMO
+          </button>
+          <span className="header-session-badge hidden sm:inline-flex">
+            {signedInName} · {signedInRole}
+          </span>
           <button
             onClick={() => {
               const homeTab = isOwnerSession ? 'JONO' : currentUserTab?.id;
@@ -120,55 +120,102 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               resetFormState(); setShowMobileMenu(false);
             }}
             title="Home"
-            className={`transition-colors ${
-              (activeTab === 'JONO' || activeTab === currentUserTab?.id) && activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID
-                ? 'text-accent' : 'text-muted/40 hover:text-primary'
+            className={`header-icon-btn ${
+              (activeTab === 'JONO' || activeTab === currentUserTab?.id) && isContentView ? 'active' : ''
             }`}
           >
-            <Home size={18} strokeWidth={1.5} />
-          </button>
-          <button
-            onClick={() => { setActiveTab(DEMO_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] sm:text-[11px] tracking-[0.24em] uppercase transition-all font-bold whitespace-nowrap demo-pulse-glow ${
-              activeTab === DEMO_TAB_ID
-                ? 'text-accent border-accent/70 bg-accent/15'
-                : 'text-accent/90 border-accent/30 bg-accent/10 hover:bg-accent/15 hover:border-accent/60'
-            }`}
-          >
-            <span className="relative inline-flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-70" style={{ backgroundColor: 'var(--accent-status)' }} />
-              <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: 'var(--accent-status)' }} />
-            </span>
-            DEMO
+            <Home size={16} strokeWidth={1.5} />
           </button>
           <button
             onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
             title="Settings"
-            className={`settings-icon transition-colors ${
-              activeTab === SETTINGS_TAB_ID ? 'text-accent' : 'text-muted/40 hover:text-primary'
-            }`}
+            className={`header-icon-btn ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
           >
-            <Settings size={18} strokeWidth={1.5} />
-          </button>
-          {/* Session indicator — compact name/role badge */}
-          <span className="hidden sm:inline-flex text-[8px] tracking-[0.15em] uppercase text-muted/40 font-bold border-l border-edge pl-3 whitespace-nowrap">
-            {signedInName} · {signedInRole}
-          </span>
-          <button onClick={() => setShowMobileMenu(true)} title="Menu" className="sm:hidden text-muted/40 hover:text-accent transition-colors">
-            <Menu size={20} strokeWidth={1.5} />
+            <Settings size={16} strokeWidth={1.5} />
           </button>
           <button
             onClick={() => setShowThemeDock(prev => !prev)}
             title={showThemeDock ? 'Hide Theme Selector' : 'Show Theme Selector'}
-            className={`theme-toggle-icon transition-colors ${showThemeDock ? 'text-accent' : 'text-muted/40 hover:text-primary'}`}
+            className={`header-icon-btn ${showThemeDock ? 'active' : ''}`}
           >
-            <Palette size={18} strokeWidth={1.5} />
+            <Palette size={16} strokeWidth={1.5} />
           </button>
-          <button onClick={onLogout} title="Terminate Session" className="desktop-only-action text-muted/40 hover:text-red-400 transition-colors">
-            <LogOut size={18} strokeWidth={1.5} />
+          <button onClick={onLogout} title="Terminate Session" className="header-icon-btn header-logout hidden sm:flex">
+            <LogOut size={16} strokeWidth={1.5} />
+          </button>
+          <button onClick={() => setShowMobileMenu(true)} title="Menu" className="header-icon-btn sm:hidden">
+            <Menu size={18} strokeWidth={1.5} />
           </button>
         </div>
       </nav>
+
+      {/* ━━━ TIER 2 — Context Header (floating console, role-dependent) ━━━ */}
+      {isContentView && (
+        <div className="header-context">
+          {/* Context label */}
+          <div className="header-context-label">{sectionTitle}</div>
+
+          <div className="header-context-controls">
+            {/* Owner: channel switchboard tabs */}
+            {isOwnerSession && (
+              <div className="header-channel-bar">
+                {visibleTabs.filter(t => !t.isOwner).map(tab => (
+                  <button
+                    key={tab.id}
+                    className={`header-channel-tab ${activeTab === tab.id ? 'active' : ''}`}
+                    onClick={() => { setActiveTab(tab.id); setActiveProjectId(null); resetFormState(); }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Non-owner: project tabs + chat */}
+            {!isOwnerSession && (
+              <div className="header-project-bar">
+                {myProjects
+                  .sort((a, b) => a.index - b.index)
+                  .map((project) => (
+                    <button
+                      key={project.id}
+                      className={`header-project-tab ${activeProjectId === project.id ? 'active' : ''}`}
+                      onClick={() => { setActiveProjectId(project.id); resetFormState(); }}
+                    >
+                      {getTabLabel(project)}
+                    </button>
+                  ))}
+                <button
+                  className={`header-project-tab header-chat-tab ${isChatAnchor(activeProjectId) ? 'active' : ''}`}
+                  onClick={() => { setActiveProjectId(getChatAnchorId(currentUserTab!.id)); resetFormState(); }}
+                >
+                  CHAT
+                </button>
+              </div>
+            )}
+
+            {/* View mode controls */}
+            {showViewControls && (
+              <div className="header-view-toggle">
+                {([
+                  { mode: 'list' as const, icon: <LayoutList size={13} />, label: 'List' },
+                  { mode: 'grid-small' as const, icon: <Grid3X3 size={13} />, label: 'Grid' },
+                  { mode: 'grid-big' as const, icon: <LayoutGrid size={13} />, label: 'Cards' },
+                ]).map(v => (
+                  <button
+                    key={v.mode}
+                    onClick={() => setViewMode(v.mode)}
+                    className={`header-view-btn ${viewMode === v.mode ? 'active' : ''}`}
+                    title={v.label}
+                  >
+                    {v.icon}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ─── Mobile slide-out drawer ─── */}
       {showMobileMenu && (
@@ -181,7 +228,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 <X size={18} strokeWidth={1.5} />
               </button>
             </div>
-            {/* Session indicator — mobile */}
             <div className="text-[9px] tracking-[0.15em] uppercase text-muted/40 font-bold mb-3 px-4">
               {signedInName} · {signedInRole}
             </div>

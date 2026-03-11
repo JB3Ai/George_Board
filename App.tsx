@@ -161,12 +161,12 @@ const AppInner: React.FC = () => {
 
   const viewedUserProjects = useMemo(() => {
     if (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID) return [];
-    return userProjectsMap[activeTab] || [{ id: `${activeTab}_P1`, name: 'Project 1', index: 1, createdAt: 0 }];
+    return userProjectsMap[activeTab] || [{ id: `${activeTab}_P1`, name: 'HOME', index: 1, createdAt: 0 }];
   }, [activeTab, userProjectsMap]);
 
   const myProjects = useMemo(() => {
     if (!currentUserTab || isOwnerSession) return [];
-    return userProjectsMap[currentUserTab.id] || [{ id: `${currentUserTab.id}_P1`, name: 'Project 1', index: 1, createdAt: 0 }];
+    return userProjectsMap[currentUserTab.id] || [{ id: `${currentUserTab.id}_P1`, name: 'HOME', index: 1, createdAt: 0 }];
   }, [currentUserTab, isOwnerSession, userProjectsMap]);
 
   useEffect(() => {
@@ -460,18 +460,18 @@ const AppInner: React.FC = () => {
   const MAX_PROJECT_TABS = 7; // 8th slot reserved for Chat
   const MAX_TAB_NAME_LENGTH = 20;
 
-  /** Display label: "TAB2 · Research" if custom name, else "TAB2" */
+  /** Display label: HOME for slot 1, custom label or fallback TAB{n} for slot 2+ */
   const getTabLabel = (project: UserProject): string => {
-    const base = `TAB${project.index}`;
+    if (project.index === 1) return 'HOME';
     const custom = project.name;
-    if (!custom || custom.startsWith('Project ')) return base;
-    return `${base} · ${custom}`;
+    if (!custom || custom.startsWith('Project ')) return `TAB${project.index}`;
+    return custom;
   };
 
   const openNewTabModal = (userId: string) => {
     const projects = userProjectsMap[userId] || [{ id: `${userId}_P1`, name: 'Project 1', index: 1, createdAt: 0 }];
     if (projects.length >= MAX_PROJECT_TABS) {
-      showToast('Maximum 7 project tabs per user', 'error');
+      showToast('Maximum tabs reached (HOME + 7 project tabs)', 'error');
       return;
     }
     setNewTabTargetUserId(userId);
@@ -480,6 +480,13 @@ const AppInner: React.FC = () => {
   };
 
   const openRenameModal = (userId: string, projectId: string, currentName: string) => {
+    // Block rename on HOME tab (index 1)
+    const projects = userProjectsMap[userId] || [];
+    const target = projects.find(p => p.id === projectId);
+    if (target && target.index === 1) {
+      showToast('HOME tab cannot be renamed', 'info');
+      return;
+    }
     setRenameProjectUserId(userId);
     setRenameProjectId(projectId);
     setRenameLabel(currentName.startsWith('Project ') ? '' : currentName);
@@ -499,55 +506,32 @@ const AppInner: React.FC = () => {
   };
 
   const handleCreateNewProject = async (userId: string, tabName?: string) => {
-    const projects = userProjectsMap[userId] || [{ id: `${userId}_P1`, name: 'Project 1', index: 1, createdAt: 0 }];
+    const projects = userProjectsMap[userId] || [{ id: `${userId}_P1`, name: 'HOME', index: 1, createdAt: 0 }];
     if (projects.length >= MAX_PROJECT_TABS) {
-      showToast('Maximum 7 project tabs per user', 'error');
+      showToast('Maximum tabs reached (HOME + 7 project tabs)', 'error');
       return;
     }
-    // Push-stack: shift every existing project index up by 1
-    const shifted = projects.map(p => ({ ...p, index: p.index + 1 }));
-    // Archive any project that overflows to index 8+
-    const kept = shifted.filter(p => p.index <= MAX_PROJECT_TABS);
-    const archived = shifted.filter(p => p.index > MAX_PROJECT_TABS);
-
-    // Shift item-level projectIds to match new project positions
-    const oldToNew = new Map<string, string>();
-    projects.forEach(oldP => {
-      const newP = shifted.find(s => s.id === oldP.id);
-      if (newP) oldToNew.set(oldP.id, newP.id);
-    });
-    // Archive items belonging to projects that overflowed
-    const archivedIds = new Set(archived.map(p => p.id));
-    items.forEach(item => {
-      if (item.syncTabId !== userId || item.type === ItemType.CHAT) return;
-      if (archivedIds.has(item.projectId || '')) {
-        db.updateItem(item.id, session.email, { isArchived: true });
-      }
-    });
-
-    if (archived.length > 0) {
-      showToast(`${archived.length} project(s) archived (exceeded 7-tab limit)`, 'info');
-    }
-    // Insert new project as TAB 1 (index 1)
+    // Append new project after the last slot — HOME stays at index 1
+    const maxIndex = Math.max(...projects.map(p => p.index), 0);
     const newProject: UserProject = {
       id: `${userId}_P${Date.now()}`,
-      name: tabName?.trim() || `Project ${kept.length + 1}`,
-      index: 1,
+      name: tabName?.trim() || `Project ${maxIndex + 1}`,
+      index: maxIndex + 1,
       createdAt: Date.now(),
     };
-    const updated = [newProject, ...kept].sort((a, b) => a.index - b.index);
+    const updated = [...projects, newProject].sort((a, b) => a.index - b.index);
     setUserProjectsMap(prev => ({ ...prev, [userId]: updated }));
     await saveUserProjects(userId, updated);
     setActiveProjectId(newProject.id);
-    showToast('New project tab created — existing tabs shifted right', 'success');
+    showToast(`Project tab created: ${newProject.name}`, 'success');
   };
 
-  /** Ensure every target user has at least one project tab before distributing items */
+  /** Ensure every target user has at least one project tab (HOME) before distributing items */
   const ensureUserProjectsExist = async (userIds: string[]) => {
     for (const userId of userIds) {
       const existing = userProjectsMap[userId];
       if (!existing || existing.length === 0) {
-        const defaultProject: UserProject = { id: `${userId}_P1`, name: 'Project 1', index: 1, createdAt: Date.now() };
+        const defaultProject: UserProject = { id: `${userId}_P1`, name: 'HOME', index: 1, createdAt: Date.now() };
         await saveUserProjects(userId, [defaultProject]);
         setUserProjectsMap(prev => ({ ...prev, [userId]: [defaultProject] }));
       }
@@ -1307,7 +1291,7 @@ const AppInner: React.FC = () => {
                   <p className="text-[9px] tracking-widest text-muted/20 text-right">{newTabName.length}/{MAX_TAB_NAME_LENGTH}</p>
                 </div>
                 <p className="text-[9px] tracking-widest text-muted/30 leading-relaxed">
-                  Choose a short label for this workspace tab. New tab appears as TAB 1. Existing tabs shift right. Max {MAX_PROJECT_TABS} tabs per user.
+                  Choose a short label for this workspace tab. New project tab is added after HOME. Max {MAX_PROJECT_TABS} tabs per user.
                 </p>
                 <div className="flex justify-end gap-6 pt-4 border-t border-edge">
                   <button onClick={() => setShowNewTabModal(false)} className="text-[11px] tracking-[0.3em] text-muted/40 hover:text-primary transition-colors uppercase font-bold">Cancel</button>
@@ -1472,16 +1456,18 @@ const AppInner: React.FC = () => {
                       >
                         {getTabLabel(project)}
                       </button>
-                      <button
-                        className="tab-rename-btn"
-                        onClick={(e) => { e.stopPropagation(); openRenameModal(activeTab, project.id, project.name); }}
-                        title="Rename tab"
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', opacity: 0.4, transition: 'opacity 0.2s' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-                        onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.4')}
-                      >
-                        <Pencil size={10} className="text-muted" />
-                      </button>
+                      {project.index !== 1 && (
+                        <button
+                          className="tab-rename-btn"
+                          onClick={(e) => { e.stopPropagation(); openRenameModal(activeTab, project.id, project.name); }}
+                          title="Rename tab"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', opacity: 0.4, transition: 'opacity 0.2s' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.4')}
+                        >
+                          <Pencil size={10} className="text-muted" />
+                        </button>
+                      )}
                     </div>
                   ))}
                   {/* Fill empty slots up to 7 */}

@@ -9,12 +9,12 @@ const SETTINGS_TAB_ID = '__SETTINGS__';
 const getChatAnchorId = (userId: string) => `${userId}_CHAT`;
 const isChatAnchor = (id: string | null) => typeof id === 'string' && id.endsWith('_CHAT');
 
-/** Display label: "TAB2 · Research" if custom name, else "TAB2" */
+/** Display label: HOME for slot 1, custom label or fallback TAB{n} for slot 2+ */
 const getTabLabel = (project: UserProject): string => {
-  const base = `TAB${project.index}`;
+  if (project.index === 1) return 'HOME';
   const custom = project.name;
-  if (!custom || custom.startsWith('Project ')) return base;
-  return `${base} · ${custom}`;
+  if (!custom || custom.startsWith('Project ')) return `TAB${project.index}`;
+  return custom;
 };
 
 export interface AppHeaderProps {

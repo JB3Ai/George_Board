@@ -72,87 +72,91 @@ export const ControlTower: React.FC<ControlTowerProps> = ({
         </div>
       </div>
 
-      {/* Execution Queue */}
-      <div className="ct-module">
-        <div className="ct-module-header">
-          <span className="ct-module-title">Execution Queue</span>
-        </div>
-        <div className="ct-module-body">
-          <div className="ct-queue-item">
-            <span className="ct-queue-label">READY FOR EXECUTION</span>
-            <span className="ct-queue-badge">{pending + events}</span>
+      {/* Execution Queue — owner only */}
+      {isOwner && (
+        <div className="ct-module">
+          <div className="ct-module-header">
+            <span className="ct-module-title">Execution Queue</span>
           </div>
-          {pending > 0 && (
+          <div className="ct-module-body">
             <div className="ct-queue-item">
-              <span className="ct-queue-label">Tasks Open</span>
-              <span className="ct-queue-badge pending">{pending}</span>
+              <span className="ct-queue-label">READY FOR EXECUTION</span>
+              <span className="ct-queue-badge">{pending + events}</span>
             </div>
-          )}
-          {done > 0 && (
-            <div className="ct-queue-item">
-              <span className="ct-queue-label">Tasks Complete</span>
-              <span className="ct-queue-badge">{done}</span>
-            </div>
-          )}
-          {events > 0 && (
-            <div className="ct-queue-item">
-              <span className="ct-queue-label">Scheduled Events</span>
-              <span className="ct-queue-badge">{events}</span>
-            </div>
-          )}
-          {pending === 0 && done === 0 && events === 0 && (
-            <div className="ct-queue-item">
-              <span className="ct-queue-label" style={{ opacity: 0.3 }}>Queue Clear</span>
-            </div>
-          )}
+            {pending > 0 && (
+              <div className="ct-queue-item">
+                <span className="ct-queue-label">Tasks Open</span>
+                <span className="ct-queue-badge pending">{pending}</span>
+              </div>
+            )}
+            {done > 0 && (
+              <div className="ct-queue-item">
+                <span className="ct-queue-label">Tasks Complete</span>
+                <span className="ct-queue-badge">{done}</span>
+              </div>
+            )}
+            {events > 0 && (
+              <div className="ct-queue-item">
+                <span className="ct-queue-label">Scheduled Events</span>
+                <span className="ct-queue-badge">{events}</span>
+              </div>
+            )}
+            {pending === 0 && done === 0 && events === 0 && (
+              <div className="ct-queue-item">
+                <span className="ct-queue-label" style={{ opacity: 0.3 }}>Queue Clear</span>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* System Metrics */}
-      <div className="ct-module">
-        <div className="ct-module-header">
-          <span className="ct-module-title">System Metrics</span>
-        </div>
-        <div className="ct-module-body">
-          <div className="ct-metric-row">
-            <span className="ct-metric-label">Queue Depth</span>
-            <span className="ct-metric-value">{pending + events}</span>
+      {/* System Metrics — owner only */}
+      {isOwner && (
+        <div className="ct-module">
+          <div className="ct-module-header">
+            <span className="ct-module-title">System Metrics</span>
           </div>
-          <div className="ct-metric-row">
-            <span className="ct-metric-label">Node Health</span>
-            <span className="ct-metric-value ct-metric-ok">NOMINAL</span>
-          </div>
-          <div className="ct-metric-row">
-            <span className="ct-metric-label">Uptime</span>
-            <span className="ct-metric-value">99.9%</span>
-          </div>
-          <div className="ct-metric-divider" />
-          <div className="ct-metric-row">
-            <span className="ct-metric-label">Notes</span>
-            <span className="ct-metric-value">{notes}</span>
-          </div>
-          <div className="ct-metric-row">
-            <span className="ct-metric-label">Tasks</span>
-            <span className="ct-metric-value">{tasks.length}</span>
-          </div>
-          <div className="ct-metric-row">
-            <span className="ct-metric-label">Media / Docs</span>
-            <span className="ct-metric-value">{docs}</span>
-          </div>
-          <div className="ct-metric-row">
-            <span className="ct-metric-label">Total Records</span>
-            <span className="ct-metric-value">{items.length}</span>
-          </div>
-          {items.length > 0 && (
-            <div className="ct-metric-bar">
-              <div
-                className="ct-metric-fill"
-                style={{ width: `${Math.min(100, (tasks.length / items.length) * 100)}%` }}
-              />
+          <div className="ct-module-body">
+            <div className="ct-metric-row">
+              <span className="ct-metric-label">Queue Depth</span>
+              <span className="ct-metric-value">{pending + events}</span>
             </div>
-          )}
+            <div className="ct-metric-row">
+              <span className="ct-metric-label">Node Health</span>
+              <span className="ct-metric-value ct-metric-ok">NOMINAL</span>
+            </div>
+            <div className="ct-metric-row">
+              <span className="ct-metric-label">Uptime</span>
+              <span className="ct-metric-value">99.9%</span>
+            </div>
+            <div className="ct-metric-divider" />
+            <div className="ct-metric-row">
+              <span className="ct-metric-label">Notes</span>
+              <span className="ct-metric-value">{notes}</span>
+            </div>
+            <div className="ct-metric-row">
+              <span className="ct-metric-label">Tasks</span>
+              <span className="ct-metric-value">{tasks.length}</span>
+            </div>
+            <div className="ct-metric-row">
+              <span className="ct-metric-label">Media / Docs</span>
+              <span className="ct-metric-value">{docs}</span>
+            </div>
+            <div className="ct-metric-row">
+              <span className="ct-metric-label">Total Records</span>
+              <span className="ct-metric-value">{items.length}</span>
+            </div>
+            {items.length > 0 && (
+              <div className="ct-metric-bar">
+                <div
+                  className="ct-metric-fill"
+                  style={{ width: `${Math.min(100, (tasks.length / items.length) * 100)}%` }}
+                />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 };

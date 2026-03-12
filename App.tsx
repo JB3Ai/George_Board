@@ -364,6 +364,22 @@ const AppInner: React.FC = () => {
     return () => clearInterval(interval);
   }, [session.email]);
 
+  // ─── Chat startup pre-load ───────────────────────────────────────────────
+  // Pre-populate the last 50 persisted chat messages for the user's own channel
+  // on mount so chat history is ready the moment the user navigates to TAB5,
+  // without waiting for a lazy-load triggered by tab navigation.
+  useEffect(() => {
+    if (isOwnerSession || !currentUserTab) return; // owner uses OwnerCommsHub
+    loadRecentChat(currentUserTab.id).then((chatItems) => {
+      if (chatItems.length === 0) return;
+      setItems(prev => {
+        const ids = new Set(chatItems.map(i => i.id));
+        const kept = prev.filter(i => !ids.has(i.id));
+        return [...kept, ...chatItems];
+      });
+    }).catch(() => undefined);
+  }, [currentUserTab?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── Owner: live status polling for the currently-viewed user tab ───
   const [viewedUserStatus, setViewedUserStatus] = useState<'ACTIVE NOW' | 'IDLE' | 'OFFLINE'>('OFFLINE');
   const [viewedUserLastSeen, setViewedUserLastSeen] = useState<string | null>(null);

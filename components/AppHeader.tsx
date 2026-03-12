@@ -191,14 +191,15 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
          TIER 2 — Context Header
          Fixed tab layout: HOME | project tabs | CHAT | SETTINGS(owner)
+         Always shown except on the DEMO splash tab.
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {isContentView && (
+      {activeTab !== DEMO_TAB_ID && (
         <div className="header-context">
           {/* Section title */}
           <div className="header-context-label">{sectionTitle}</div>
 
           <div className="header-context-controls">
-            {/* Owner: channel switchboard tabs (swipeable on mobile) */}
+            {/* Owner: channel switchboard tabs (swipeable on mobile) + TAB6=SETTINGS */}
             {isOwnerSession && (
               <div className="header-channel-bar">
                 {visibleTabs.filter(t => !t.isOwner).map(tab => (
@@ -210,6 +211,15 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     {tab.label}
                   </button>
                 ))}
+                {/* TAB6: SETTINGS — fixed, owner-only */}
+                <button
+                  className={`header-channel-tab header-settings-tab ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
+                  onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); }}
+                  title="Settings (TAB6)"
+                >
+                  <Settings size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+                  SETTINGS
+                </button>
               </div>
             )}
 

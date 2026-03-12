@@ -1,15 +1,18 @@
 ﻿
 import React from 'react';
-import { ShieldAlert, RefreshCw, KeyRound, Smartphone, Palette, Type, Play, Download } from 'lucide-react';
-import { UserSession, Theme, FontSize } from '../types';
+import { ShieldAlert, RefreshCw, KeyRound, Smartphone, Palette, Type, Play, Download, Pencil, Trash2, FolderOpen } from 'lucide-react';
+import { UserSession, UserProject, Theme, FontSize } from '../types';
 import { useUI } from '../src/context/UIContext';
 
 interface SettingsTabProps {
   session: UserSession;
   onResetPin: () => void;
+  projects?: UserProject[];
+  onRenameProject?: (projectId: string, currentName: string) => void;
+  onDeleteProject?: (projectId: string) => void;
 }
 
-export const SettingsTab: React.FC<SettingsTabProps> = ({ session, onResetPin }) => {
+export const SettingsTab: React.FC<SettingsTabProps> = ({ session, onResetPin, projects, onRenameProject, onDeleteProject }) => {
   const isTrusted = session.trustUntil && session.trustUntil > Date.now();
   const trustExpiry = isTrusted ? new Date(session.trustUntil!).toLocaleDateString() : 'N/A';
   const { theme, fontSize, welcomeVideoEnabled, installGuideEnabled, setTheme, setFontSize, setWelcomeVideoEnabled, setInstallGuideEnabled } = useUI();
@@ -162,6 +165,64 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ session, onResetPin })
           </button>
         </div>
       </div>
+
+      {/* ─── Project Tab Management ─── */}
+      {projects && projects.length > 0 && (
+        <>
+          <div className="space-y-4">
+            <h4 className="text-[10px] tracking-ultra text-primary/40 uppercase font-bold">Project Tabs</h4>
+            <div className="h-[1px] w-12 bg-card/20" />
+          </div>
+
+          <div className="space-y-3">
+            {projects
+              .sort((a, b) => a.index - b.index)
+              .map((project) => {
+                const isHome = project.index === 1;
+                const label = isHome ? 'HOME' : (project.name.startsWith('Project ') ? `TAB${project.index}` : project.name);
+                return (
+                  <div key={project.id} className="glass p-6 rounded-3xl flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-card/10 border border-edge flex items-center justify-center text-primary/20">
+                        <FolderOpen size={16} strokeWidth={1} />
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="text-[9px] tracking-premium text-primary/20 uppercase font-bold">
+                          {isHome ? 'System Tab' : `Slot ${project.index}`}
+                        </p>
+                        <p className="text-sm text-primary font-light">{label}</p>
+                      </div>
+                    </div>
+                    {!isHome && (
+                      <div className="flex items-center gap-2">
+                        {onRenameProject && (
+                          <button
+                            onClick={() => onRenameProject(project.id, project.name)}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-edge text-primary/30 hover:text-primary hover:border-primary/20 transition-all text-[9px] tracking-widest uppercase font-bold"
+                            title="Rename tab"
+                          >
+                            <Pencil size={10} />
+                            Rename
+                          </button>
+                        )}
+                        {onDeleteProject && (
+                          <button
+                            onClick={() => onDeleteProject(project.id)}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-500/10 text-red-400/60 hover:text-red-400 hover:bg-red-400/5 transition-all text-[9px] tracking-widest uppercase font-bold"
+                            title="Delete tab"
+                          >
+                            <Trash2 size={10} />
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+        </>
+      )}
 
       <div className="glass p-8 rounded-3xl">
         <div className="flex items-start gap-4">

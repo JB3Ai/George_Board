@@ -7,7 +7,7 @@ import { SearchInput } from './components/SearchInput';
 import { ToastProvider, useToast } from './components/Toast';
 import { useUI } from './src/context/UIContext';
 import { db } from './services/db';
-import { loadDefaultNote, saveDefaultNoteToCloud, sendPresenceHeartbeat, getUserPresence, loadUserProjects, saveUserProjects, getTab1Data } from './services/db';
+import { loadDefaultNote, saveDefaultNoteToCloud, sendPresenceHeartbeat, clearPresence, getUserPresence, loadUserProjects, saveUserProjects, getTab1Data, loadRecentChat } from './services/db';
 import { userRegistry, hydrateRegistryFromCloud } from './services/userRegistry';
 import { supabaseAuth } from './services/auth';
 import { supabase } from './services/supabaseClient';
@@ -329,6 +329,19 @@ const AppInner: React.FC = () => {
   // ─── Chat polling: refresh items every 5s when chat is active ───
   useEffect(() => {
     if (!isChatAnchor(activeProjectId)) return;
+
+    // Immediately load the last 50 chat messages from cloud on entry
+    const syncTab = activeTab;
+    loadRecentChat(syncTab).then((chatItems) => {
+      if (chatItems.length > 0) {
+        setItems(prev => {
+          const newIds = new Set(chatItems.map(i => i.id));
+          const kept = prev.filter(i => !newIds.has(i.id));
+          return [...kept, ...chatItems];
+        });
+      }
+    }).catch(() => undefined);
+
     const poll = async () => {
       const cloudItems = await db.hydrateFromCloud();
       if (cloudItems && cloudItems.length > 0) {
@@ -376,6 +389,8 @@ const AppInner: React.FC = () => {
   }, [isOwnerSession, activeTab, TABS]);
 
   const handleLogout = async () => {
+    // Clear presence so "last seen" resets to "Not seen" for this user
+    await clearPresence(session.email);
     if (supabase) await supabase.auth.signOut();
     localStorage.removeItem('jb3_session');
     window.location.reload();
@@ -466,7 +481,7 @@ const AppInner: React.FC = () => {
   /** Active board for new items. null = no board context (legacy). */
   const getActiveBoardId = (): string | undefined => activeBoardId || undefined;
 
-  const MAX_PROJECT_TABS = 7; // 8th slot reserved for Chat
+  const MAX_PROJECT_TABS = 3; // TAB2–TAB4; slot 5 = CHAT, slot 6 = SETTINGS
   const MAX_TAB_NAME_LENGTH = 20;
 
   /** Display label: HOME for slot 1, custom label or fallback TAB{n} for slot 2+ */
@@ -480,7 +495,7 @@ const AppInner: React.FC = () => {
   const openNewTabModal = (userId: string) => {
     const projects = userProjectsMap[userId] || [{ id: `${userId}_P1`, name: 'Project 1', index: 1, createdAt: 0 }];
     if (projects.length >= MAX_PROJECT_TABS) {
-      showToast('Maximum tabs reached (HOME + 7 project tabs)', 'error');
+      showToast('Maximum project tabs reached (HOME + 3 project tabs)', 'error');
       return;
     }
     setNewTabTargetUserId(userId);
@@ -537,7 +552,7 @@ const AppInner: React.FC = () => {
   const handleCreateNewProject = async (userId: string, tabName?: string) => {
     const projects = userProjectsMap[userId] || [{ id: `${userId}_P1`, name: 'HOME', index: 1, createdAt: 0 }];
     if (projects.length >= MAX_PROJECT_TABS) {
-      showToast('Maximum tabs reached (HOME + 7 project tabs)', 'error');
+      showToast('Maximum project tabs reached (HOME + 3 project tabs)', 'error');
       return;
     }
     // Append new project after the last slot — HOME stays at index 1
@@ -553,6 +568,22 @@ const AppInner: React.FC = () => {
     await saveUserProjects(userId, updated);
     setActiveProjectId(newProject.id);
     showToast(`Project tab created: ${newProject.name}`, 'success');
+  };
+
+  const handleDeleteProject = async (userId: string, projectId: string) => {
+    const projects = userProjectsMap[userId] || [];
+    const target = projects.find(p => p.id === projectId);
+    if (!target) return;
+    if (target.index === 1) { showToast('HOME tab cannot be removed', 'info'); return; }
+    const updated = projects.filter(p => p.id !== projectId);
+    setUserProjectsMap(prev => ({ ...prev, [userId]: updated }));
+    await saveUserProjects(userId, updated);
+    // If the deleted project was active, switch to HOME
+    if (activeProjectId === projectId) {
+      const home = updated.find(p => p.index === 1);
+      setActiveProjectId(home?.id || null);
+    }
+    showToast('Project tab removed', 'success');
   };
 
   /** Ensure every target user has at least one project tab (HOME) before distributing items */
@@ -1504,7 +1535,7 @@ const AppInner: React.FC = () => {
                   <span>{activeTabLabel}: {viewedUserStatus}</span>
                 </div>
                 <div className="metadata-row">
-                  <span>LAST SEEN: {viewedUserLastSeen || 'NEVER'}</span>
+                  <span>LAST SEEN: {viewedUserLastSeen || 'Not seen'}</span>
                   <span>1:1 SYNC: SECURE AES-256</span>
                 </div>
               </div>
@@ -1534,8 +1565,8 @@ const AppInner: React.FC = () => {
                       )}
                     </div>
                   ))}
-                  {/* Fill empty slots up to 7 */}
-                  {Array.from({ length: Math.max(0, 7 - viewedUserProjects.length) }).map((_, i) => (
+                  {/* Fill empty slots up to 3 project tabs */}
+                  {Array.from({ length: Math.max(0, 3 - viewedUserProjects.filter(p => p.index > 1).length) }).map((_, i) => (
                     <span key={`empty-${i}`} className="tab-item tab-empty" />
                   ))}
                   <button
@@ -1544,13 +1575,15 @@ const AppInner: React.FC = () => {
                   >
                     CHAT
                   </button>
-                  <button
-                    className="tab-item new-project-btn"
-                    onClick={() => openNewTabModal(activeTab)}
-                    title="Create new project for this user"
-                  >
-                    <FolderPlus size={12} /> NEW
-                  </button>
+                  {viewedUserProjects.filter(p => p.index > 1).length < 3 && (
+                    <button
+                      className="tab-item new-project-btn"
+                      onClick={() => openNewTabModal(activeTab)}
+                      title="Create new project for this user"
+                    >
+                      <FolderPlus size={12} /> NEW
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -2090,7 +2123,17 @@ const AppInner: React.FC = () => {
             {activeTab === DEMO_TAB_ID ? (
               <DemoTab items={items} />
             ) : activeTab === SETTINGS_TAB_ID ? (
-              <SettingsTab session={session} onResetPin={handleResetPin} />
+              <SettingsTab
+                session={session}
+                onResetPin={handleResetPin}
+                projects={myProjects}
+                onRenameProject={(projectId, currentName) => {
+                  if (currentUserTab) openRenameModal(currentUserTab.id, projectId, currentName);
+                }}
+                onDeleteProject={(projectId) => {
+                  if (currentUserTab) handleDeleteProject(currentUserTab.id, projectId);
+                }}
+              />
             ) : isChatAnchor(activeProjectId) && isOwnerSession ? (
               <OwnerCommsHub
                 items={items}

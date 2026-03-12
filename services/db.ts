@@ -302,6 +302,36 @@ export async function getUserPresence(email: string): Promise<{ timestamp: numbe
   }
 }
 
+export async function clearPresence(email: string): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
+  try {
+    await (supabase as any)
+      .from('clipboard_state')
+      .delete()
+      .eq('id', `${PRESENCE_PREFIX}${email}`);
+  } catch (err) {
+    console.warn('Presence clear failed:', err);
+  }
+}
+
+// ─── Load recent chat messages (last 50) for a sync channel ───────────
+export async function loadRecentChat(syncTabId: string): Promise<ClipboardItem[]> {
+  if (!isSupabaseConfigured || !supabase) return [];
+  try {
+    const { data, error } = await (supabase as any)
+      .from(ITEMS_TABLE)
+      .select('*')
+      .eq('sync_tab_id', syncTabId)
+      .eq('type', 'CHAT')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) { console.warn('loadRecentChat failed:', error.message); return []; }
+    return (data || []).map(fromRow);
+  } catch {
+    return [];
+  }
+}
+
 // ─── TAB 1 Recovery: fetch legacy + P1-aliased items from Supabase ─────
 export async function getTab1Data(userId: string): Promise<ClipboardItem[]> {
   if (!isSupabaseConfigured || !supabase) return [];

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogOut, Info, Home, Settings, Palette, Menu, X, LayoutList, Grid3X3, LayoutGrid, Shield, Rocket } from 'lucide-react';
+import { LogOut, Info, Home, Settings, Palette, Menu, X, LayoutList, Grid3X3, LayoutGrid, Shield, Rocket, MessageCircle } from 'lucide-react';
 import type { UserProject } from '../types';
 import type { UserTab } from '../services/userRegistry';
 
@@ -90,7 +90,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     <>
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
          TIER 1 — System Header
-         Desktop: full controls · Mobile: identity + mode only
+         Desktop: full controls · Mobile: identity + menu
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <nav className="header-system">
         {/* Left: OS³ Security Badge */}
@@ -111,8 +111,28 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           <span className="header-mobile-role">{signedInRole}</span>
         </div>
 
-        {/* Right: System controls */}
+        {/* Right: System controls + always-visible view toggle */}
         <div className="header-system-right">
+          {/* View mode toggle — always visible for owner and user */}
+          {showViewControls && (
+            <div className="header-view-toggle">
+              {([
+                { mode: 'list' as const, icon: <LayoutList size={13} />, label: 'List' },
+                { mode: 'grid-small' as const, icon: <Grid3X3 size={13} />, label: 'Grid' },
+                { mode: 'grid-big' as const, icon: <LayoutGrid size={13} />, label: 'Cards' },
+              ]).map(v => (
+                <button
+                  key={v.mode}
+                  onClick={() => setViewMode(v.mode)}
+                  className={`header-view-btn ${viewMode === v.mode ? 'active' : ''}`}
+                  title={v.label}
+                >
+                  {v.icon}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Desktop-only controls */}
           <button
             onClick={() => { setActiveTab(DEMO_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
@@ -140,14 +160,16 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <Home size={16} strokeWidth={1.5} />
           </button>
 
-          {/* Desktop-only: Settings, Palette, Logout */}
-          <button
-            onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
-            title="Settings"
-            className={`header-icon-btn header-desktop-only ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
-          >
-            <Settings size={16} strokeWidth={1.5} />
-          </button>
+          {/* Desktop-only: Settings (owner only), Palette, Logout */}
+          {isOwnerSession && (
+            <button
+              onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
+              title="Settings"
+              className={`header-icon-btn header-desktop-only ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
+            >
+              <Settings size={16} strokeWidth={1.5} />
+            </button>
+          )}
           <button
             onClick={() => setShowThemeDock(prev => !prev)}
             title={showThemeDock ? 'Hide Theme Selector' : 'Show Theme Selector'}
@@ -168,8 +190,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
          TIER 2 — Context Header
-         Desktop: floating console with label + tabs + view controls
-         Mobile: full-width context bar with section title + swipeable tabs
+         Fixed tab layout: HOME | project tabs | CHAT | SETTINGS(owner)
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {isContentView && (
         <div className="header-context">
@@ -192,10 +213,24 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               </div>
             )}
 
-            {/* Non-owner: project tabs + chat (swipeable on mobile) */}
-            {!isOwnerSession && (
+            {/* Non-owner: fixed layout — HOME | P2 | P3 | P4 | CHAT | SETTINGS(owner) */}
+            {!isOwnerSession && currentUserTab && (
               <div className="header-project-bar">
+                {/* TAB1: HOME (always first) */}
                 {myProjects
+                  .filter(p => p.index === 1)
+                  .map((project) => (
+                    <button
+                      key={project.id}
+                      className={`header-project-tab ${activeProjectId === project.id ? 'active' : ''}`}
+                      onClick={() => { setActiveProjectId(project.id); resetFormState(); }}
+                    >
+                      HOME
+                    </button>
+                  ))}
+                {/* TAB2–TAB4: project tabs (sorted by index) */}
+                {myProjects
+                  .filter(p => p.index > 1)
                   .sort((a, b) => a.index - b.index)
                   .map((project) => (
                     <button
@@ -206,32 +241,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                       {getTabLabel(project)}
                     </button>
                   ))}
+                {/* TAB5: CHAT (always fifth) */}
                 <button
                   className={`header-project-tab header-chat-tab ${isChatAnchor(activeProjectId) ? 'active' : ''}`}
-                  onClick={() => { setActiveProjectId(getChatAnchorId(currentUserTab!.id)); resetFormState(); }}
+                  onClick={() => { setActiveProjectId(getChatAnchorId(currentUserTab.id)); resetFormState(); }}
                 >
+                  <MessageCircle size={12} />
                   CHAT
                 </button>
-              </div>
-            )}
-
-            {/* View mode controls — desktop only */}
-            {showViewControls && (
-              <div className="header-view-toggle header-desktop-only">
-                {([
-                  { mode: 'list' as const, icon: <LayoutList size={13} />, label: 'List' },
-                  { mode: 'grid-small' as const, icon: <Grid3X3 size={13} />, label: 'Grid' },
-                  { mode: 'grid-big' as const, icon: <LayoutGrid size={13} />, label: 'Cards' },
-                ]).map(v => (
-                  <button
-                    key={v.mode}
-                    onClick={() => setViewMode(v.mode)}
-                    className={`header-view-btn ${viewMode === v.mode ? 'active' : ''}`}
-                    title={v.label}
-                  >
-                    {v.icon}
-                  </button>
-                ))}
               </div>
             )}
           </div>
@@ -295,6 +312,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               ))
             ) : (
               <>
+                {/* Fixed layout mirrored: HOME, project tabs, CHAT */}
                 {myProjects
                   .sort((a, b) => a.index - b.index)
                   .map((project) => (
@@ -315,39 +333,18 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               </>
             )}
 
-            {/* ── View Mode (mobile-only segmented control) ── */}
-            {showViewControls && (
-              <>
-                <div className="mobile-drawer-section-label">VIEW MODE</div>
-                <div className="mobile-drawer-view-seg">
-                  {([
-                    { mode: 'list' as const, icon: <LayoutList size={14} />, label: 'LIST' },
-                    { mode: 'grid-small' as const, icon: <Grid3X3 size={14} />, label: 'GRID' },
-                    { mode: 'grid-big' as const, icon: <LayoutGrid size={14} />, label: 'CARDS' },
-                  ]).map(v => (
-                    <button
-                      key={v.mode}
-                      onClick={() => { setViewMode(v.mode); setShowMobileMenu(false); }}
-                      className={`mobile-drawer-seg-btn ${viewMode === v.mode ? 'active' : ''}`}
-                    >
-                      {v.icon}
-                      {v.label}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-
             <div className="mobile-drawer-divider" />
 
             {/* ── System ── */}
             <div className="mobile-drawer-section-label">SYSTEM</div>
-            <button
-              onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
-              className={`mobile-drawer-item ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
-            >
-              Settings
-            </button>
+            {isOwnerSession && (
+              <button
+                onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
+                className={`mobile-drawer-item ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
+              >
+                Settings
+              </button>
+            )}
             <button
               onClick={() => { setShowMobileMenu(false); onLogout(); }}
               className="mobile-drawer-item mobile-drawer-logout"

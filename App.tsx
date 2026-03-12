@@ -1554,21 +1554,6 @@ const AppInner: React.FC = () => {
                   <Search size={14} />
                   <span>{TABS.find(t => t.id === activeTab)?.label || activeTab}</span>
                 </button>
-                {activeTab !== 'JONO' && (
-                  <button
-                    className="tab-rename-btn"
-                    onClick={() => {
-                      const tab = TABS.find(t => t.id === activeTab);
-                      openChannelRenameModal(activeTab, tab?.customName);
-                    }}
-                    title="Rename channel"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', opacity: 0.4, transition: 'opacity 0.2s' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.4')}
-                  >
-                    <Pencil size={12} className="text-accent" />
-                  </button>
-                )}
               </div>
               <div className="admin-info-pane">
                 <div className="status-row">
@@ -1585,26 +1570,13 @@ const AppInner: React.FC = () => {
                   {viewedUserProjects
                     .sort((a, b) => a.index - b.index)
                     .map((project) => (
-                    <div key={project.id} className="tab-item-wrapper" style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
                       <button
+                        key={project.id}
                         className={`tab-item ${activeProjectId === project.id ? 'active' : ''}`}
                         onClick={() => setActiveProjectId(project.id)}
                       >
                         {getTabLabel(project)}
                       </button>
-                      {project.index !== 1 && (
-                        <button
-                          className="tab-rename-btn"
-                          onClick={(e) => { e.stopPropagation(); openRenameModal(activeTab, project.id, project.name); }}
-                          title="Rename tab"
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', opacity: 0.4, transition: 'opacity 0.2s' }}
-                          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-                          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.4')}
-                        >
-                          <Pencil size={10} className="text-muted" />
-                        </button>
-                      )}
-                    </div>
                   ))}
                   {/* Fill empty slots up to 3 project tabs */}
                   {Array.from({ length: Math.max(0, 3 - viewedUserProjects.filter(p => p.index > 1).length) }).map((_, i) => (

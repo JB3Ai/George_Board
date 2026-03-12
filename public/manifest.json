@@ -1,7 +1,7 @@
 {
   "name": "JB³Ai Clipboard",
-  "short_name": "Clipboard",
-  "description": "Secure shared clipboard for the JB3 team",
+  "short_name": "JB³Ai",
+  "description": "JB³Ai Secure Clipboard Workspace",
   "start_url": "/clipboard/",
   "scope": "/clipboard/",
   "display": "standalone",

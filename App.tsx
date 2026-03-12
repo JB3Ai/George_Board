@@ -106,6 +106,9 @@ const AppInner: React.FC = () => {
   const { theme } = useUI();
   const bgImage = `${import.meta.env.BASE_URL}${THEME_BACKGROUNDS[theme] ?? 'Media/NEON.jpg'}`;
 
+  // Track last-viewed user tab so owner can manage that user's projects in Settings
+  const lastViewedUserTabRef = useRef<string | null>(null);
+
   // ─── History-aware tab navigation ───
   // Wrap setActiveTab to push browser history state so Back navigates within the app.
   const historyInitRef = useRef(false);
@@ -178,6 +181,21 @@ const AppInner: React.FC = () => {
     return userProjectsMap[currentUserTab.id] || [{ id: `${currentUserTab.id}_P1`, name: 'HOME', index: 1, createdAt: 0 }];
   }, [currentUserTab, isOwnerSession, userProjectsMap]);
 
+  // Keep lastViewedUserTabRef pointing at the most recent non-system user tab
+  useEffect(() => {
+    if (activeTab !== 'JONO' && activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID) {
+      lastViewedUserTabRef.current = activeTab;
+    }
+  }, [activeTab]);
+
+  // For owner Settings: show the last-viewed user's projects
+  const settingsProjects = useMemo(() => {
+    if (!isOwnerSession) return myProjects;
+    const uid = lastViewedUserTabRef.current;
+    if (!uid) return [];
+    return userProjectsMap[uid] || [];
+  }, [isOwnerSession, myProjects, userProjectsMap, activeTab]);
+
   useEffect(() => {
     const localItems = db.getItems();
     setItems(localItems);
@@ -199,7 +217,12 @@ const AppInner: React.FC = () => {
     db.hydrateFromCloud()
       .then((cloudItems) => {
         if (cloudItems && cloudItems.length > 0) {
-          setItems(cloudItems);
+          // Merge: keep local-only items (not yet synced) alongside cloud data
+          setItems(prev => {
+            const cloudIds = new Set(cloudItems.map(i => i.id));
+            const localOnly = prev.filter(i => !cloudIds.has(i.id));
+            return [...localOnly, ...cloudItems];
+          });
         }
       })
       .catch(() => undefined);
@@ -849,12 +872,14 @@ const AppInner: React.FC = () => {
 
   const handleCommit = async () => {
     if (editingItem) {
+      const targetProjectId = getFormTargetProjectId();
       const updates: Partial<ClipboardItem> = {
         type: newItemType,
         taskStatus: newItemType === ItemType.TASK ? (editingItem.taskStatus || TaskStatus.OPEN) : undefined,
         dueDate: newItemType === ItemType.TASK || newItemType === ItemType.EVENT ? newItemDueDate : undefined,
         eventLocation: newItemType === ItemType.EVENT ? newItemLocation : undefined,
-        isDemo: newItemIsDemo
+        isDemo: newItemIsDemo,
+        ...(targetProjectId && targetProjectId !== editingItem.projectId ? { projectId: targetProjectId } : {}),
       };
 
       if (newItemType === ItemType.WEBPAGE || newItemType === ItemType.YOUTUBE) {
@@ -2142,12 +2167,14 @@ const AppInner: React.FC = () => {
               <SettingsTab
                 session={session}
                 onResetPin={handleResetPin}
-                projects={myProjects}
+                projects={settingsProjects}
                 onRenameProject={(projectId, currentName) => {
-                  if (currentUserTab) openRenameModal(currentUserTab.id, projectId, currentName);
+                  const uid = isOwnerSession ? lastViewedUserTabRef.current : currentUserTab?.id;
+                  if (uid) openRenameModal(uid, projectId, currentName);
                 }}
                 onDeleteProject={(projectId) => {
-                  if (currentUserTab) handleDeleteProject(currentUserTab.id, projectId);
+                  const uid = isOwnerSession ? lastViewedUserTabRef.current : currentUserTab?.id;
+                  if (uid) handleDeleteProject(uid, projectId);
                 }}
               />
             ) : isChatAnchor(activeProjectId) && isOwnerSession ? (

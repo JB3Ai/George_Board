@@ -2453,10 +2453,10 @@ input::placeholder, textarea::placeholder {
   opacity: 0.5;
 }
 
-/* ── Console Grid (70/30 split) ── */
+/* ── Console Grid (fluid data engine + fixed-width control tower) ── */
 .console-grid {
   display: grid;
-  grid-template-columns: 7fr 3fr;
+  grid-template-columns: 1fr 280px;
   gap: var(--space-md);
   padding: var(--space-md);
   min-height: calc(100vh - 220px);
@@ -2472,6 +2472,9 @@ input::placeholder, textarea::placeholder {
   flex-direction: column;
   gap: var(--space-sm);
   min-width: 0;
+  width: 280px;
+  max-width: 280px;
+  flex-shrink: 0;
 }
 
 /* Control Tower modules */
@@ -2612,7 +2615,11 @@ input::placeholder, textarea::placeholder {
 /* ── Console responsive ── */
 @media (max-width: 1024px) {
   .console-grid {
-    grid-template-columns: 6fr 4fr;
+    grid-template-columns: 1fr 240px;
+  }
+  .console-control-tower {
+    width: 240px;
+    max-width: 240px;
   }
 }
 @media (max-width: 768px) {
@@ -2621,6 +2628,8 @@ input::placeholder, textarea::placeholder {
   }
   .console-control-tower {
     order: -1;
+    width: 100%;
+    max-width: 100%;
   }
   .protocol-banner {
     flex-direction: column;

@@ -112,10 +112,10 @@ export const DemoTab: React.FC<DemoTabProps> = ({ items }) => {
             }
             window.open(target, '_blank');
           }}
-          className="group relative flex flex-col items-start p-10 glass rounded-[2.5rem] border-edge hover:border-accent/30 hover:bg-accent/5 transition-all duration-500 text-left overflow-hidden"
+          className="group relative flex flex-col items-start p-10 glass rounded-[2.5rem] border-edge hover:border-accent/30 hover:bg-accent/5 transition-all duration-500 text-left glow-card"
         >
           {/* Background Glow */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+          <div className="absolute -top-8 -right-8 w-48 h-48 bg-accent/10 blur-[80px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
 
           {/* YouTube Thumbnail */}
           {item.youtubeId && (

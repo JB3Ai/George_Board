@@ -636,13 +636,89 @@ input::placeholder, textarea::placeholder {
   -webkit-user-select: text !important;
 }
 
+/* ─── PIN Lock Screen ────────────────────────────────────────────── */
+.pin-screen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  height: 100vh; /* fallback */
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-dark);
+  z-index: 9999;
+}
+.pin-screen-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-height: 100dvh;
+  max-height: 100vh; /* fallback */
+  padding: 1.5rem 1rem;
+  overflow: hidden;
+}
+
 .pin-input-field {
-  position: absolute;
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
   opacity: 0;
   width: 1px;
   height: 1px;
   overflow: hidden;
   pointer-events: auto !important;
+}
+
+.pin-keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 260px;
+}
+.pin-key {
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 300;
+  color: var(--text-muted);
+  border: 1px solid var(--border-default);
+  border-radius: 1.5rem;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.pin-key:hover {
+  color: var(--accent);
+  background: rgba(102, 255, 102, 0.05);
+  border-color: rgba(102, 255, 102, 0.2);
+}
+.pin-key:active {
+  transform: scale(0.9);
+}
+.pin-key-delete {
+  border: none;
+  color: var(--text-muted);
+  opacity: 0.3;
+}
+.pin-key-delete:hover {
+  color: #f87171;
+  background: transparent;
+  border-color: transparent;
+  opacity: 1;
+}
+
+@supports (height: 100dvh) {
+  .pin-screen { height: 100dvh; }
+  .pin-screen-inner { max-height: 100dvh; }
 }
 
 .bg-environment-blur,

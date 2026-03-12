@@ -176,20 +176,20 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
           </div>
         </Layout>
       ) : !session.pinVerified ? (
-        <Layout showBackground={false}>
-          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="pin-screen">
+          <div className="pin-screen-inner">
             <PinPad onComplete={handlePinComplete} isSetting={isSetting} onResetPin={handlePinResetFromGate} resetKey={pinResetKey} />
             <button
               onClick={async () => {
                 if (supabase) await supabase.auth.signOut();
                 setSession(null);
               }}
-              className="mt-12 text-[9px] tracking-[0.3em] text-primary/10 hover:text-primary/40 transition-colors uppercase font-bold"
+              className="mt-4 text-[9px] tracking-[0.3em] text-primary/10 hover:text-primary/40 transition-colors uppercase font-bold"
             >
               Cancel Session
             </button>
           </div>
-        </Layout>
+        </div>
       ) : (
         <>{children}</>
       )}

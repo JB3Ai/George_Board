@@ -2949,3 +2949,74 @@ input::placeholder, textarea::placeholder {
   background: var(--border-color);
   margin: 6px 0;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   SPLASH / INTRO — Fixed brand constants (theme-independent)
+   ══════════════════════════════════════════════════════════════ */
+.splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  /* Hard black — never inherits theme background */
+  background: #050505;
+}
+
+.splash-text-group {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Nudge above vertical center to clear car body / motion lines */
+  margin-top: -8vh;
+}
+
+.splash-title {
+  font-family: 'Satoshi', 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 56px;
+  line-height: 1.25;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  /* No theme inheritance */
+  color: #E6EDF3;
+}
+
+.splash-title-welcome {
+  color: #E6EDF3;
+}
+
+.splash-title-user {
+  color: #66FF66;
+  font-weight: 600;
+  text-shadow:
+    0 0 8px rgba(102, 255, 102, 0.4),
+    0 0 20px rgba(102, 255, 102, 0.15);
+}
+
+.splash-sub {
+  font-family: 'Satoshi', 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.25;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: #8FA3B8;
+  margin-top: 16px;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .splash-title { font-size: 42px; }
+  .splash-sub   { font-size: 13px; }
+}
+/* Mobile */
+@media (max-width: 640px) {
+  .splash-title { font-size: 28px; }
+  .splash-sub   { font-size: 11px; }
+  .splash-text-group { margin-top: -4vh; }
+}

@@ -43,7 +43,7 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
   }, [textDone, videoDone, completeOnce]);
 
   return (
-    <div className="fixed inset-0 bg-dark z-[200] flex items-center justify-center overflow-hidden">
+    <div className="splash-overlay">
 
       {/* ── GTR intro video background ── */}
       <video
@@ -61,7 +61,7 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
       <div className="absolute inset-0 bg-black/55" />
 
       {/* ── Text overlay steps ── */}
-      <div className="relative z-10 flex items-center justify-center">
+      <div className="splash-text-group">
         <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div
@@ -71,23 +71,23 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
               exit={{ opacity: 0, scale: 1.2 }}
               className="flex flex-col items-center gap-8"
             >
-              <div className="w-24 h-24 border-2 border-accent rounded-3xl flex items-center justify-center relative">
+              <div className="w-24 h-24 rounded-3xl flex items-center justify-center relative" style={{ border: '2px solid #66FF66' }}>
                 <motion.div 
                   initial={{ height: 0 }}
                   animate={{ height: '100%' }}
                   transition={{ duration: 1, ease: "easeInOut" }}
-                  className="absolute inset-0 bg-accent/10 rounded-[22px]"
+                  className="absolute inset-0 rounded-[22px]" style={{ background: 'rgba(102,255,102,0.1)' }}
                 />
-                <span className="text-2xl font-bold text-accent tracking-[0.08em] relative z-10">JB³Ai</span>
+                <span className="text-2xl font-bold tracking-[0.08em] relative z-10" style={{ color: '#66FF66' }}>JB³Ai</span>
               </div>
               <div className="space-y-2 text-center">
-                <p className="text-[10px] tracking-[0.5em] text-accent font-bold uppercase">Initializing</p>
-                <div className="w-48 h-[1px] bg-card/10 relative overflow-hidden">
+                <p className="text-[10px] tracking-[0.5em] font-bold uppercase" style={{ color: '#66FF66' }}>Initializing</p>
+                <div className="w-48 h-[1px] relative overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                   <motion.div 
                     initial={{ x: '-100%' }}
                     animate={{ x: '100%' }}
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="absolute inset-0 bg-accent"
+                    className="absolute inset-0" style={{ background: '#66FF66' }}
                   />
                 </div>
               </div>
@@ -100,18 +100,18 @@ export const Splash: React.FC<SplashProps> = ({ onComplete, username }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="text-center space-y-4"
+              className="text-center"
             >
-              <h1 className="text-4xl font-light tracking-[0.2em] text-primary uppercase">Welcome, <span className="text-accent font-bold">{username || 'Operator'}</span></h1>
-              <p className="text-[11px] tracking-[0.4em] text-primary/20 uppercase font-bold">Secure Stakeholder Environment</p>
+              <h1 className="splash-title"><span className="splash-title-welcome">WELCOME, </span><span className="splash-title-user">{username || 'OPERATOR'}</span></h1>
+              <p className="splash-sub">SECURE START ENVIRONMENT</p>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Background Grid */}
+      {/* Background Grid — fixed color, not theme-driven */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-        style={{ backgroundImage: 'radial-gradient(var(--accent) 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
+        style={{ backgroundImage: 'radial-gradient(#66FF66 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
       />
     </div>
   );

@@ -2542,40 +2542,6 @@ input::placeholder, textarea::placeholder {
   color: var(--accent);
 }
 
-/* Execution Queue */
-.ct-queue-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-sm) 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-}
-.ct-queue-item:last-child {
-  border-bottom: none;
-}
-.ct-queue-label {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-}
-.ct-queue-badge {
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: rgba(102, 255, 102, 0.06);
-  color: var(--accent);
-  border: 1px solid var(--border-active);
-}
-.ct-queue-badge.pending {
-  background: rgba(245, 158, 11, 0.08);
-  color: #F59E0B;
-  border-color: rgba(245, 158, 11, 0.2);
-}
-
 /* System Metrics */
 .ct-metric-row {
   display: flex;
@@ -2933,11 +2899,6 @@ input::placeholder, textarea::placeholder {
 }
 .ct-action-btn.primary:hover {
   opacity: 0.85;
-}
-
-.ct-queue-badge.pending {
-  background: rgba(251, 191, 36, 0.15);
-  color: #fbbf24;
 }
 
 .ct-metric-ok {

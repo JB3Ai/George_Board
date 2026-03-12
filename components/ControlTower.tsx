@@ -72,44 +72,6 @@ export const ControlTower: React.FC<ControlTowerProps> = ({
         </div>
       </div>
 
-      {/* Execution Queue — owner only */}
-      {isOwner && (
-        <div className="ct-module">
-          <div className="ct-module-header">
-            <span className="ct-module-title">Execution Queue</span>
-          </div>
-          <div className="ct-module-body">
-            <div className="ct-queue-item">
-              <span className="ct-queue-label">READY FOR EXECUTION</span>
-              <span className="ct-queue-badge">{pending + events}</span>
-            </div>
-            {pending > 0 && (
-              <div className="ct-queue-item">
-                <span className="ct-queue-label">Tasks Open</span>
-                <span className="ct-queue-badge pending">{pending}</span>
-              </div>
-            )}
-            {done > 0 && (
-              <div className="ct-queue-item">
-                <span className="ct-queue-label">Tasks Complete</span>
-                <span className="ct-queue-badge">{done}</span>
-              </div>
-            )}
-            {events > 0 && (
-              <div className="ct-queue-item">
-                <span className="ct-queue-label">Scheduled Events</span>
-                <span className="ct-queue-badge">{events}</span>
-              </div>
-            )}
-            {pending === 0 && done === 0 && events === 0 && (
-              <div className="ct-queue-item">
-                <span className="ct-queue-label" style={{ opacity: 0.3 }}>Queue Clear</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* System Metrics — owner only */}
       {isOwner && (
         <div className="ct-module">

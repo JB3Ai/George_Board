@@ -2537,6 +2537,9 @@ input::placeholder, textarea::placeholder {
   padding: var(--space-md);
   min-height: calc(100vh - 220px);
 }
+.console-grid.console-grid-full {
+  grid-template-columns: 1fr;
+}
 .console-data-engine {
   display: flex;
   flex-direction: column;
@@ -2658,6 +2661,9 @@ input::placeholder, textarea::placeholder {
 @media (max-width: 1024px) {
   .console-grid {
     grid-template-columns: 1fr 240px;
+  }
+  .console-grid.console-grid-full {
+    grid-template-columns: 1fr;
   }
   .console-control-tower {
     width: 240px;

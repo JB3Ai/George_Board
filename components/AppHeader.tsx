@@ -160,16 +160,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <Home size={16} strokeWidth={1.5} />
           </button>
 
-          {/* Desktop-only: Settings (owner only), Palette, Logout */}
-          {isOwnerSession && (
-            <button
-              onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
-              title="Settings"
-              className={`header-icon-btn header-desktop-only ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
-            >
-              <Settings size={16} strokeWidth={1.5} />
-            </button>
-          )}
+          {/* Desktop-only: Settings gear — visible for both owner and user */}
+          <button
+            onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
+            title="Settings"
+            className={`header-icon-btn header-desktop-only ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
+          >
+            <Settings size={16} strokeWidth={1.5} />
+          </button>
           <button
             onClick={() => setShowThemeDock(prev => !prev)}
             title={showThemeDock ? 'Hide Theme Selector' : 'Show Theme Selector'}
@@ -199,7 +197,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           <div className="header-context-label">{sectionTitle}</div>
 
           <div className="header-context-controls">
-            {/* Owner: channel switchboard tabs (swipeable on mobile) + TAB6=SETTINGS */}
+            {/* Owner: channel switchboard tabs (swipeable on mobile) */}
             {isOwnerSession && (
               <div className="header-channel-bar">
                 {visibleTabs.filter(t => !t.isOwner).map(tab => (
@@ -211,15 +209,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     {tab.label}
                   </button>
                 ))}
-                {/* TAB6: SETTINGS — fixed, owner-only */}
-                <button
-                  className={`header-channel-tab header-settings-tab ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
-                  onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); }}
-                  title="Settings (TAB6)"
-                >
-                  <Settings size={10} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
-                  SETTINGS
-                </button>
               </div>
             )}
 
@@ -347,14 +336,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
             {/* ── System ── */}
             <div className="mobile-drawer-section-label">SYSTEM</div>
-            {isOwnerSession && (
-              <button
-                onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
-                className={`mobile-drawer-item ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
-              >
-                Settings
-              </button>
-            )}
+            <button
+              onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
+              className={`mobile-drawer-item ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
+            >
+              Settings
+            </button>
             <button
               onClick={() => { setShowMobileMenu(false); onLogout(); }}
               className="mobile-drawer-item mobile-drawer-logout"

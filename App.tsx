@@ -2139,15 +2139,15 @@ const AppInner: React.FC = () => {
               <SettingsTab
                 session={session}
                 onResetPin={handleResetPin}
-                projects={settingsProjects}
-                onRenameProject={(projectId, currentName) => {
-                  const uid = isOwnerSession ? lastViewedUserTabRef.current : currentUserTab?.id;
+                projects={isOwnerSession ? settingsProjects : undefined}
+                onRenameProject={isOwnerSession ? (projectId, currentName) => {
+                  const uid = lastViewedUserTabRef.current;
                   if (uid) openRenameModal(uid, projectId, currentName);
-                }}
-                onDeleteProject={(projectId) => {
-                  const uid = isOwnerSession ? lastViewedUserTabRef.current : currentUserTab?.id;
+                } : undefined}
+                onDeleteProject={isOwnerSession ? (projectId) => {
+                  const uid = lastViewedUserTabRef.current;
                   if (uid) handleDeleteProject(uid, projectId);
-                }}
+                } : undefined}
               />
             ) : isChatAnchor(activeProjectId) && isOwnerSession ? (
               <OwnerCommsHub

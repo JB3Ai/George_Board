@@ -2393,16 +2393,18 @@ input::placeholder, textarea::placeholder {
 .header-mobile-only  { display: none; }
 .header-mobile-identity { display: none; }
 
-/* ── Compact mode: hide low-priority items first (Info, Theme, Exit) ── */
+/* ── Compact mode: hide low-priority items first (Info, Exit) ── */
 @media (max-width: 480px) {
   .header-priority-low { display: none !important; }
   /* Shrink center elements to reclaim space */
-  .header-system-center { gap: 6px; }
-  .header-demo-chip { padding: 3px 8px; font-size: 8px; letter-spacing: 0.15em; }
-  .header-session-badge { font-size: 7px; letter-spacing: 0.1em; }
-  .header-icon-btn { width: 28px; height: 28px; }
-  .header-badge-btn { padding: 3px 8px; gap: 4px; }
-  .header-badge-label { font-size: 8px; letter-spacing: 0.15em; }
+  .header-system { gap: 4px; padding: 6px 8px; }
+  .header-system-center { gap: 4px; }
+  .header-system-right { gap: 2px; }
+  .header-demo-chip { padding: 3px 6px; font-size: 8px; letter-spacing: 0.1em; }
+  .header-session-badge { font-size: 7px; letter-spacing: 0.08em; }
+  .header-icon-btn { width: 26px; height: 26px; }
+  .header-badge-btn { padding: 3px 6px; gap: 3px; }
+  .header-badge-label { font-size: 8px; letter-spacing: 0.1em; }
 }
 
 /* ── Full burger mode: only when truly cramped ── */

@@ -150,7 +150,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           <button
             onClick={() => setShowThemeDock(prev => !prev)}
             title={showThemeDock ? 'Hide Theme Selector' : 'Show Theme Selector'}
-            className={`header-icon-btn header-desktop-only header-priority-low ${showThemeDock ? 'active' : ''}`}
+            className={`header-icon-btn header-desktop-only header-priority-high ${showThemeDock ? 'active' : ''}`}
           >
             <Palette size={16} strokeWidth={1.5} />
           </button>

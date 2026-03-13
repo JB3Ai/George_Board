@@ -1588,6 +1588,12 @@ const AppInner: React.FC = () => {
                   >
                     CHAT
                   </button>
+                  <button
+                    className={`tab-item ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
+                    onClick={() => { setActiveTab(SETTINGS_TAB_ID); setIsAdding(false); setSearchTerm(''); }}
+                  >
+                    CONFIG
+                  </button>
                   {viewedUserProjects.filter(p => p.index > 1).length < 3 && (
                     <button
                       className="tab-item new-project-btn"

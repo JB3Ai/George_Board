@@ -109,19 +109,19 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               resetFormState(); setShowMobileMenu(false);
             }}
             title="Home"
-            className={`header-icon-btn header-desktop-only ${
+            className={`header-icon-btn header-desktop-only header-priority-high ${
               (activeTab === 'JONO' || activeTab === currentUserTab?.id) && isContentView ? 'active' : ''
             }`}
           >
             <Home size={16} strokeWidth={1.5} />
           </button>
-          <button onClick={onOpenInfo} title="Info & Help" className="header-icon-btn header-desktop-only">
+          <button onClick={onOpenInfo} title="Info & Help" className="header-icon-btn header-desktop-only header-priority-low">
             <Info size={16} strokeWidth={1.5} />
           </button>
         </div>
 
         {/* CENTER zone: DEMO button + Username capsule (desktop) / Mobile identity */}
-        <div className="header-system-center header-desktop-only">
+        <div className="header-system-center header-desktop-only header-priority-high">
           <button
             onClick={() => { setActiveTab(DEMO_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
             className={`header-demo-chip ${activeTab === DEMO_TAB_ID ? 'active' : ''}`}
@@ -143,18 +143,18 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           <button
             onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
             title="Settings"
-            className={`header-icon-btn header-desktop-only ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
+            className={`header-icon-btn header-desktop-only header-priority-high ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
           >
             <Settings size={16} strokeWidth={1.5} />
           </button>
           <button
             onClick={() => setShowThemeDock(prev => !prev)}
             title={showThemeDock ? 'Hide Theme Selector' : 'Show Theme Selector'}
-            className={`header-icon-btn header-desktop-only ${showThemeDock ? 'active' : ''}`}
+            className={`header-icon-btn header-desktop-only header-priority-low ${showThemeDock ? 'active' : ''}`}
           >
             <Palette size={16} strokeWidth={1.5} />
           </button>
-          <button onClick={onLogout} title="Terminate Session" className="header-icon-btn header-logout header-desktop-only">
+          <button onClick={onLogout} title="Terminate Session" className="header-icon-btn header-logout header-desktop-only header-priority-low">
             <LogOut size={16} strokeWidth={1.5} />
           </button>
           {/* Mobile-only: Hamburger */}

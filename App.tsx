@@ -1282,7 +1282,7 @@ const AppInner: React.FC = () => {
         : `SYNC CHANNEL: JONO ↔ ${activeTabLabel}`;
 
   const signedInName = (currentUserTab?.label || session.email.split('@')[0] || 'USER').toUpperCase();
-  const signedInRole = isOwnerSession ? 'OWNER ACCESS' : 'USER ACCESS';
+  const signedInRole = isOwnerSession ? 'OA' : 'USER ACCESS';
 
   return (
     <SessionGuard>

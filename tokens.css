@@ -1918,6 +1918,7 @@ input::placeholder, textarea::placeholder {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
   padding: 6px 16px;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
@@ -1931,6 +1932,14 @@ input::placeholder, textarea::placeholder {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+.header-system-center {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 /* OS³ AES-256 Badge */

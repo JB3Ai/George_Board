@@ -89,63 +89,19 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   return (
     <>
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-         TIER 1 — System Header
-         Desktop: full controls · Mobile: identity + menu
+         TIER 1 — System Header  (same for Owner + User)
+         Left: OS³ · Home · Info
+         Center: DEMO · Username
+         Right: Gear · Theme · Exit
+         NO ViewSelector in Tier 1
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <nav className="header-system">
-        {/* Left: OS³ Security Badge */}
+        {/* LEFT zone: OS³ badge + Home + Info */}
         <div className="header-system-left">
           <button onClick={onOpenAES} className="header-badge-btn" title="AES-256 Encryption">
             <Shield size={14} />
             <span className="header-badge-label">OS³</span>
           </button>
-          {/* Desktop-only: Info button */}
-          <button onClick={onOpenInfo} title="Info & Help" className="header-icon-btn header-desktop-only">
-            <Info size={16} strokeWidth={1.5} />
-          </button>
-        </div>
-
-        {/* Center: Mobile-only identity chip */}
-        <div className="header-mobile-identity">
-          <span className="header-mobile-name">{signedInName}</span>
-          <span className="header-mobile-role">{signedInRole}</span>
-        </div>
-
-        {/* Right: System controls + always-visible view toggle */}
-        <div className="header-system-right">
-          {/* View mode toggle — always visible for owner and user */}
-          {showViewControls && (
-            <div className="header-view-toggle">
-              {([
-                { mode: 'list' as const, icon: <LayoutList size={13} />, label: 'List' },
-                { mode: 'grid-small' as const, icon: <Grid3X3 size={13} />, label: 'Grid' },
-                { mode: 'grid-big' as const, icon: <LayoutGrid size={13} />, label: 'Cards' },
-              ]).map(v => (
-                <button
-                  key={v.mode}
-                  onClick={() => setViewMode(v.mode)}
-                  className={`header-view-btn ${viewMode === v.mode ? 'active' : ''}`}
-                  title={v.label}
-                >
-                  {v.icon}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Desktop-only controls */}
-          <button
-            onClick={() => { setActiveTab(DEMO_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
-            className={`header-demo-chip header-desktop-only ${activeTab === DEMO_TAB_ID ? 'active' : ''}`}
-          >
-            <span className="header-demo-dot" />
-            DEMO
-          </button>
-          <span className="header-session-badge header-desktop-only">
-            {signedInName} · {signedInRole}
-          </span>
-
-          {/* Home — always visible */}
           <button
             onClick={() => {
               const homeTab = isOwnerSession ? 'JONO' : currentUserTab?.id;
@@ -153,14 +109,37 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               resetFormState(); setShowMobileMenu(false);
             }}
             title="Home"
-            className={`header-icon-btn ${
+            className={`header-icon-btn header-desktop-only ${
               (activeTab === 'JONO' || activeTab === currentUserTab?.id) && isContentView ? 'active' : ''
             }`}
           >
             <Home size={16} strokeWidth={1.5} />
           </button>
+          <button onClick={onOpenInfo} title="Info & Help" className="header-icon-btn header-desktop-only">
+            <Info size={16} strokeWidth={1.5} />
+          </button>
+        </div>
 
-          {/* Desktop-only: Settings gear — visible for both owner and user */}
+        {/* CENTER zone: DEMO button + Username capsule (desktop) / Mobile identity */}
+        <div className="header-system-center header-desktop-only">
+          <button
+            onClick={() => { setActiveTab(DEMO_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
+            className={`header-demo-chip ${activeTab === DEMO_TAB_ID ? 'active' : ''}`}
+          >
+            <span className="header-demo-dot" />
+            DEMO
+          </button>
+          <span className="header-session-badge">
+            {signedInName} · {signedInRole}
+          </span>
+        </div>
+        <div className="header-mobile-identity">
+          <span className="header-mobile-name">{signedInName}</span>
+          <span className="header-mobile-role">{signedInRole}</span>
+        </div>
+
+        {/* RIGHT zone: Gear + Theme + Exit (NO ViewSelector) */}
+        <div className="header-system-right">
           <button
             onClick={() => { setActiveTab(SETTINGS_TAB_ID); resetFormState(); setShowMobileMenu(false); }}
             title="Settings"
@@ -178,7 +157,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           <button onClick={onLogout} title="Terminate Session" className="header-icon-btn header-logout header-desktop-only">
             <LogOut size={16} strokeWidth={1.5} />
           </button>
-
           {/* Mobile-only: Hamburger */}
           <button onClick={() => setShowMobileMenu(true)} title="Menu" className="header-icon-btn header-mobile-only">
             <Menu size={18} strokeWidth={1.5} />
@@ -187,17 +165,19 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       </nav>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-         TIER 2 — Context Header
-         Fixed tab layout: HOME | project tabs | CHAT | SETTINGS(owner)
+         TIER 2 — Workspace Header  (role-aware)
+         Left: SYNC CHANNEL label
+         Center: Owner → user name tabs | User → project tabs
+         Right: ViewSelector
          Always shown except on the DEMO splash tab.
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {activeTab !== DEMO_TAB_ID && (
         <div className="header-context">
-          {/* Section title */}
-          <div className="header-context-label">{sectionTitle}</div>
+          {/* SYNC CHANNEL label */}
+          <div className="header-context-label">SYNC CHANNEL</div>
 
           <div className="header-context-controls">
-            {/* Owner: channel switchboard tabs (swipeable on mobile) */}
+            {/* Owner: user name switchboard tabs */}
             {isOwnerSession && (
               <div className="header-channel-bar">
                 {visibleTabs.filter(t => !t.isOwner).map(tab => (
@@ -212,10 +192,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               </div>
             )}
 
-            {/* Non-owner: fixed layout — HOME | P2 | P3 | P4 | CHAT | SETTINGS(owner) */}
+            {/* User: fixed project tabs — HOME | TAB2-4 | CHAT (no CONFIG) */}
             {!isOwnerSession && currentUserTab && (
               <div className="header-project-bar">
-                {/* TAB1: HOME (always first) */}
                 {myProjects
                   .filter(p => p.index === 1)
                   .map((project) => (
@@ -227,7 +206,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                       HOME
                     </button>
                   ))}
-                {/* TAB2–TAB4: project tabs (sorted by index) */}
                 {myProjects
                   .filter(p => p.index > 1)
                   .sort((a, b) => a.index - b.index)
@@ -240,7 +218,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                       {getTabLabel(project)}
                     </button>
                   ))}
-                {/* TAB5: CHAT (always fifth) */}
                 <button
                   className={`header-project-tab header-chat-tab ${isChatAnchor(activeProjectId) ? 'active' : ''}`}
                   onClick={() => { setActiveProjectId(getChatAnchorId(currentUserTab.id)); resetFormState(); }}
@@ -248,6 +225,26 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                   <MessageCircle size={12} />
                   CHAT
                 </button>
+              </div>
+            )}
+
+            {/* ViewSelector — in Tier 2 for both owner and user */}
+            {showViewControls && (
+              <div className="header-view-toggle">
+                {([
+                  { mode: 'list' as const, icon: <LayoutList size={13} />, label: 'List' },
+                  { mode: 'grid-small' as const, icon: <Grid3X3 size={13} />, label: 'Grid' },
+                  { mode: 'grid-big' as const, icon: <LayoutGrid size={13} />, label: 'Cards' },
+                ]).map(v => (
+                  <button
+                    key={v.mode}
+                    onClick={() => setViewMode(v.mode)}
+                    className={`header-view-btn ${viewMode === v.mode ? 'active' : ''}`}
+                    title={v.label}
+                  >
+                    {v.icon}
+                  </button>
+                ))}
               </div>
             )}
           </div>

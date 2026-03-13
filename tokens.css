@@ -2963,8 +2963,9 @@ input::placeholder, textarea::placeholder {
   height: 22px;
   padding: 0 10px;
   border-radius: 4px;
-  background: var(--accent);
-  color: var(--bg-dark);
+  background: rgba(102, 255, 102, 0.1);
+  color: var(--accent);
+  opacity: 0.7;
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.2em;

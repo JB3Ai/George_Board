@@ -1855,7 +1855,7 @@ const AppInner: React.FC = () => {
                   setEditCopyToUsers([]);
                   setIsAdding(true);
                 }}
-                className="ct-action-btn ct-action-primary inline-flex items-center gap-3 text-[11px] tracking-[0.3em] uppercase font-bold"
+                className="ct-action-btn primary w-full justify-center py-3 text-[11px] tracking-[0.3em] uppercase font-bold"
               >
                 <Plus size={16} />
                 New Entry

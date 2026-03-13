@@ -899,6 +899,200 @@ input::placeholder, textarea::placeholder {
   }
 }
 
+/* ─── OAC Layout Components ─── */
+.oac-user-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.oac-user-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #FFD700;
+}
+.oac-status-dot {
+  font-size: 8px;
+  line-height: 1;
+}
+.oac-status-dot.active-now { color: #4ade80; }
+.oac-status-dot.idle { color: #facc15; }
+.oac-status-dot.offline { color: #ef4444; }
+.oac-user-status {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.oac-meta {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.12);
+}
+
+/* ─── OAC 6-Tab Row ─── */
+.oac-tab-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  width: 100%;
+  padding-top: 8px;
+}
+.oac-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 4px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.oac-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.08);
+}
+.oac-tab.active {
+  color: #FFD700;
+  background: rgba(255, 215, 0, 0.1);
+  border-color: rgba(255, 215, 0, 0.3);
+}
+.oac-tab--empty {
+  opacity: 0.2;
+  cursor: default;
+  pointer-events: none;
+}
+.oac-tab--config {
+  border-color: rgba(255, 215, 0, 0.15);
+}
+
+/* ─── OAC CONFIG Panel ─── */
+.oac-config-panel {
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 215, 0, 0.15);
+}
+.oac-config-header {
+  margin-bottom: 8px;
+}
+.oac-config-title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #FFD700;
+}
+.oac-config-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.oac-config-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.oac-config-item--fixed {
+  opacity: 0.5;
+}
+.oac-config-slot {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 215, 0, 0.6);
+  min-width: 40px;
+}
+.oac-config-label {
+  flex: 1;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+.oac-config-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.oac-config-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.oac-config-action:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.08);
+}
+.oac-config-action--danger:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+.oac-config-fixed-label {
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.2);
+}
+.oac-config-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 215, 0, 0.25);
+  background: transparent;
+  color: rgba(255, 215, 0, 0.5);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.oac-config-add:hover {
+  color: #FFD700;
+  background: rgba(255, 215, 0, 0.06);
+  border-color: rgba(255, 215, 0, 0.4);
+}
+
 /* ─── Live Status Indicators ──────────────────────────────────────────── */
 .status-row {
   display: flex;

@@ -84,6 +84,7 @@ const AppInner: React.FC = () => {
   const [userProjectsMap, setUserProjectsMap] = useState<Record<string, UserProject[]>>({});
   const [showAdminSearch, setShowAdminSearch] = useState(false);
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
+  const [showAdminConfig, setShowAdminConfig] = useState(false);
   const [newItemTargetProjectId, setNewItemTargetProjectId] = useState<string | null>(null);
   const [editCopyToUsers, setEditCopyToUsers] = useState<string[]>([]);
   const [showNewTabModal, setShowNewTabModal] = useState(false);
@@ -1546,61 +1547,132 @@ const AppInner: React.FC = () => {
             setSearchTerm={setSearchTerm}
           />
 
-          {/* Master Admin Console — Owner-only with user search selector */}
+          {/* ━━━ Owner Admin Console — exactly 6 tabs ━━━ */}
           {isOwnerSession && activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && (
             <div className="owner-admin-console">
-              <div className="user-switcher">
+              {/* User info row */}
+              <div className="oac-user-row">
                 <button className="admin-search-trigger" onClick={() => { setShowAdminSearch(true); setAdminSearchQuery(''); }}>
                   <Search size={14} />
-                  <span>{TABS.find(t => t.id === activeTab)?.label || activeTab}</span>
+                  <span className="oac-user-name">{activeTabLabel}</span>
                 </button>
+                <span className={`oac-status-dot ${viewedUserStatus.toLowerCase().replace(' ', '-')}`}>&#9679;</span>
+                <span className="oac-user-status">{viewedUserStatus}</span>
               </div>
-              <div className="admin-info-pane">
-                <div className="status-row">
-                  <span className={`status-dot ${viewedUserStatus.toLowerCase().replace(' ', '-')}`}>&#9679;</span>
-                  <span>{activeTabLabel}: {viewedUserStatus}</span>
-                </div>
-                <div className="metadata-row">
-                  <span>LAST SEEN: {viewedUserLastSeen || 'Not seen'}</span>
-                  <span>1:1 SYNC: SECURE AES-256</span>
-                </div>
+              <div className="oac-meta">
+                <span>LAST SEEN: {viewedUserLastSeen || 'Not seen'}</span>
+                <span>1:1 SYNC: SECURE AES-256</span>
               </div>
+
+              {/* Exactly 6 tabs: HOME | TAB2 | TAB3 | TAB4 | CHAT | CONFIG */}
               {activeTab !== 'JONO' && (
-                <div className="project-tab-container admin-tab-grid">
+                <div className="oac-tab-row">
+                  {/* TAB1: HOME (fixed) */}
                   {viewedUserProjects
+                    .filter(p => p.index === 1)
+                    .map((project) => (
+                      <button
+                        key={project.id}
+                        className={`oac-tab ${activeProjectId === project.id && !showAdminConfig ? 'active' : ''}`}
+                        onClick={() => { setActiveProjectId(project.id); setShowAdminConfig(false); }}
+                      >
+                        HOME
+                      </button>
+                    ))}
+                  {/* TAB2–TAB4: editable project tabs + empty slots */}
+                  {viewedUserProjects
+                    .filter(p => p.index > 1)
                     .sort((a, b) => a.index - b.index)
                     .map((project) => (
                       <button
                         key={project.id}
-                        className={`tab-item ${activeProjectId === project.id ? 'active' : ''}`}
-                        onClick={() => setActiveProjectId(project.id)}
+                        className={`oac-tab ${activeProjectId === project.id && !showAdminConfig ? 'active' : ''}`}
+                        onClick={() => { setActiveProjectId(project.id); setShowAdminConfig(false); }}
                       >
                         {getTabLabel(project)}
                       </button>
-                  ))}
-                  {/* Fill empty slots up to 3 project tabs */}
+                    ))}
                   {Array.from({ length: Math.max(0, 3 - viewedUserProjects.filter(p => p.index > 1).length) }).map((_, i) => (
-                    <span key={`empty-${i}`} className="tab-item tab-empty" />
+                    <span key={`empty-${i}`} className="oac-tab oac-tab--empty">—</span>
                   ))}
+                  {/* TAB5: CHAT (fixed) */}
                   <button
-                    className={`tab-item chat-anchor ${isChatAnchor(activeProjectId) ? 'active' : ''}`}
-                    onClick={() => setActiveProjectId(getChatAnchorId(activeTab))}
+                    className={`oac-tab ${isChatAnchor(activeProjectId) && !showAdminConfig ? 'active' : ''}`}
+                    onClick={() => { setActiveProjectId(getChatAnchorId(activeTab)); setShowAdminConfig(false); }}
                   >
                     CHAT
                   </button>
+                  {/* TAB6: CONFIG (fixed, gear icon) */}
                   <button
-                    className={`tab-item ${activeTab === SETTINGS_TAB_ID ? 'active' : ''}`}
-                    onClick={() => { setActiveTab(SETTINGS_TAB_ID); setIsAdding(false); setSearchTerm(''); }}
+                    className={`oac-tab oac-tab--config ${showAdminConfig ? 'active' : ''}`}
+                    onClick={() => setShowAdminConfig(prev => !prev)}
+                    title="Tab configuration"
                   >
+                    <Settings size={12} />
                     CONFIG
                   </button>
+                </div>
+              )}
+
+              {/* CONFIG panel — tab management for this user */}
+              {showAdminConfig && activeTab !== 'JONO' && (
+                <div className="oac-config-panel">
+                  <div className="oac-config-header">
+                    <span className="oac-config-title">TAB CONFIG: {activeTabLabel}</span>
+                  </div>
+                  <div className="oac-config-list">
+                    {viewedUserProjects
+                      .sort((a, b) => a.index - b.index)
+                      .map((project) => {
+                        const label = getTabLabel(project);
+                        const isEditable = project.index > 1;
+                        return (
+                          <div key={project.id} className={`oac-config-item ${!isEditable ? 'oac-config-item--fixed' : ''}`}>
+                            <span className="oac-config-slot">{project.index === 1 ? 'HOME' : `TAB${project.index}`}</span>
+                            <span className="oac-config-label">{label}</span>
+                            {isEditable && (
+                              <div className="oac-config-actions">
+                                <button
+                                  className="oac-config-action"
+                                  onClick={() => openRenameModal(activeTab, project.id, project.name)}
+                                  title="Rename tab"
+                                >
+                                  <Pencil size={12} />
+                                </button>
+                                <button
+                                  className="oac-config-action oac-config-action--danger"
+                                  onClick={() => handleDeleteProject(activeTab, project.id)}
+                                  title="Remove tab"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            )}
+                            {!isEditable && <span className="oac-config-fixed-label">FIXED</span>}
+                          </div>
+                        );
+                      })}
+                    {/* CHAT row (fixed) */}
+                    <div className="oac-config-item oac-config-item--fixed">
+                      <span className="oac-config-slot">TAB5</span>
+                      <span className="oac-config-label">CHAT</span>
+                      <span className="oac-config-fixed-label">FIXED</span>
+                    </div>
+                    {/* CONFIG row (fixed) */}
+                    <div className="oac-config-item oac-config-item--fixed">
+                      <span className="oac-config-slot">TAB6</span>
+                      <span className="oac-config-label">CONFIG</span>
+                      <span className="oac-config-fixed-label">FIXED</span>
+                    </div>
+                  </div>
+                  {/* Add new tab button — only if < 3 editable tabs exist */}
                   {viewedUserProjects.filter(p => p.index > 1).length < 3 && (
                     <button
-                      className="tab-item new-project-btn"
+                      className="oac-config-add"
                       onClick={() => openNewTabModal(activeTab)}
-                      title="Create new project for this user"
                     >
-                      <FolderPlus size={12} /> NEW
+                      <FolderPlus size={12} />
+                      ADD NEW TAB
                     </button>
                   )}
                 </div>

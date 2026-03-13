@@ -63,6 +63,27 @@
   user-select: none;
 }
 
+/* ─── Demo button (Tier 1 center) ─── */
+
+.header-demo-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.header-demo-btn:hover {
+  color: rgba(251, 191, 36, 0.9);
+}
+
 /* ─── Wrapper (fixed shell for both tiers) ─── */
 
 .app-header-wrapper {
@@ -154,4 +175,172 @@
 .view-btn--active {
   color: rgba(255, 255, 255, 0.95);
   background: rgba(255, 255, 255, 0.1);
+}
+
+/* ─── Tier 2 sync label (left zone) ─── */
+
+.tier2-sync-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.tier2-scroll {
+  scrollbar-width: none;
+}
+.tier2-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ───────────────────────────────────────────────
+   Owner Admin Console
+   ─────────────────────────────────────────────── */
+
+.owner-admin-console {
+  padding: 10px 20px 8px;
+  background: rgba(20, 16, 8, 0.92);
+  border-bottom: 1px solid rgba(234, 179, 8, 0.15);
+}
+
+/* ── User info row ── */
+
+.oac-user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.oac-user-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.oac-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.oac-user-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.oac-user-status {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.oac-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Tab row ── */
+
+.oac-tab-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.oac-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  border-radius: 6px;
+  transition: background-color 0.15s;
+}
+
+.oac-tab--active {
+  background: rgba(234, 179, 8, 0.1);
+}
+
+.oac-tab-label {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.oac-tab--active .oac-tab-label {
+  color: rgba(234, 179, 8, 0.85);
+}
+
+.oac-tab-label:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.oac-tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 4px;
+}
+
+.oac-tab-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.oac-tab-action:hover {
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.oac-tab-action--danger:hover {
+  color: rgba(239, 68, 68, 0.8);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.oac-tab-add {
+  justify-content: center;
+  padding: 0 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.oac-tab-add:hover {
+  color: rgba(234, 179, 8, 0.6);
+  border-color: rgba(234, 179, 8, 0.3);
 }

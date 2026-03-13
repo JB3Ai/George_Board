@@ -17,7 +17,7 @@ import type { Workspace, Board } from './services/boardService';
 import { logBoardActivity } from './services/activityService';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme, UserProject } from './types';
 import { OWNER_EMAIL } from './constants';
-import { Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, X, Users, LayoutGrid, LayoutList, Grid3X3, RotateCcw, FolderPlus, Search, ArrowUp, Pencil } from 'lucide-react';
+import { Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, X, Users, LayoutGrid, LayoutList, Grid3X3, RotateCcw, FolderPlus, Search, ArrowUp, Pencil, Settings } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 import { ThemeDock } from './components/ThemeDock';
@@ -51,6 +51,25 @@ const isChatAnchor = (id: string | null) => typeof id === 'string' && id.endsWit
 
 /** Returns true when projectId is null, undefined, or the V1 placeholder 'default' */
 const isLegacyProjectId = (pid: string | undefined) => !pid || pid === 'default';
+
+/* ── Error Boundary — prevents blank screens on uncaught render errors ── */
+class RenderErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+          <p style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.6 }}>A rendering error occurred</p>
+          <button onClick={() => this.setState({ hasError: false })} style={{ padding: '8px 20px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', cursor: 'pointer', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+            Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const AppInner: React.FC = () => {
   const [activeTab, setActiveTabRaw] = useState<string>('JONO');
@@ -299,6 +318,9 @@ const AppInner: React.FC = () => {
     setActiveProjectId(projects[0].id);
   }, [activeTab, userProjectsMap]);
 
+  // ─── Close CONFIG panel when switching tabs to prevent stale state ───
+  useEffect(() => { setShowAdminConfig(false); }, [activeTab]);
+
   // ─── TAB 1 "Memory" bridge: hydrate legacy items from Supabase when P1 is active ───
   useEffect(() => {
     if (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID) return;
@@ -411,6 +433,10 @@ const AppInner: React.FC = () => {
   useEffect(() => {
     if (!isOwnerSession) return;
     if (activeTab === 'JONO' || activeTab === DEMO_TAB_ID || activeTab === SETTINGS_TAB_ID) return;
+
+    // Immediately reset to prevent stale status from previous user
+    setViewedUserStatus('OFFLINE');
+    setViewedUserLastSeen(null);
 
     const targetTab = TABS.find(t => t.id === activeTab);
     if (!targetTab) return;
@@ -1260,6 +1286,7 @@ const AppInner: React.FC = () => {
 
   return (
     <SessionGuard>
+      <RenderErrorBoundary>
         <div className="relative min-h-screen">
           {/* Fixed background — theme-reactive (z-0) */}
           <div
@@ -2311,6 +2338,7 @@ const AppInner: React.FC = () => {
 
       {/* Material Theme Dock — shown on clipboard tabs, not on SETTINGS or DEMO */}
       {showThemeDock && <ThemeDock />}
+      </RenderErrorBoundary>
     </SessionGuard>
   );
 };

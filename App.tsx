@@ -1279,7 +1279,7 @@ const AppInner: React.FC = () => {
         ? 'INTERFACE SETTINGS'
       : isChatAnchor(activeProjectId)
         ? `1:1 SECURE CHAT: JONO ↔ ${activeTabLabel}`
-        : `SYNC CHANNEL: JONO ↔ ${activeTabLabel}`;
+        : `JONO ↔ ${activeTabLabel}`;
 
   const signedInName = (currentUserTab?.label || session.email.split('@')[0] || 'USER').toUpperCase();
   const signedInRole = isOwnerSession ? 'OA' : 'USER ACCESS';

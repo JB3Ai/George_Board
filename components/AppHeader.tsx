@@ -173,9 +173,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {activeTab !== DEMO_TAB_ID && (
         <div className="header-context">
-          {/* SYNC CHANNEL label */}
-          <div className="header-context-label">SYNC CHANNEL</div>
-
           <div className="header-context-controls">
             {/* Owner: user name switchboard tabs */}
             {isOwnerSession && (

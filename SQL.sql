@@ -120,6 +120,7 @@ ALTER TABLE public.clipboard_items ADD COLUMN IF NOT EXISTS shared_group_id TEXT
 CREATE TABLE IF NOT EXISTS public.user_registry (
   id TEXT PRIMARY KEY,
   label TEXT NOT NULL,
+  custom_name TEXT,
   email TEXT NOT NULL UNIQUE,
   is_owner BOOLEAN DEFAULT false,
   added_at BIGINT DEFAULT 0,
@@ -1001,4 +1002,28 @@ COMMENT ON FUNCTION public.update_board_activity() IS
 
 -- ╔════════════════════════════════════════════════════════════════════════════╗
 -- ║  END PHASE 4.5 OPERATIONAL BOARD LAYER                                    ║
+-- ╚════════════════════════════════════════════════════════════════════════════╝
+
+
+-- ╔════════════════════════════════════════════════════════════════════════════╗
+-- ║  PHASE 5: MULTI-TAB VISIBILITY & SCHEMA ALIGNMENT                         ║
+-- ║  Adds visible_in_tabs, is_demo columns to clipboard_items                 ║
+-- ║  Adds custom_name column to user_registry                                 ║
+-- ║  Date: 2025-07-17                                                         ║
+-- ╚════════════════════════════════════════════════════════════════════════════╝
+
+-- BLOCK 12a: clipboard_items.visible_in_tabs — multi-tab asset visibility
+ALTER TABLE public.clipboard_items
+  ADD COLUMN IF NOT EXISTS visible_in_tabs TEXT[];
+
+-- BLOCK 12b: clipboard_items.is_demo — demo flag for seed items
+ALTER TABLE public.clipboard_items
+  ADD COLUMN IF NOT EXISTS is_demo BOOLEAN DEFAULT false;
+
+-- BLOCK 12c: user_registry.custom_name — user display name persistence
+ALTER TABLE public.user_registry
+  ADD COLUMN IF NOT EXISTS custom_name TEXT;
+
+-- ╔════════════════════════════════════════════════════════════════════════════╗
+-- ║  END PHASE 5 MULTI-TAB VISIBILITY & SCHEMA ALIGNMENT                     ║
 -- ╚════════════════════════════════════════════════════════════════════════════╝

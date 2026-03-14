@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ClipboardItem, ItemType } from '../types';
 import { UserTab } from '../services/userRegistry';
 import { getUserPresence } from '../services/db';
-import { Send, Pin, Archive, StickyNote, AlertTriangle, MessageSquare, LayoutGrid, ListFilter, ChevronLeft } from 'lucide-react';
+import { Send, Pin, Archive, StickyNote, AlertTriangle, MessageSquare, LayoutGrid, ListFilter, ChevronLeft, Trash2 } from 'lucide-react';
 
 /* ─── Derived types (no DB changes — built from existing ClipboardItem[]) ─── */
 interface DerivedChannel {
@@ -25,6 +25,7 @@ interface OwnerCommsHubProps {
   currentUser: string;
   tabs: UserTab[];
   onSend: (userId: string, content: string) => void;
+  onClearChat?: (userId: string) => void;
   onSwitchToUser: (userId: string) => void;
 }
 
@@ -34,6 +35,7 @@ export const OwnerCommsHub: React.FC<OwnerCommsHubProps> = ({
   currentUser,
   tabs,
   onSend,
+  onClearChat,
   onSwitchToUser,
 }) => {
   const [activeChannel, setActiveChannel] = useState<string | null>(null);
@@ -332,6 +334,16 @@ export const OwnerCommsHub: React.FC<OwnerCommsHubProps> = ({
               <AlertTriangle size={14} />
               <span>Escalate</span>
             </button>
+            {onClearChat && (
+              <button
+                className="comms-dock-btn comms-dock-danger"
+                onClick={() => { if (confirm(`Clear all messages with ${activeChannelData.userName}?`)) onClearChat(activeChannel); }}
+                title="Clear all messages"
+              >
+                <Trash2 size={14} />
+                <span>Clear</span>
+              </button>
+            )}
           </div>
 
           {/* Notes panel */}

@@ -68,6 +68,7 @@ export interface ClipboardItem {
   isDemo?: boolean;
   sharedGroupId?: string;
   projectId?: string;
+  visibleInTabs?: string[];
   boardId?: string;
   boardPosition?: number;
   preview_fail_count?: number;

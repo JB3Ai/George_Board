@@ -105,6 +105,7 @@ const AppInner: React.FC = () => {
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
   const [showAdminConfig, setShowAdminConfig] = useState(false);
   const [newItemTargetProjectId, setNewItemTargetProjectId] = useState<string | null>(null);
+  const [newItemTargetTabs, setNewItemTargetTabs] = useState<string[]>([]);
   const [editCopyToUsers, setEditCopyToUsers] = useState<string[]>([]);
   const [showNewTabModal, setShowNewTabModal] = useState(false);
   const [newTabName, setNewTabName] = useState('');
@@ -565,7 +566,7 @@ const AppInner: React.FC = () => {
   /** Active board for new items. null = no board context (legacy). */
   const getActiveBoardId = (): string | undefined => activeBoardId || undefined;
 
-  const MAX_PROJECT_TABS = 3; // TAB2–TAB4; slot 5 = CHAT, slot 6 = SETTINGS
+  const MAX_PROJECT_TABS = 4; // 1 HOME + 3 editable (TAB2–TAB4); slot 5 = CHAT, slot 6 = CONFIG
   const MAX_TAB_NAME_LENGTH = 20;
 
   /** Display label: HOME for slot 1, custom label or fallback TAB{n} for slot 2+ */
@@ -709,6 +710,16 @@ const AppInner: React.FC = () => {
     setItems(db.getItems());
   };
 
+  /** Owner Comms Hub: clear all chat messages for a specific user channel */
+  const handleClearChat = (targetUserId: string) => {
+    const allItems = db.getItems();
+    const chatIds = allItems.filter(i => i.type === ItemType.CHAT && i.syncTabId === targetUserId).map(i => i.id);
+    for (const id of chatIds) {
+      db.deleteItem(id, session.email);
+    }
+    setItems(db.getItems());
+  };
+
   const canPost = activeTab !== DEMO_TAB_ID && activeTab !== SETTINGS_TAB_ID && !isChatAnchor(activeProjectId) && (isOwnerSession || activeTab === currentUserTab?.id);
   const isOwnerMainTab = isOwnerSession && activeTab === 'JONO';
   const showOwnerAdminPanels = isOwnerMainTab;
@@ -748,6 +759,8 @@ const AppInner: React.FC = () => {
     setNewItemDueDate(item.dueDate || '');
     setNewItemLocation(item.eventLocation || '');
     setNewItemIsDemo(item.isDemo || false);
+    setNewItemTargetProjectId(item.projectId || null);
+    setNewItemTargetTabs(item.visibleInTabs || (item.projectId ? [item.projectId] : []));
     setIsAdding(true);
   };
 
@@ -832,6 +845,10 @@ const AppInner: React.FC = () => {
       baseItems = items.filter((item) => {
         if (item.syncTabId !== activeTab) return false;
         if (item.type === ItemType.CHAT) return false;
+        // Multi-tab visibility: if visibleInTabs is set, check if current project is in the list
+        if (item.visibleInTabs && item.visibleInTabs.length > 0) {
+          return item.visibleInTabs.includes(pid);
+        }
         // TAB 1 captures legacy items (null / 'default' projectId) + exact match
         if (viewingTab1 && isLegacyProjectId(item.projectId)) return true;
         return (item.projectId || 'default') === pid;
@@ -924,6 +941,8 @@ const AppInner: React.FC = () => {
         eventLocation: newItemType === ItemType.EVENT ? newItemLocation : undefined,
         isDemo: newItemIsDemo,
         ...(targetProjectId && targetProjectId !== editingItem.projectId ? { projectId: targetProjectId } : {}),
+        // Multi-tab visibility: write selected tabs (or clear if single-tab via projectId)
+        visibleInTabs: newItemTargetTabs.length > 0 ? newItemTargetTabs : undefined,
       };
 
       if (newItemType === ItemType.WEBPAGE || newItemType === ItemType.YOUTUBE) {
@@ -1254,6 +1273,7 @@ const AppInner: React.FC = () => {
     setNewItemFile(null);
     setSelectedTargetUsers([]);
     setNewItemTargetProjectId(null);
+    setNewItemTargetTabs([]);
     setEditCopyToUsers([]);
   };
 
@@ -1772,7 +1792,7 @@ const AppInner: React.FC = () => {
                 isOwner={isOwnerSession}
                 activeChannel={activeTab}
                 canPost={canPost}
-                onNewEntry={() => { setEditingItem(null); setNewItemContent(''); setNewItemTargetProjectId(null); setEditCopyToUsers([]); setIsAdding(true); }}
+                onNewEntry={() => { setEditingItem(null); setNewItemContent(''); setNewItemTargetProjectId(null); setNewItemTargetTabs([]); setEditCopyToUsers([]); setIsAdding(true); }}
                 onSearch={() => { setShowAdminSearch(true); setAdminSearchQuery(''); }}
                 onRefresh={() => setItems(db.getItems())}
                 onResetVisibility={isOwnerSession && activeTab !== 'JONO' ? () => handleResetUserVisibility(activeTab) : undefined}
@@ -1869,6 +1889,7 @@ const AppInner: React.FC = () => {
                   setEditingItem(null);
                   setNewItemContent('');
                   setNewItemTargetProjectId(null);
+                  setNewItemTargetTabs([]);
                   setEditCopyToUsers([]);
                   setIsAdding(true);
                 }}
@@ -1908,28 +1929,36 @@ const AppInner: React.FC = () => {
                   )}
                 </div>
 
-                {/* Target Tab picker — choose which project tab the entry goes to */}
+                {/* Target Tab picker — choose which project tab(s) the entry appears in */}
                 {!isChatAnchor(activeProjectId) && (() => {
+                  // When editing, resolve tabs from the item's owner; otherwise use current view
+                  const itemOwnerTab = editingItem?.syncTabId;
                   const tabProjects = isOwnerSession
-                    ? (userProjectsMap[activeTab] || [])
+                    ? (userProjectsMap[itemOwnerTab || activeTab] || [])
                     : myProjects;
                   if (tabProjects.length <= 1) return null;
-                  return (
-                    <div className="space-y-4 border border-accent/10 rounded-2xl p-6 bg-accent/[0.02]">
-                      <p className="text-[9px] tracking-widest text-muted/40 uppercase font-bold flex items-center gap-3">
-                        <LayoutGrid size={14} className="text-accent/40" />
-                        Target Tab
-                      </p>
-                      <div className="flex flex-wrap gap-3">
-                        {tabProjects
-                          .sort((a, b) => a.index - b.index)
-                          .map(project => {
-                            const isSelected = (newItemTargetProjectId || activeProjectId) === project.id;
+                  const sorted = [...tabProjects].sort((a, b) => a.index - b.index);
+                  // In edit mode use multi-select via newItemTargetTabs; in create mode use single-select
+                  if (editingItem) {
+                    return (
+                      <div className="space-y-4 border border-accent/10 rounded-2xl p-6 bg-accent/[0.02]">
+                        <p className="text-[9px] tracking-widest text-muted/40 uppercase font-bold flex items-center gap-3">
+                          <LayoutGrid size={14} className="text-accent/40" />
+                          Visible In Tabs
+                          <span className="text-muted/20 font-normal">(multi-select)</span>
+                        </p>
+                        <div className="flex flex-wrap gap-3">
+                          {sorted.map(project => {
+                            const isSelected = newItemTargetTabs.includes(project.id);
                             return (
                               <button
                                 key={project.id}
                                 type="button"
-                                onClick={() => setNewItemTargetProjectId(project.id)}
+                                onClick={() => setNewItemTargetTabs(prev =>
+                                  prev.includes(project.id)
+                                    ? prev.filter(id => id !== project.id)
+                                    : [...prev, project.id]
+                                )}
                                 className={`text-[10px] tracking-widest px-5 py-2.5 rounded-full border transition-all uppercase font-bold ${
                                   isSelected
                                     ? 'bg-accent/10 border-accent/30 text-accent'
@@ -1940,6 +1969,35 @@ const AppInner: React.FC = () => {
                               </button>
                             );
                           })}
+                        </div>
+                      </div>
+                    );
+                  }
+                  // Create mode — single-select (existing behavior)
+                  return (
+                    <div className="space-y-4 border border-accent/10 rounded-2xl p-6 bg-accent/[0.02]">
+                      <p className="text-[9px] tracking-widest text-muted/40 uppercase font-bold flex items-center gap-3">
+                        <LayoutGrid size={14} className="text-accent/40" />
+                        Target Tab
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        {sorted.map(project => {
+                          const isSelected = (newItemTargetProjectId || activeProjectId) === project.id;
+                          return (
+                            <button
+                              key={project.id}
+                              type="button"
+                              onClick={() => setNewItemTargetProjectId(project.id)}
+                              className={`text-[10px] tracking-widest px-5 py-2.5 rounded-full border transition-all uppercase font-bold ${
+                                isSelected
+                                  ? 'bg-accent/10 border-accent/30 text-accent'
+                                  : 'border-edge text-muted/40 hover:border-edge hover:text-muted'
+                              }`}
+                            >
+                              {project.name || `TAB ${project.index}`}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -2277,6 +2335,7 @@ const AppInner: React.FC = () => {
                 currentUser={session.email}
                 tabs={TABS}
                 onSend={handleCommsSend}
+                onClearChat={handleClearChat}
                 onSwitchToUser={(userId) => { setActiveTab(userId); setActiveProjectId(null); }}
               />
             ) : isChatAnchor(activeProjectId) ? (

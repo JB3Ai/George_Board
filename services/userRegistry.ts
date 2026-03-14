@@ -98,11 +98,26 @@ function saveRegistry(users: RegisteredUser[]): void {
     .from(REGISTRY_TABLE)
     .upsert(users.map(toRow), { onConflict: 'email' })
     .then(({ error }: { error: any }) => {
-      if (error) console.warn('Registry sync failed:', error.message);
+      if (error) {
+        console.error('[UserRegistry] Supabase upsert FAILED:', error.message, error);
+        // If the error mentions a missing column, strip that field and retry
+        if (error.message?.includes('custom_name')) {
+          console.warn('[UserRegistry] Retrying without custom_name field...');
+          const safeRows = users.map(toRow).map(({ custom_name, ...rest }: any) => rest);
+          (supabase as any)
+            .from(REGISTRY_TABLE)
+            .upsert(safeRows, { onConflict: 'email' })
+            .then(({ error: retryErr }: { error: any }) => {
+              if (retryErr) console.error('[UserRegistry] Retry also failed:', retryErr.message);
+              else console.log('[UserRegistry] Retry without custom_name succeeded');
+            });
+        }
+      }
     });
 }
 
-// On first load, try to pull registry from Supabase and hydrate localStorage
+// On first load, pull registry from Supabase and MERGE with localStorage
+// (preserves local-only users that haven't synced yet)
 export async function hydrateRegistryFromCloud(): Promise<void> {
   if (!isSupabaseConfigured || !supabase) return;
   try {
@@ -113,8 +128,25 @@ export async function hydrateRegistryFromCloud(): Promise<void> {
 
     if (error || !Array.isArray(data) || data.length === 0) return;
 
-    const users = ensureOwner(data.map(fromRow));
-    localStorage.setItem(REGISTRY_KEY, JSON.stringify(users));
+    const cloudUsers = data.map(fromRow);
+    const cloudEmails = new Set(cloudUsers.map((u: RegisteredUser) => u.email));
+
+    // Keep local-only users (added but not yet synced to cloud)
+    const localUsers = loadRegistry();
+    const localOnly = localUsers.filter((u) => !cloudEmails.has(u.email));
+
+    const merged = ensureOwner([...cloudUsers, ...localOnly]);
+    localStorage.setItem(REGISTRY_KEY, JSON.stringify(merged));
+
+    // Re-sync local-only users to cloud
+    if (localOnly.length > 0) {
+      (supabase as any)
+        .from(REGISTRY_TABLE)
+        .upsert(localOnly.map(toRow), { onConflict: 'email' })
+        .then(({ error: syncErr }: { error: any }) => {
+          if (syncErr) console.warn('Registry re-sync of local users failed:', syncErr.message);
+        });
+    }
   } catch {
     // silently fall back to localStorage
   }

@@ -403,6 +403,24 @@ const AppInner: React.FC = () => {
     return () => clearInterval(interval);
   }, [activeProjectId]);
 
+  // ─── Background cloud sync: keep all items fresh (cards + chat) ──────────
+  // Hydrates every 30 seconds so data persists reliably across sign-out/sign-in
+  // and cards saved to project tabs (TAB2–TAB4) stay visible after re-login.
+  useEffect(() => {
+    const sync = async () => {
+      const cloudItems = await db.hydrateFromCloud();
+      if (cloudItems && cloudItems.length > 0) {
+        setItems(prev => {
+          const cloudIds = new Set(cloudItems.map(i => i.id));
+          const localOnly = prev.filter(i => !cloudIds.has(i.id));
+          return [...localOnly, ...cloudItems];
+        });
+      }
+    };
+    const interval = setInterval(sync, 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
   // ─── Presence heartbeat: ping every 30s so owner can see who's active ───
   useEffect(() => {
     sendPresenceHeartbeat(session.email);
@@ -670,7 +688,6 @@ const AppInner: React.FC = () => {
     const chatItem = db.addItem({
       userId: session.email,
       syncTabId,
-      boardId: getActiveBoardId(),
       type: ItemType.CHAT,
       title: 'Chat',
       content,
@@ -684,7 +701,6 @@ const AppInner: React.FC = () => {
     const chatItem = db.addItem({
       userId: session.email,
       syncTabId: targetUserId,
-      boardId: getActiveBoardId(),
       type: ItemType.CHAT,
       title: 'Chat',
       content,
@@ -823,8 +839,9 @@ const AppInner: React.FC = () => {
     }
 
     // Board filter — when a board is selected, show only items on that board (plus legacy unassigned items)
+    // Chat items are board-agnostic — never filter them by board context
     if (activeBoardId) {
-      baseItems = baseItems.filter((item) => item.boardId === activeBoardId || !item.boardId);
+      baseItems = baseItems.filter((item) => item.type === ItemType.CHAT || item.boardId === activeBoardId || !item.boardId);
     }
 
     return baseItems.filter((item) => {

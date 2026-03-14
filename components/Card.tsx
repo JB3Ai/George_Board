@@ -25,6 +25,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
   const hasFailed = item.enrichmentStatus === EnrichmentStatus.FAILED || isDelayed;
   const cardRef = useRef<HTMLDivElement>(null);
   const [showCooldown, setShowCooldown] = useState(false);
+  const [noteExpanded, setNoteExpanded] = useState(false);
   const { showToast } = useToast();
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -136,6 +137,10 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
   };
 
   const openAsset = () => {
+    if (item.type === ItemType.NOTE) {
+      setNoteExpanded(true);
+      return;
+    }
     const assetUrl = getAssetUrl();
     if (!assetUrl) return;
     window.open(assetUrl, '_blank');
@@ -153,10 +158,12 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
   // ─── LIST VIEW: compact single-line row ───
   if (viewMode === 'list') {
     const openItem = () => openAsset();
+    const isNote = item.type === ItemType.NOTE;
     const displayTitle = item.metadata?.title || item.title || 'Untitled';
     return (
+      <>
       <div
-        className={`flex items-center gap-4 px-5 py-3 glass rounded-xl group/row hover:border-accent/20 transition-all ${getAssetUrl() ? 'cursor-pointer' : ''}`}
+        className={`flex items-center gap-4 px-5 py-3 glass rounded-xl group/row hover:border-accent/20 transition-all ${getAssetUrl() || isNote ? 'cursor-pointer' : ''}`}
         onClick={handleCardClick}
       >
         <span className="text-muted/50 shrink-0">{getTypeIcon()}</span>
@@ -186,6 +193,41 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
           )}
         </div>
       </div>
+      {noteExpanded && isNote && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={() => setNoteExpanded(false)}>
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          <div className="relative bg-card border border-edge rounded-3xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-8 space-y-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText size={14} className="text-accent" />
+                <h3 className="text-lg font-medium text-primary tracking-tight">{item.title || 'Note'}</h3>
+              </div>
+              <button onClick={() => setNoteExpanded(false)} className="text-primary/30 hover:text-primary transition-colors p-2">
+                <span className="text-[11px] tracking-[0.3em] uppercase font-bold">Close</span>
+              </button>
+            </div>
+            <div className="border-t border-edge" />
+            <p className="text-sm text-muted leading-relaxed whitespace-pre-wrap">{item.content}</p>
+            <div className="flex items-center gap-3 pt-4 border-t border-edge">
+              <button
+                onClick={() => { navigator.clipboard.writeText(item.content); showToast('Note copied', 'success'); }}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-card/10 border border-edge text-[10px] tracking-[0.2em] uppercase text-muted hover:text-accent hover:border-accent/20 transition-all font-bold"
+              >
+                <Copy size={12} /> Copy
+              </button>
+              {isOwner && (
+                <button
+                  onClick={() => { setNoteExpanded(false); onEdit(item); }}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent/10 border border-accent/20 text-[10px] tracking-[0.2em] uppercase text-accent hover:bg-accent/20 transition-all font-bold"
+                >
+                  <Edit3 size={12} /> Edit
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      </>
     );
   }
 
@@ -194,7 +236,7 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
       ref={cardRef}
       onMouseMove={handleMouseMove}
       onClick={handleCardClick}
-      className={`glass rounded-[2rem] flex flex-col overflow-hidden group relative glow-card ${item.isArchived ? 'opacity-30 grayscale-[0.5]' : ''} ${getAssetUrl() ? 'cursor-pointer' : ''}`}
+      className={`glass rounded-[2rem] flex flex-col overflow-hidden group relative glow-card ${item.isArchived ? 'opacity-30 grayscale-[0.5]' : ''} ${getAssetUrl() || item.type === ItemType.NOTE ? 'cursor-pointer' : ''}`}
     >
       {/* IMAGE banner — shows full image at top of card */}
       {item.type === ItemType.IMAGE && item.fileUrl && (
@@ -568,6 +610,42 @@ export const Card: React.FC<CardProps> = ({ item, currentUser, canManageAll = fa
           </div>
         )}
       </div>
+
+      {/* Expanded Note Overlay */}
+      {noteExpanded && item.type === ItemType.NOTE && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={() => setNoteExpanded(false)}>
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          <div className="relative bg-card border border-edge rounded-3xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-8 space-y-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText size={14} className="text-accent" />
+                <h3 className="text-lg font-medium text-primary tracking-tight">{item.title || 'Note'}</h3>
+              </div>
+              <button onClick={() => setNoteExpanded(false)} className="text-primary/30 hover:text-primary transition-colors p-2">
+                <span className="text-[11px] tracking-[0.3em] uppercase font-bold">Close</span>
+              </button>
+            </div>
+            <div className="border-t border-edge" />
+            <p className="text-sm text-muted leading-relaxed whitespace-pre-wrap">{item.content}</p>
+            <div className="flex items-center gap-3 pt-4 border-t border-edge">
+              <button
+                onClick={() => { navigator.clipboard.writeText(item.content); showToast('Note copied', 'success'); }}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-card/10 border border-edge text-[10px] tracking-[0.2em] uppercase text-muted hover:text-accent hover:border-accent/20 transition-all font-bold"
+              >
+                <Copy size={12} /> Copy
+              </button>
+              {isOwner && (
+                <button
+                  onClick={() => { setNoteExpanded(false); onEdit(item); }}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent/10 border border-accent/20 text-[10px] tracking-[0.2em] uppercase text-accent hover:bg-accent/20 transition-all font-bold"
+                >
+                  <Edit3 size={12} /> Edit
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

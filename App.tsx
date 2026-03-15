@@ -17,7 +17,7 @@ import type { Workspace, Board } from './services/boardService';
 import { logBoardActivity } from './services/activityService';
 import { ClipboardItem, UserEmail, ItemType, TaskStatus, EnrichmentStatus, UserSession, Theme, UserProject } from './types';
 import { OWNER_EMAIL } from './constants';
-import { Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, X, Users, LayoutGrid, LayoutList, Grid3X3, RotateCcw, FolderPlus, Search, ArrowUp, Pencil, Settings } from 'lucide-react';
+import { Plus, Calendar, MapPin, Youtube, Globe, FileText, CheckSquare, Rocket, UserPlus, Trash2, FileArchive, Upload, Loader2, Image as ImageIcon, Video as VideoIcon, X, Users, LayoutGrid, LayoutList, Grid3X3, RotateCcw, FolderPlus, Search, ArrowUp, Pencil, Settings, Copy } from 'lucide-react';
 import { uploadDocument, formatFileSize, getFileIcon, ACCEPTED_EXTENSIONS } from './services/documentService';
 import { uploadMedia, ACCEPTED_IMAGE_EXTENSIONS, ACCEPTED_VIDEO_EXTENSIONS } from './services/mediaService';
 import { ThemeDock } from './components/ThemeDock';
@@ -117,6 +117,13 @@ const AppInner: React.FC = () => {
   const [renameMode, setRenameMode] = useState<'project' | 'channel'>('project');
   const [renameChannelUserId, setRenameChannelUserId] = useState<string>('');
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // ─── Copy Tab modal state ───
+  const [showCopyTabModal, setShowCopyTabModal] = useState(false);
+  const [copyTabSourceUserId, setCopyTabSourceUserId] = useState<string>('');
+  const [copyTabSourceProjectId, setCopyTabSourceProjectId] = useState<string>('');
+  const [copyTabTargets, setCopyTabTargets] = useState<Record<string, string>>({}); // userId → destination projectId
+  const [copyTabConflictAction, setCopyTabConflictAction] = useState<'replace' | null>(null);
 
   // ─── Board/Workspace state ───
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -669,6 +676,108 @@ const AppInner: React.FC = () => {
       setActiveProjectId(home?.id || null);
     }
     showToast('Project tab removed', 'success');
+  };
+
+  /** Open the Copy Tab modal pre-filled with the currently viewed user & tab */
+  const openCopyTabModal = (sourceUserId: string, sourceProjectId: string) => {
+    setCopyTabSourceUserId(sourceUserId);
+    setCopyTabSourceProjectId(sourceProjectId);
+    setCopyTabTargets({});
+    setCopyTabConflictAction(null);
+    setShowCopyTabModal(true);
+  };
+
+  /** Execute the Copy Tab operation */
+  const handleCopyTab = async () => {
+    const targetEntries = Object.entries(copyTabTargets).filter(([, pid]) => pid);
+    if (!copyTabSourceProjectId || targetEntries.length === 0) return;
+
+    const sourceProjects = userProjectsMap[copyTabSourceUserId] || [];
+    const sourceProject = sourceProjects.find(p => p.id === copyTabSourceProjectId);
+    if (!sourceProject) { showToast('Source tab not found', 'error'); return; }
+
+    // Check for conflicts: target tabs that already have items
+    const allItems = db.getItems();
+    for (const [targetUserId, destPid] of targetEntries) {
+      const existingItems = allItems.filter(
+        i => i.syncTabId === targetUserId && (i.projectId === destPid || (i.visibleInTabs && i.visibleInTabs.includes(destPid)))
+      );
+      if (existingItems.length > 0 && !copyTabConflictAction) {
+        const destProjects = userProjectsMap[targetUserId] || [];
+        const destProject = destProjects.find(p => p.id === destPid);
+        const destLabel = destProject ? getTabLabel(destProject) : destPid;
+        const userName = TABS.find(t => t.id === targetUserId)?.label || targetUserId;
+        showToast(`${userName} → ${destLabel} has ${existingItems.length} existing item(s). Choose Replace or change destination.`, 'info');
+        return;
+      }
+    }
+
+    // Get source items
+    const sourceItems = allItems.filter(
+      i => i.syncTabId === copyTabSourceUserId && (
+        i.projectId === copyTabSourceProjectId ||
+        (i.visibleInTabs && i.visibleInTabs.includes(copyTabSourceProjectId))
+      ) && i.type !== ItemType.CHAT
+    );
+
+    if (sourceItems.length === 0) {
+      showToast('Source tab has no items to copy', 'info');
+      return;
+    }
+
+    let totalCopied = 0;
+
+    for (const [targetUserId, destPid] of targetEntries) {
+      // If replacing, delete existing items in the destination tab
+      if (copyTabConflictAction === 'replace') {
+        const existing = allItems.filter(
+          i => i.syncTabId === targetUserId && (i.projectId === destPid || (i.visibleInTabs && i.visibleInTabs.includes(destPid))) && i.type !== ItemType.CHAT
+        );
+        for (const item of existing) {
+          db.deleteItem(item.id, session.email);
+        }
+      }
+
+      // Rename the destination tab to match the source tab name
+      const destProjects = userProjectsMap[targetUserId] || [];
+      const destProject = destProjects.find(p => p.id === destPid);
+      if (destProject && sourceProject.name) {
+        const updated = destProjects.map(p =>
+          p.id === destPid ? { ...p, name: sourceProject.name } : p
+        );
+        setUserProjectsMap(prev => ({ ...prev, [targetUserId]: updated }));
+        await saveUserProjects(targetUserId, updated);
+      }
+
+      // Duplicate each source item for the target user + destination tab
+      for (const src of sourceItems) {
+        db.addItem({
+          userId: session.email,
+          syncTabId: targetUserId,
+          type: src.type,
+          title: src.title,
+          content: src.content,
+          taskStatus: src.taskStatus,
+          dueDate: src.dueDate,
+          eventLocation: src.eventLocation,
+          metadata: src.metadata ? { ...src.metadata } : undefined,
+          enrichmentStatus: src.enrichmentStatus,
+          isDemo: src.isDemo,
+          projectId: destPid,
+          visibleInTabs: [destPid],
+          boardId: src.boardId,
+          boardPosition: src.boardPosition,
+          fileUrl: src.fileUrl,
+          fileName: src.fileName,
+          fileSize: src.fileSize,
+        });
+        totalCopied++;
+      }
+    }
+
+    setItems(db.getItems());
+    setShowCopyTabModal(false);
+    showToast(`Copied ${sourceItems.length} item(s) to ${targetEntries.length} user(s) (${totalCopied} total)`, 'success');
   };
 
   /** Ensure every target user has at least one project tab (HOME) before distributing items */
@@ -1532,6 +1641,188 @@ const AppInner: React.FC = () => {
             </div>
           )}
 
+          {/* Copy Tab Modal (z-[150]) */}
+          {showCopyTabModal && (() => {
+            const sourceProjects = (userProjectsMap[copyTabSourceUserId] || []).filter(p => p.index > 1);
+            const sourceProject = sourceProjects.find(p => p.id === copyTabSourceProjectId);
+            const sourceLabel = sourceProject ? `TAB${sourceProject.index} — ${getTabLabel(sourceProject)}` : '';
+            const sourceUser = TABS.find(t => t.id === copyTabSourceUserId);
+            // Target users: all non-owner users except the source user
+            const availableTargets = nonOwnerTabs.filter(t => t.id !== copyTabSourceUserId);
+
+            // Check if any selected target has items in its destination tab
+            const allCurrent = db.getItems();
+            const hasConflict = Object.entries(copyTabTargets).some(([uid, pid]) => {
+              if (!pid) return false;
+              return allCurrent.some(i => i.syncTabId === uid && (i.projectId === pid || (i.visibleInTabs && i.visibleInTabs.includes(pid))) && i.type !== ItemType.CHAT);
+            });
+
+            return (
+              <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => setShowCopyTabModal(false)}>
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+                <div className="relative bg-card border border-edge rounded-3xl max-w-lg w-full p-8 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-[11px] tracking-[0.3em] uppercase text-accent font-bold flex items-center gap-3">
+                      <Copy size={16} />
+                      Copy Tab to Users
+                    </h2>
+                    <button onClick={() => setShowCopyTabModal(false)} className="text-primary/30 hover:text-primary transition-colors"><X size={18} /></button>
+                  </div>
+
+                  {/* Source user */}
+                  <div className="space-y-2">
+                    <label className="text-[9px] tracking-widest uppercase text-muted/50 font-bold">Source User</label>
+                    <select
+                      value={copyTabSourceUserId}
+                      onChange={(e) => {
+                        setCopyTabSourceUserId(e.target.value);
+                        const proj = (userProjectsMap[e.target.value] || []).find(p => p.index > 1);
+                        setCopyTabSourceProjectId(proj?.id || '');
+                        setCopyTabTargets({});
+                        setCopyTabConflictAction(null);
+                      }}
+                      className="w-full bg-base border border-edge rounded-xl px-4 py-3 text-[11px] tracking-widest text-primary/70 focus:outline-none focus:border-accent/30"
+                    >
+                      {TABS.map(t => (
+                        <option key={t.id} value={t.id}>{t.label}{t.isOwner ? ' (Owner)' : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Source tab */}
+                  <div className="space-y-2">
+                    <label className="text-[9px] tracking-widest uppercase text-muted/50 font-bold">Source Tab</label>
+                    {sourceProjects.length === 0 ? (
+                      <p className="text-[10px] text-muted/40 italic">No editable tabs for this user</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {sourceProjects.map(p => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => { setCopyTabSourceProjectId(p.id); setCopyTabConflictAction(null); }}
+                            className={`px-4 py-2 rounded-xl text-[10px] tracking-widest font-bold uppercase border transition-all ${
+                              copyTabSourceProjectId === p.id
+                                ? 'bg-accent/20 border-accent/40 text-accent'
+                                : 'bg-base border-edge text-muted/40 hover:text-muted hover:border-muted/30'
+                            }`}
+                          >
+                            TAB{p.index} — {getTabLabel(p)}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Target users + destination tab per user */}
+                  {sourceProject && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-4">
+                        <label className="text-[9px] tracking-widest uppercase text-muted/50 font-bold">Target Users</label>
+                        <button type="button" onClick={() => {
+                          const all: Record<string, string> = {};
+                          for (const t of availableTargets) {
+                            const proj = (userProjectsMap[t.id] || []).find(p => p.index > 1);
+                            if (proj) all[t.id] = proj.id;
+                          }
+                          setCopyTabTargets(all);
+                          setCopyTabConflictAction(null);
+                        }} className="text-[9px] tracking-widest uppercase text-accent/40 hover:text-accent font-bold transition-colors">All</button>
+                        <button type="button" onClick={() => { setCopyTabTargets({}); setCopyTabConflictAction(null); }} className="text-[9px] tracking-widest uppercase text-muted/30 hover:text-muted font-bold transition-colors">Clear</button>
+                      </div>
+
+                      {availableTargets.length === 0 && (
+                        <p className="text-[10px] text-muted/40 italic">No other users available</p>
+                      )}
+
+                      {availableTargets.map(t => {
+                        const userProjects = (userProjectsMap[t.id] || []).filter(p => p.index > 1);
+                        const isSelected = !!copyTabTargets[t.id];
+                        return (
+                          <div key={t.id} className={`rounded-xl border p-3 transition-all ${isSelected ? 'border-accent/30 bg-accent/5' : 'border-edge bg-base/50'}`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (isSelected) {
+                                    const next = { ...copyTabTargets };
+                                    delete next[t.id];
+                                    setCopyTabTargets(next);
+                                  } else {
+                                    const firstTab = userProjects[0];
+                                    if (firstTab) setCopyTabTargets(prev => ({ ...prev, [t.id]: firstTab.id }));
+                                  }
+                                  setCopyTabConflictAction(null);
+                                }}
+                                className={`text-[10px] tracking-widest font-bold uppercase transition-colors ${isSelected ? 'text-accent' : 'text-muted/40 hover:text-muted'}`}
+                              >
+                                {t.label}
+                              </button>
+                              {isSelected && <span className="text-[8px] text-accent/50 tracking-widest uppercase">Selected</span>}
+                            </div>
+                            {isSelected && userProjects.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {userProjects.map(p => (
+                                  <button
+                                    key={p.id}
+                                    type="button"
+                                    onClick={() => { setCopyTabTargets(prev => ({ ...prev, [t.id]: p.id })); setCopyTabConflictAction(null); }}
+                                    className={`px-3 py-1.5 rounded-lg text-[9px] tracking-widest font-bold uppercase border transition-all ${
+                                      copyTabTargets[t.id] === p.id
+                                        ? 'bg-accent/20 border-accent/40 text-accent'
+                                        : 'bg-base border-edge text-muted/30 hover:text-muted hover:border-muted/20'
+                                    }`}
+                                  >
+                                    TAB{p.index} — {getTabLabel(p)}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            {isSelected && userProjects.length === 0 && (
+                              <p className="text-[9px] text-muted/30 italic">No editable tabs — create one first</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Conflict warning */}
+                  {hasConflict && !copyTabConflictAction && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 space-y-2">
+                      <p className="text-[10px] tracking-widest text-amber-400 font-bold uppercase">Destination tab(s) have existing items</p>
+                      <p className="text-[9px] text-amber-400/60">Choose Replace to clear existing items before copying, or change the destination tab.</p>
+                      <button
+                        type="button"
+                        onClick={() => setCopyTabConflictAction('replace')}
+                        className="px-4 py-2 rounded-xl text-[9px] tracking-widest font-bold uppercase bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 transition-all"
+                      >
+                        Replace Existing Items
+                      </button>
+                    </div>
+                  )}
+                  {copyTabConflictAction === 'replace' && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3">
+                      <p className="text-[9px] tracking-widest text-red-400/70 font-bold uppercase">Existing items will be replaced</p>
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div className="flex items-center justify-between pt-2">
+                    <button onClick={() => setShowCopyTabModal(false)} className="text-[11px] tracking-[0.3em] text-muted/40 hover:text-primary transition-colors uppercase font-bold">Cancel</button>
+                    <button
+                      onClick={handleCopyTab}
+                      disabled={!copyTabSourceProjectId || Object.values(copyTabTargets).filter(Boolean).length === 0 || (hasConflict && !copyTabConflictAction)}
+                      className="px-6 py-3 rounded-2xl text-[11px] tracking-[0.3em] font-bold uppercase bg-accent/20 text-accent border border-accent/30 hover:bg-accent/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    >
+                      Copy {sourceLabel || 'Tab'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Share Modal (z-[150]) */}
           {shareItem && (
             <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={() => setShareItem(null)}>
@@ -1737,6 +2028,19 @@ const AppInner: React.FC = () => {
                     >
                       <FolderPlus size={12} />
                       ADD NEW TAB
+                    </button>
+                  )}
+                  {/* Copy entire tab button — only when editable tabs exist */}
+                  {viewedUserProjects.filter(p => p.index > 1).length > 0 && (
+                    <button
+                      className="oac-config-add"
+                      onClick={() => {
+                        const firstEditable = viewedUserProjects.find(p => p.index > 1);
+                        if (firstEditable) openCopyTabModal(activeTab, firstEditable.id);
+                      }}
+                    >
+                      <Copy size={12} />
+                      COPY TAB TO USERS
                     </button>
                   )}
                 </div>

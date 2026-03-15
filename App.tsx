@@ -93,7 +93,7 @@ const AppInner: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [selectedTargetUsers, setSelectedTargetUsers] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<'grid-big' | 'grid-small' | 'list'>(() => window.innerWidth < 768 ? 'list' : 'grid-big');
+  const [viewMode, setViewMode] = useState<'grid-big' | 'grid-small' | 'list'>('grid-big');
   const [showAES, setShowAES] = useState(false);
   const [showThemeDock, setShowThemeDock] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);

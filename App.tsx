@@ -1938,6 +1938,8 @@ const AppInner: React.FC = () => {
                     : myProjects;
                   if (tabProjects.length <= 1) return null;
                   const sorted = [...tabProjects].sort((a, b) => a.index - b.index);
+                  const tabLabel = (p: typeof sorted[0]) =>
+                    `TAB${p.index} — ${getTabLabel(p)}`;
                   // In edit mode use multi-select via newItemTargetTabs; in create mode use single-select
                   if (editingItem) {
                     return (
@@ -1965,7 +1967,7 @@ const AppInner: React.FC = () => {
                                     : 'border-edge text-muted/40 hover:border-edge hover:text-muted'
                                 }`}
                               >
-                                {project.name || `TAB ${project.index}`}
+                                {tabLabel(project)}
                               </button>
                             );
                           })}
@@ -1994,7 +1996,7 @@ const AppInner: React.FC = () => {
                                   : 'border-edge text-muted/40 hover:border-edge hover:text-muted'
                               }`}
                             >
-                              {project.name || `TAB ${project.index}`}
+                              {tabLabel(project)}
                             </button>
                           );
                         })}

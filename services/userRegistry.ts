@@ -129,20 +129,29 @@ export async function hydrateRegistryFromCloud(): Promise<void> {
     if (error || !Array.isArray(data) || data.length === 0) return;
 
     const cloudUsers = data.map(fromRow);
-    const cloudEmails = new Set(cloudUsers.map((u: RegisteredUser) => u.email));
+    const cloudEmails = new Set(cloudUsers.map((u: RegisteredUser) => u.email.toLowerCase().trim()));
 
     // Keep local-only users (added but not yet synced to cloud)
     const localUsers = loadRegistry();
-    const localOnly = localUsers.filter((u) => !cloudEmails.has(u.email));
+    const localOnly = localUsers.filter((u) => !cloudEmails.has(u.email.toLowerCase().trim()));
 
-    const merged = ensureOwner([...cloudUsers, ...localOnly]);
+    // Ensure all seed users survive the merge — prevents seed users from being
+    // lost when they were never synced to cloud (e.g. upsert failures)
+    const mergedEmails = new Set([
+      ...cloudUsers.map((u: RegisteredUser) => u.email.toLowerCase().trim()),
+      ...localOnly.map((u) => u.email.toLowerCase().trim()),
+    ]);
+    const missingSeed = SEED_USERS.filter((s) => !mergedEmails.has(s.email.toLowerCase().trim()));
+
+    const merged = ensureOwner([...cloudUsers, ...localOnly, ...missingSeed]);
     localStorage.setItem(REGISTRY_KEY, JSON.stringify(merged));
 
-    // Re-sync local-only users to cloud
-    if (localOnly.length > 0) {
+    // Re-sync local-only users and missing seed users to cloud
+    const usersToSync = [...localOnly, ...missingSeed];
+    if (usersToSync.length > 0) {
       (supabase as any)
         .from(REGISTRY_TABLE)
-        .upsert(localOnly.map(toRow), { onConflict: 'email' })
+        .upsert(usersToSync.map(toRow), { onConflict: 'email' })
         .then(({ error: syncErr }: { error: any }) => {
           if (syncErr) console.warn('Registry re-sync of local users failed:', syncErr.message);
         });

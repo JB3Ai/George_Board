@@ -58,29 +58,37 @@ const toRow = (u: RegisteredUser) => ({
   added_by: u.addedBy ?? null,
 });
 
-function ensureOwner(users: RegisteredUser[]): RegisteredUser[] {
+function ensureAllSeeds(users: RegisteredUser[]): RegisteredUser[] {
+  // Ensure owner exists with isOwner flag
   const hasOwner = users.some((u) => u.email.toLowerCase().trim() === OWNER_EMAIL && u.isOwner);
-  if (hasOwner) return users;
-  const ownerSeed = SEED_USERS.find((u) => u.email === OWNER_EMAIL)!;
-  return [ownerSeed, ...users.filter((u) => u.email.toLowerCase().trim() !== OWNER_EMAIL)];
+  let merged = hasOwner
+    ? users
+    : [SEED_USERS.find((u) => u.email === OWNER_EMAIL)!, ...users.filter((u) => u.email.toLowerCase().trim() !== OWNER_EMAIL)];
+
+  // Ensure every seed user is present (covers new users added to SEED_USERS)
+  const existingEmails = new Set(merged.map((u) => u.email.toLowerCase().trim()));
+  const missing = SEED_USERS.filter((s) => !existingEmails.has(s.email.toLowerCase().trim()));
+  if (missing.length > 0) merged = [...merged, ...missing];
+
+  return merged;
 }
 
 function loadRegistry(): RegisteredUser[] {
   const data = localStorage.getItem(REGISTRY_KEY);
   if (!data) {
-    const seeded = ensureOwner([...SEED_USERS]);
+    const seeded = ensureAllSeeds([...SEED_USERS]);
     localStorage.setItem(REGISTRY_KEY, JSON.stringify(seeded));
     return seeded;
   }
   try {
     const parsed = JSON.parse(data) as RegisteredUser[];
-    const fixed = ensureOwner(Array.isArray(parsed) ? parsed : [...SEED_USERS]);
+    const fixed = ensureAllSeeds(Array.isArray(parsed) ? parsed : [...SEED_USERS]);
     if (fixed.length !== parsed.length) {
       localStorage.setItem(REGISTRY_KEY, JSON.stringify(fixed));
     }
     return fixed;
   } catch {
-    const seeded = ensureOwner([...SEED_USERS]);
+    const seeded = ensureAllSeeds([...SEED_USERS]);
     localStorage.setItem(REGISTRY_KEY, JSON.stringify(seeded));
     return seeded;
   }
@@ -139,7 +147,7 @@ export async function hydrateRegistryFromCloud(): Promise<void> {
     ]);
     const missingSeed = SEED_USERS.filter((s) => !mergedEmails.has(s.email.toLowerCase().trim()));
 
-    const merged = ensureOwner([...cloudUsers, ...localOnly, ...missingSeed]);
+    const merged = ensureAllSeeds([...cloudUsers, ...localOnly, ...missingSeed]);
     localStorage.setItem(REGISTRY_KEY, JSON.stringify(merged));
 
     // Re-sync local-only users and missing seed users to cloud

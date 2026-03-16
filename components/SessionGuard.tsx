@@ -62,65 +62,71 @@ export const SessionGuard: React.FC<SessionGuardProps> = ({ children }) => {
     if (!session) return;
     setIsProcessing(true);
 
-    // Check server-side if user has a PIN set
-    const status = await checkPinStatus(session.email);
+    try {
+      // Check server-side if user has a PIN set
+      const status = await checkPinStatus(session.email);
 
-    if (status.locked) {
-      showToast(status.error || 'Account locked. Try again later.', 'error');
-      setPinResetKey(k => k + 1);
-      setIsProcessing(false);
-      return;
-    }
-
-    const firstTime = !status.has_pin;
-
-    if (firstTime) {
-      // No PIN exists — set one
-      const setResult = await supabaseAuth.setPin(session.email, pin);
-      if (!setResult.success) {
-        showToast(setResult.error || 'Failed to set PIN', 'error');
+      if (status.locked) {
+        showToast(status.error || 'Account locked. Try again later.', 'error');
         setPinResetKey(k => k + 1);
         setIsProcessing(false);
         return;
       }
-    }
 
-    // Verify the PIN (even after setting — confirms hash round-trip)
-    const result = await supabaseAuth.verifyPin(session.email, pin);
+      const firstTime = !status.has_pin;
 
-    if (result.success) {
-      // Phase 4.3: Exchange token for real Supabase Auth session (activates JWT-based RLS)
-      if (result.token_hash && supabase) {
-        try {
-          await supabase.auth.verifyOtp({ token_hash: result.token_hash, type: 'magiclink' });
-        } catch {
-          // Non-fatal: app works without JWT session, board RLS stays dormant
-          console.warn('Supabase session exchange failed — board RLS inactive');
+      if (firstTime) {
+        // No PIN exists — set one
+        const setResult = await supabaseAuth.setPin(session.email, pin);
+        if (!setResult.success) {
+          showToast(setResult.error || 'Failed to set PIN', 'error');
+          setPinResetKey(k => k + 1);
+          setIsProcessing(false);
+          return;
         }
       }
 
-      const verifiedSession: UserSession = {
-        ...session,
-        pinVerified: true,
-        trustUntil: trust ? Date.now() + (7 * 24 * 60 * 60 * 1000) : undefined
-      };
-      setSession(verifiedSession);
-      localStorage.setItem('jb3_session', JSON.stringify(verifiedSession));
+      // Verify the PIN (even after setting — confirms hash round-trip)
+      const result = await supabaseAuth.verifyPin(session.email, pin);
 
-      const user = userRegistry.getUserByEmail(session.email);
-      setSplashUsername(user?.label || session.email.split('@')[0].toUpperCase());
+      if (result.success) {
+        // Phase 4.3: Exchange token for real Supabase Auth session (activates JWT-based RLS)
+        if (result.token_hash && supabase) {
+          try {
+            await supabase.auth.verifyOtp({ token_hash: result.token_hash, type: 'magiclink' });
+          } catch {
+            // Non-fatal: app works without JWT session, board RLS stays dormant
+            console.warn('Supabase session exchange failed — board RLS inactive');
+          }
+        }
 
-      showToast(firstTime ? 'PIN Created & Session Authorized' : 'Session Authorized', 'success');
-      if (welcomeVideoEnabled) {
-        setShowSplash(true);
-      } else if (installGuideEnabled) {
-        setShowInstallModal(true);
+        const verifiedSession: UserSession = {
+          ...session,
+          pinVerified: true,
+          trustUntil: trust ? Date.now() + (7 * 24 * 60 * 60 * 1000) : undefined
+        };
+        setSession(verifiedSession);
+        localStorage.setItem('jb3_session', JSON.stringify(verifiedSession));
+
+        const user = userRegistry.getUserByEmail(session.email);
+        setSplashUsername(user?.label || session.email.split('@')[0].toUpperCase());
+
+        showToast(firstTime ? 'PIN Created & Session Authorized' : 'Session Authorized', 'success');
+        if (welcomeVideoEnabled) {
+          setShowSplash(true);
+        } else if (installGuideEnabled) {
+          setShowInstallModal(true);
+        }
+      } else {
+        const msg = result.attempts_remaining !== undefined && result.attempts_remaining <= 2
+          ? `Verification failed. ${result.attempts_remaining} attempt${result.attempts_remaining === 1 ? '' : 's'} remaining.`
+          : result.error || 'Verification failed';
+        showToast(msg, 'error');
+        setPinResetKey(k => k + 1);
       }
-    } else {
-      const msg = result.attempts_remaining !== undefined && result.attempts_remaining <= 2
-        ? `Verification failed. ${result.attempts_remaining} attempt${result.attempts_remaining === 1 ? '' : 's'} remaining.`
-        : result.error || 'Verification failed';
-      showToast(msg, 'error');
+    } catch (err) {
+      console.error('PIN flow error:', err);
+      showToast('Session error. Please try again.', 'error');
       setPinResetKey(k => k + 1);
     }
     setIsProcessing(false);

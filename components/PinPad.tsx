@@ -14,6 +14,8 @@ export const PinPad: React.FC<PinPadProps> = ({ onComplete, isSetting, onResetPi
   const [trust, setTrust] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   // Focus lock — grab focus on mount and re-grab on any click
   useEffect(() => {
@@ -35,21 +37,11 @@ export const PinPad: React.FC<PinPadProps> = ({ onComplete, isSetting, onResetPi
 
   useEffect(() => {
     if (pin.length !== 4 || isSubmitting) return;
-
-    let isActive = true;
     setIsSubmitting(true);
-
-    Promise.resolve(onComplete(pin, trust))
-      .finally(() => {
-        if (!isActive) return;
-        setPin('');
-        setIsSubmitting(false);
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [pin, onComplete, trust]);
+    // Use ref so the effect doesn't re-fire when parent re-renders (new callback ref).
+    // On success PinPad unmounts; on failure parent increments resetKey.
+    onCompleteRef.current(pin, trust);
+  }, [pin, trust]);
 
   const handlePress = (num: string) => {
     if (isSubmitting) return;
